@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% block title %}Admin Profile{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+
+  <div class="mb-4 p-4 text-white rounded" style="background:#0f3460;">
+    <h3>{{ request.user.get_full_name|default:request.user.username }}</h3>
+    <p>🛡️ Administrator</p>
+    <a href="{% url 'edit_profile' %}" class="btn btn-light btn-sm">Edit Profile</a>
+  </div>
+
+  <div class="row">
+
+    <div class="col-md-4">
+      <div class="card p-3 mb-3">
+        <h6>Account Info</h6>
+        <p><b>Username:</b> {{ request.user.username }}</p>
+        <p><b>Email:</b> {{ request.user.email|default:"—" }}</p>
+        <p><b>Phone:</b> {{ request.user.phone|default:"—" }}</p>
+        <p><b>Joined:</b> {{ request.user.date_joined|date:"d M Y" }}</p>
+      </div>
+
+      <div class="card p-3">
+  <h6>Quick Actions</h6>
+
+  <a href="{% url 'admin_dashboard' %}">Dashboard</a><br>
+  <a href="{% url 'stats' %}">Statistics</a><br>
+
+  <!-- ✅ NEW CORRECT BUTTON -->
+  <a href="{% url 'export_students_excel' %}">Export Excel</a><br>
+
+  <a href="{% url 'search_students' %}">Search Students</a>
+</div>
+
+    <div class="col-md-8">
+      <div class="card p-3 mb-3">
+        <h6>Platform Overview</h6>
+        <p><b>Students:</b> {{ total_students }}</p>
+        <p><b>Recruiters:</b> {{ total_recruiters }}</p>
+        <p><b>Drives:</b> —</p>
+        <p><b>Selected:</b> —</p>
+      </div>
+
+      <div class="card p-3">
+        <h6>Admin Permissions</h6>
+        {% for perm in permissions %}
+          <p>✓ {{ perm }}</p>
+        {% endfor %}
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
