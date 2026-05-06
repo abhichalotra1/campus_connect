@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="row mt-3">
+    <div class="col-md-8">
+        <h3><i class="fas fa-briefcase text-primary me-2"></i>Placement Drives</h3>
+    </div>
+    <div class="col-md-4 text-end">
+        {% if user.role == 'recruiter' or user.role == 'admin' %}
+            <a href="/placements/post-drive/" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Post a Drive
+            </a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card p-3 mt-3 mb-3">
+    <form method="GET" class="row g-2">
+        <div class="col-md-4">
+            <input type="text" name="search" class="form-control"
+                   placeholder="Search company or role..." value="{{ search }}">
+        </div>
+        <div class="col-md-3">
+            <select name="branch" class="form-select">
+                <option value="">All Branches</option>
+                <option value="CSE" {% if branch == 'CSE' %}selected{% endif %}>CSE</option>
+                <option value="ECE" {% if branch == 'ECE' %}selected{% endif %}>ECE</option>
+                <option value="ME"  {% if branch == 'ME'  %}selected{% endif %}>ME</option>
+                <option value="CE"  {% if branch == 'CE'  %}selected{% endif %}>CE</option>
+                <option value="EE"  {% if branch == 'EE'  %}selected{% endif %}>EE</option>
+                <option value="IT"  {% if branch == 'IT'  %}selected{% endif %}>IT</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <select name="job_type" class="form-select">
+                <option value="">All Types</option>
+                <option value="full_time"  {% if job_type == 'full_time'  %}selected{% endif %}>Full Time</option>
+                <option value="internship" {% if job_type == 'internship' %}selected{% endif %}>Internship</option>
+                <option value="part_time"  {% if job_type == 'part_time'  %}selected{% endif %}>Part Time</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-primary w-100">Filter</button>
+        </div>
+    </form>
+</div>
+
+<div class="row">
+    {% for drive in drives %}
+    <div class="col-md-6 mb-3">
+        <div class="card p-3 h-100">
+            <div class="d-flex justify-content-between">
+                <h5>{{ drive.company }}</h5>
+                <span class="badge bg-success">{{ drive.package }}</span>
+            </div>
+            <p class="text-muted mb-1">
+                <i class="fas fa-briefcase me-1"></i>{{ drive.role }}
+            </p>
+            <p class="text-muted mb-1">
+                <i class="fas fa-map-marker-alt me-1"></i>{{ drive.location }}
+            </p>
+            <p class="text-muted mb-1">
+                <i class="fas fa-calendar me-1"></i>Deadline: {{ drive.deadline }}
+            </p>
+            <p class="text-muted mb-2">
+                <i class="fas fa-graduation-cap me-1"></i>Min CGPA: {{ drive.min_cgpa }}
+            </p>
+            <div class="mt-auto">
+                <a href="/placements/{{ drive.pk }}/" class="btn btn-outline-primary btn-sm me-2">
+                    View Details
+                </a>
+                {% if user.role == 'student' %}
+                    {% if drive.pk in applied_ids %}
+                        <span class="badge bg-success p-2">Applied</span>
+                    {% else %}
+                        <a href="/placements/apply/{{ drive.pk }}/" class="btn btn-success btn-sm">
+                            Apply Now
+                        </a>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% empty %}
+        <div class="col-12 text-center mt-4">
+            <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">No placement drives found!</h5>
+        </div>
+    {% endfor %}
+</div>
+{% endblock %}

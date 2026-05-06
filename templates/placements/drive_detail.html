@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="row mt-3">
+    <div class="col-md-8">
+        <div class="card p-4">
+            <div class="d-flex justify-content-between align-items-start">
+                <div><h3>{{ drive.company }}</h3><h5 class="text-muted">{{ drive.role }}</h5></div>
+                <span class="badge bg-success fs-6">{{ drive.package }}</span>
+            </div>
+            <hr>
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <p><i class="fas fa-map-marker-alt text-primary me-2"></i><strong>Location:</strong> {{ drive.location }}</p>
+                    <p><i class="fas fa-briefcase text-primary me-2"></i><strong>Job Type:</strong> {{ drive.get_job_type_display }}</p>
+                    <p><i class="fas fa-calendar text-primary me-2"></i><strong>Deadline:</strong> {{ drive.deadline }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><i class="fas fa-graduation-cap text-primary me-2"></i><strong>Min CGPA:</strong> {{ drive.min_cgpa }}</p>
+                    <p><i class="fas fa-code-branch text-primary me-2"></i><strong>Eligible Branch:</strong> {{ drive.eligible_branch }}</p>
+                    <p><i class="fas fa-tools text-primary me-2"></i><strong>Skills:</strong> {{ drive.skills_required }}</p>
+                </div>
+            </div>
+            <h5>Job Description</h5>
+            <p>{{ drive.description }}</p>
+            <div class="mt-3">
+                {% if user.role == 'student' %}
+                    {% if already_applied %}
+                        <span class="badge bg-success p-3 fs-6">Already Applied</span>
+                    {% else %}
+                        <a href="/placements/apply/{{ drive.pk }}/" class="btn btn-success me-2">Apply Now</a>
+                    {% endif %}
+                {% endif %}
+                <a href="/placements/" class="btn btn-outline-secondary">Back to Drives</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card p-3">
+            <h5><i class="fas fa-building text-primary me-2"></i>Company Info</h5><hr>
+            <p><strong>Company:</strong> {{ drive.company }}</p>
+            <p><strong>Posted by:</strong> {{ drive.posted_by.username }}</p>
+            <p><strong>Posted on:</strong> {{ drive.created_at|date:"d M Y" }}</p>
+            <p><strong>Status:</strong> <span class="badge bg-success">{{ drive.status }}</span></p>
+        </div>
+    </div>
+</div>
+{% endblock %}

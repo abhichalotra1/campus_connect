@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="row mt-3">
+    <div class="col-12"><h3><i class="fas fa-file-alt text-primary me-2"></i>My Applications</h3></div>
+</div>
+<div class="row mt-3">
+    {% for app in applications %}
+    <div class="col-md-6 mb-3">
+        <div class="card p-3">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <h5>{{ app.drive.company }}</h5>
+                    <p class="text-muted mb-1"><i class="fas fa-briefcase me-1"></i>{{ app.drive.role }}</p>
+                    <p class="text-muted mb-1"><i class="fas fa-calendar me-1"></i>Applied: {{ app.applied_at|date:"d M Y" }}</p>
+                </div>
+                <div class="text-end">
+                    {% if app.status == 'applied' %}<span class="badge bg-primary p-2">Applied</span>
+                    {% elif app.status == 'shortlisted' %}<span class="badge bg-warning p-2">Shortlisted</span>
+                    {% elif app.status == 'selected' %}<span class="badge bg-success p-2">Selected</span>
+                    {% elif app.status == 'rejected' %}<span class="badge bg-danger p-2">Rejected</span>{% endif %}
+                </div>
+            </div>
+            <div class="mt-2">
+                <a href="/placements/{{ app.drive.pk }}/" class="btn btn-outline-primary btn-sm me-2">View Drive</a>
+                {% if app.status == 'applied' %}
+                    <a href="/placements/withdraw/{{ app.pk }}/" class="btn btn-outline-danger btn-sm">Withdraw</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% empty %}
+        <div class="col-12 text-center mt-4">
+            <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">No applications yet!</h5>
+            <a href="/placements/" class="btn btn-primary mt-2">Browse Drives</a>
+        </div>
+    {% endfor %}
+</div>
+{% endblock %}

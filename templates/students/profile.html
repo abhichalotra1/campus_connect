@@ -1,0 +1,72 @@
+﻿{% extends 'base.html' %}
+{% block content %}
+<div class="row mt-3">
+    <div class="col-md-4">
+        <div class="card p-3 text-center">
+            {% if profile.profile_pic %}
+                <img src="{{ profile.profile_pic.url }}" class="rounded-circle mb-3 mx-auto" style="width:120px;height:120px;object-fit:cover;">
+            {% else %}
+                <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center mb-3 mx-auto" style="width:120px;height:120px;">
+                    <i class="fas fa-user fa-3x text-white"></i>
+                </div>
+            {% endif %}
+            <h4>{{ user.first_name }} {{ user.last_name }}</h4>
+            <p class="text-muted">{{ user.email }}</p>
+            <span class="badge bg-primary">{{ user.role }}</span>
+            {% if profile %}
+            <div class="mt-3">
+                <p class="text-muted mb-1">Profile Completion</p>
+                <div class="progress">
+                    <div class="progress-bar" style="width: {{ profile.profile_completion }}%">{{ profile.profile_completion }}%</div>
+                </div>
+            </div>
+            {% endif %}
+            <a href="/students/edit-profile/" class="btn btn-primary mt-3 w-100"><i class="fas fa-edit me-2"></i>Edit Profile</a>
+        </div>
+    </div>
+    <div class="col-md-8">
+        {% if profile %}
+        <div class="card p-3 mb-3">
+            <h5><i class="fas fa-user-graduate text-primary me-2"></i>Academic Details</h5><hr>
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Branch:</strong> {{ profile.branch }}</p>
+                    <p><strong>CGPA:</strong> {{ profile.cgpa }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Roll Number:</strong> {{ profile.roll_number }}</p>
+                    <p><strong>Passing Year:</strong> {{ profile.passing_year }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="card p-3 mb-3">
+            <h5><i class="fas fa-tools text-primary me-2"></i>Skills & Certifications</h5><hr>
+            <p><strong>Skills:</strong></p>
+            <div class="mb-2">
+                {% for skill in profile.skills.split %}
+                    <span class="badge bg-secondary me-1">{{ skill }}</span>
+                {% endfor %}
+            </div>
+            <p><strong>Certifications:</strong> {{ profile.certifications }}</p>
+        </div>
+        <div class="card p-3 mb-3">
+            <h5><i class="fas fa-link text-primary me-2"></i>Links & Resume</h5><hr>
+            {% if profile.linkedin %}<p><i class="fab fa-linkedin text-primary me-2"></i><a href="{{ profile.linkedin }}">LinkedIn</a></p>{% endif %}
+            {% if profile.github %}<p><i class="fab fa-github me-2"></i><a href="{{ profile.github }}">GitHub</a></p>{% endif %}
+            {% if profile.resume %}
+                <a href="{{ profile.resume.url }}" class="btn btn-outline-primary btn-sm" target="_blank">
+                    <i class="fas fa-file-pdf me-2"></i>View Resume
+                </a>
+            {% endif %}
+        </div>
+        {% else %}
+        <div class="card p-4 text-center">
+            <i class="fas fa-user-edit fa-3x text-muted mb-3"></i>
+            <h5>Profile not complete yet!</h5>
+            <p class="text-muted">Fill in your details to get started</p>
+            <a href="/students/edit-profile/" class="btn btn-primary">Complete Profile</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

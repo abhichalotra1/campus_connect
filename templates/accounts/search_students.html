@@ -1,0 +1,85 @@
+﻿{% extends 'base.html' %}
+{% block content %}
+<div class="row mt-3">
+    <div class="col-12">
+        <h3><i class="fas fa-search text-primary me-2"></i>Search Students</h3>
+        <p class="text-muted">Find students by branch, skill or CGPA</p>
+    </div>
+</div>
+<div class="card p-3 mt-3">
+    <form method="GET" class="row g-2">
+        <div class="col-md-3">
+            <label class="form-label">Branch</label>
+            <select name="branch" class="form-select">
+                <option value="">All Branches</option>
+                <option value="CSE" {% if branch == 'CSE' %}selected{% endif %}>CSE</option>
+                <option value="ECE" {% if branch == 'ECE' %}selected{% endif %}>ECE</option>
+                <option value="ME"  {% if branch == 'ME'  %}selected{% endif %}>ME</option>
+                <option value="CE"  {% if branch == 'CE'  %}selected{% endif %}>CE</option>
+                <option value="EE"  {% if branch == 'EE'  %}selected{% endif %}>EE</option>
+                <option value="IT"  {% if branch == 'IT'  %}selected{% endif %}>IT</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Skill</label>
+            <input type="text" name="skill" class="form-control" placeholder="e.g. Python, Django..." value="{{ skill }}">
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Min CGPA</label>
+            <input type="number" name="min_cgpa" class="form-control" step="0.1" min="0" max="10" placeholder="e.g. 7.5" value="{{ min_cgpa }}">
+        </div>
+        <div class="col-md-3 d-flex align-items-end">
+            <button type="submit" class="btn btn-primary w-100">Search</button>
+        </div>
+    </form>
+</div>
+<div class="row mt-4">
+    <div class="col-12">
+        <p class="text-muted">Found <strong>{{ students|length }}</strong> students</p>
+    </div>
+    {% for profile in students %}
+    <div class="col-md-4 mb-3">
+        <div class="card p-3 h-100">
+            <div class="d-flex align-items-center gap-3 mb-3">
+                {% if profile.profile_pic %}
+                    <img src="{{ profile.profile_pic.url }}" class="rounded-circle" style="width:46px;height:46px;object-fit:cover;">
+                {% else %}
+                    <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center" style="width:46px;height:46px;">
+                        <span class="text-white fw-bold">{{ profile.user.first_name|first|upper }}</span>
+                    </div>
+                {% endif %}
+                <div>
+                    <h6 class="mb-0">{{ profile.user.get_full_name }}</h6>
+                    <small class="text-muted">{{ profile.user.email }}</small>
+                </div>
+            </div>
+            <p class="mb-1"><strong>Branch:</strong> {{ profile.branch|default:'-' }}</p>
+            <p class="mb-1"><strong>CGPA:</strong> {{ profile.cgpa|default:'-' }}</p>
+            <p class="mb-1"><strong>Passing Year:</strong> {{ profile.passing_year|default:'-' }}</p>
+            <div class="mb-2">
+                {% for skill in profile.skills.split %}
+                    <span class="badge bg-secondary me-1">{{ skill }}</span>
+                {% endfor %}
+            </div>
+            <div class="mt-auto d-flex gap-2">
+                {% if profile.resume %}
+                    <a href="{{ profile.resume.url }}" target="_blank" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-file-pdf me-1"></i>Resume
+                    </a>
+                {% endif %}
+                {% if profile.linkedin %}
+                    <a href="{{ profile.linkedin }}" target="_blank" class="btn btn-outline-primary btn-sm">
+                        <i class="fab fa-linkedin me-1"></i>LinkedIn
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12 text-center mt-4">
+        <i class="fas fa-user-slash fa-3x text-muted mb-3"></i>
+        <h5 class="text-muted">No students found!</h5>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard — Campus Connect</title>
+<link href="https://fonts.googleapis.com/css2?family=Clash+Display:wght@400;500;600;700&family=Cabinet+Grotesk:wght@300;400;500;700;800&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:#08090d; --bg2:#0e1018; --bg3:#13151f;
+  --surface:#181b26; --surface2:#1e2130;
+  --border:rgba(255,255,255,0.06); --border2:rgba(255,255,255,0.11);
+  --ink:#eef0ff; --ink2:#9298b8; --ink3:#4e5370;
+  --a:#5b6cff; --a2:#7d8bff; --a-glow:rgba(91,108,255,0.22); --a-soft:rgba(91,108,255,0.10);
+  --g:#1ed98a; --g-soft:rgba(30,217,138,0.10);
+  --r:#ff5470; --r-soft:rgba(255,84,112,0.10);
+  --y:#f5c842; --y-soft:rgba(245,200,66,0.10);
+  --sidebar: 240px;
+  --radius:14px; --radius-lg:20px;
+}
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Cabinet Grotesk', sans-serif;
+  background: var(--bg); color: var(--ink);
+  min-height: 100vh; display: flex; overflow-x: hidden;
+}
+body::before {
+  content: ''; position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+  pointer-events: none; z-index: 0; opacity: 0.6;
+}
+
+/* ─── SIDEBAR ─── */
+.sidebar {
+  width: var(--sidebar); flex-shrink: 0;
+  background: var(--bg2); border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  position: fixed; top: 0; left: 0; height: 100vh;
+  z-index: 50; overflow-y: auto;
+}
+.sidebar-logo {
+  padding: 22px 20px 18px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 10px;
+  text-decoration: none;
+}
+.logo-mark {
+  width: 30px; height: 30px; border-radius: 8px; background: var(--a);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; color: #fff; flex-shrink: 0; position: relative;
+}
+.logo-mark::after { content: ''; position: absolute; inset: -3px; border-radius: 11px; border: 1px solid rgba(91,108,255,0.35); }
+.logo-text { font-family: 'Clash Display', sans-serif; font-size: 16px; font-weight: 700; color: var(--ink); }
+
+.nav-section { padding: 16px 12px 8px; }
+.nav-section-label { font-size: 10.5px; text-transform: uppercase; letter-spacing: 1.4px; font-weight: 700; color: var(--ink3); padding: 0 8px; margin-bottom: 6px; }
+.nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 10px; border-radius: 9px; margin-bottom: 2px;
+  text-decoration: none; color: var(--ink2); font-size: 13.5px; font-weight: 500;
+  transition: all 0.16s; cursor: pointer;
+}
+.nav-item:hover { background: var(--surface); color: var(--ink); }
+.nav-item.active { background: var(--a-soft); color: var(--ink); border: 1px solid rgba(91,108,255,0.18); }
+.nav-item .nav-icon {
+  width: 28px; height: 28px; border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; flex-shrink: 0;
+  background: var(--bg3); color: var(--ink3); transition: all 0.16s;
+}
+.nav-item.active .nav-icon { background: var(--a); color: #fff; }
+.nav-item:hover .nav-icon { color: var(--ink2); }
+.nav-badge {
+  margin-left: auto; padding: 2px 7px; border-radius: 20px;
+  font-size: 11px; font-weight: 700;
+  background: var(--a-soft); color: var(--a2);
+}
+
+.sidebar-user {
+  margin-top: auto; padding: 16px; border-top: 1px solid var(--border);
+  display: flex; align-items: center; gap: 10px;
+}
+.user-avatar {
+  width: 34px; height: 34px; border-radius: 50%;
+  background: var(--a-soft); color: var(--a2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 700; flex-shrink: 0; overflow: hidden;
+}
+.user-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.user-info { flex: 1; min-width: 0; }
+.user-name { font-size: 13px; font-weight: 700; color: var(--ink); truncate: ellipsis; white-space: nowrap; overflow: hidden; }
+.user-role { font-size: 11px; color: var(--ink3); }
+.logout-btn {
+  width: 28px; height: 28px; border-radius: 7px; background: none;
+  border: 1px solid var(--border); color: var(--ink3); cursor: pointer;
+  display: flex; align-items: center; justify-content: center; font-size: 12px;
+  transition: all 0.15s; text-decoration: none;
+}
+.logout-btn:hover { background: var(--r-soft); color: var(--r); border-color: rgba(255,84,112,0.3); }
+
+/* ─── MAIN CONTENT ─── */
+.main-content {
+  margin-left: var(--sidebar); flex: 1;
+  display: flex; flex-direction: column;
+  min-height: 100vh; position: relative; z-index: 1;
+}
+
+/* Top bar */
+.topbar {
+  padding: 18px 32px; border-bottom: 1px solid var(--border);
+  background: rgba(8,9,13,0.5); backdrop-filter: blur(20px);
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 20;
+}
+.topbar-left h1 { font-family: 'Clash Display', sans-serif; font-size: 20px; font-weight: 700; letter-spacing: -0.5px; }
+.topbar-left p { font-size: 13px; color: var(--ink2); margin-top: 2px; }
+.topbar-right { display: flex; align-items: center; gap: 10px; }
+.icon-btn {
+  width: 36px; height: 36px; border-radius: 9px;
+  background: var(--surface); border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--ink2); font-size: 14px; cursor: pointer;
+  text-decoration: none; transition: all 0.15s; position: relative;
+}
+.icon-btn:hover { border-color: var(--border2); color: var(--ink); }
+.notif-dot {
+  position: absolute; top: 6px; right: 6px;
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--r); border: 2px solid var(--bg);
+}
+
+/* Content area */
+.content { padding: 32px; flex: 1; }
+
+/* ─── STATS ROW ─── */
+.stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
+.stat-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 22px 24px;
+  position: relative; overflow: hidden; transition: all 0.2s;
+}
+.stat-card:hover { border-color: var(--border2); transform: translateY(-2px); }
+.stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; }
+.stat-card.c-a::before { background: var(--a); }
+.stat-card.c-g::before { background: var(--g); }
+.stat-card.c-y::before { background: var(--y); }
+.stat-card.c-r::before { background: var(--r); }
+.stat-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.stat-label-text { font-size: 12px; text-transform: uppercase; letter-spacing: 0.8px; font-weight: 700; color: var(--ink3); }
+.stat-icon { width: 34px; height: 34px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 15px; }
+.stat-num { font-family: 'Clash Display', sans-serif; font-size: 32px; font-weight: 700; letter-spacing: -1.5px; line-height: 1; margin-bottom: 6px; }
+.stat-change { font-size: 12px; display: flex; align-items: center; gap: 4px; }
+.stat-change.up { color: var(--g); }
+.stat-change.neutral { color: var(--ink3); }
+
+/* ─── GRID LAYOUT ─── */
+.dashboard-grid { display: grid; grid-template-columns: 1fr 340px; gap: 20px; }
+
+/* ─── DRIVES LIST ─── */
+.panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+.panel-header {
+  padding: 18px 22px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.panel-title { font-family: 'Clash Display', sans-serif; font-size: 16px; font-weight: 600; letter-spacing: -0.3px; }
+.panel-action { font-size: 12.5px; color: var(--a2); text-decoration: none; font-weight: 600; display: flex; align-items: center; gap: 5px; transition: color 0.15s; }
+.panel-action:hover { color: var(--ink); }
+
+.drive-item {
+  padding: 16px 22px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 14px;
+  transition: background 0.15s;
+}
+.drive-item:last-child { border-bottom: none; }
+.drive-item:hover { background: var(--bg3); }
+.company-logo {
+  width: 40px; height: 40px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; flex-shrink: 0; border: 1px solid var(--border);
+}
+.drive-info { flex: 1; min-width: 0; }
+.drive-title { font-size: 14px; font-weight: 700; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.drive-meta { font-size: 12px; color: var(--ink3); display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.drive-meta span { display: flex; align-items: center; gap: 4px; }
+.drive-right { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex-shrink: 0; }
+.tag {
+  padding: 3px 10px; border-radius: 20px; font-size: 11.5px; font-weight: 600;
+}
+.tag-ft { background: var(--a-soft); color: var(--a2); }
+.tag-int { background: var(--g-soft); color: var(--g); }
+.tag-pt { background: var(--y-soft); color: var(--y); }
+.tag-applied { background: rgba(255,255,255,0.05); color: var(--ink3); }
+.tag-shortlisted { background: var(--g-soft); color: var(--g); }
+.tag-rejected { background: var(--r-soft); color: var(--r); }
+.tag-selected { background: var(--g-soft); color: var(--g); border: 1px solid rgba(30,217,138,0.3); }
+
+.apply-btn {
+  padding: 6px 14px; border-radius: 7px; border: none;
+  background: var(--a); color: #fff; font-family: 'Cabinet Grotesk', sans-serif;
+  font-size: 12px; font-weight: 700; cursor: pointer; text-decoration: none;
+  transition: all 0.18s;
+}
+.apply-btn:hover { background: var(--a2); transform: translateY(-1px); }
+
+/* ─── SIDE PANEL ─── */
+.side-stack { display: flex; flex-direction: column; gap: 20px; }
+
+/* Profile completion */
+.completion-card { padding: 22px; }
+.completion-header { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+.completion-avatar {
+  width: 46px; height: 46px; border-radius: 50%;
+  background: var(--a-soft); color: var(--a2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; font-weight: 700; overflow: hidden;
+}
+.completion-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.completion-name { font-size: 15px; font-weight: 700; }
+.completion-role { font-size: 12px; color: var(--ink3); }
+.completion-label { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 12.5px; }
+.completion-label span:first-child { color: var(--ink2); font-weight: 600; }
+.completion-label span:last-child { color: var(--a2); font-weight: 700; }
+.progress-bar { height: 6px; background: var(--bg3); border-radius: 99px; overflow: hidden; }
+.progress-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--a), var(--a2)); transition: width 1s ease; }
+.completion-tips { margin-top: 14px; display: flex; flex-direction: column; gap: 8px; }
+.tip {
+  display: flex; align-items: center; gap: 9px;
+  font-size: 12.5px; color: var(--ink2); padding: 7px 10px;
+  border-radius: 8px; background: var(--bg3);
+}
+.tip.done { color: var(--ink3); text-decoration: line-through; }
+.tip i { font-size: 11px; flex-shrink: 0; }
+.tip.done i { color: var(--g); }
+.tip:not(.done) i { color: var(--ink3); }
+
+/* Notifications */
+.notif-list { }
+.notif-item {
+  padding: 14px 20px; border-bottom: 1px solid var(--border);
+  display: flex; gap: 11px; align-items: flex-start; transition: background 0.15s;
+}
+.notif-item:hover { background: var(--bg3); }
+.notif-item:last-child { border-bottom: none; }
+.notif-icon {
+  width: 32px; height: 32px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; flex-shrink: 0;
+}
+.notif-body { flex: 1; }
+.notif-text { font-size: 13px; line-height: 1.5; color: var(--ink2); }
+.notif-text strong { color: var(--ink); font-weight: 600; }
+.notif-time { font-size: 11px; color: var(--ink3); margin-top: 3px; }
+
+/* Interview card */
+.interview-card { padding: 20px 22px; }
+.interview-header { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.interview-header .int-badge { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; background: var(--a-soft); color: var(--a2); }
+.interview-item {
+  padding: 12px; border-radius: 10px; background: var(--bg3);
+  border: 1px solid var(--border); margin-bottom: 10px;
+}
+.interview-item:last-child { margin-bottom: 0; }
+.int-company { font-size: 13.5px; font-weight: 700; margin-bottom: 6px; }
+.int-details { display: flex; flex-direction: column; gap: 4px; }
+.int-detail { font-size: 12px; color: var(--ink2); display: flex; align-items: center; gap: 7px; }
+.int-detail i { color: var(--a2); font-size: 11px; width: 13px; }
+.join-link { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; color: var(--a2); text-decoration: none; margin-top: 10px; padding: 6px 12px; border-radius: 7px; background: var(--a-soft); transition: all 0.15s; }
+.join-link:hover { background: var(--a); color: #fff; }
+
+/* Empty state */
+.empty-state { padding: 40px 20px; text-align: center; }
+.empty-icon { font-size: 32px; margin-bottom: 12px; opacity: 0.4; }
+.empty-text { font-size: 13px; color: var(--ink3); }
+
+/* Mobile hamburger */
+.hamburger { display: none; background: none; border: none; color: var(--ink); font-size: 18px; cursor: pointer; }
+.sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 40; }
+
+/* Animations */
+@keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+.animate { animation: fadeUp 0.5s ease both; }
+.d1 { animation-delay: 0.05s; }
+.d2 { animation-delay: 0.1s; }
+.d3 { animation-delay: 0.15s; }
+.d4 { animation-delay: 0.2s; }
+
+/* Responsive */
+@media (max-width: 1100px) {
+  .dashboard-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 768px) {
+  .sidebar { transform: translateX(-100%); transition: transform 0.3s; }
+  .sidebar.open { transform: translateX(0); }
+  .sidebar-overlay.open { display: block; }
+  .main-content { margin-left: 0; }
+  .hamburger { display: block; }
+  .stats-row { grid-template-columns: repeat(2, 1fr); }
+  .content { padding: 20px; }
+  .topbar { padding: 14px 20px; }
+}
+@media (max-width: 480px) {
+  .stats-row { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sidebar">
+  <a class="sidebar-logo" href="/">
+    <div class="logo-mark"><i class="fa-solid fa-graduation-cap"></i></div>
+    <span class="logo-text">Campus Connect</span>
+  </a>
+
+  <div class="nav-section">
+    <div class="nav-section-label">Main</div>
+    <a class="nav-item active" href="/">
+      <div class="nav-icon"><i class="fa-solid fa-house"></i></div>
+      Dashboard
+    </a>
+    <a class="nav-item" href="/placements/">
+      <div class="nav-icon"><i class="fa-solid fa-briefcase"></i></div>
+      Job Drives
+      {% if open_drives_count %}<span class="nav-badge">{{ open_drives_count }}</span>{% endif %}
+    </a>
+    {% if request.user.role == "student" %}
+    <a class="nav-item" href="/placements/my-applications/">
+      <div class="nav-icon"><i class="fa-solid fa-file-lines"></i></div>
+      My Applications
+    </a>
+    <a class="nav-item" href="/placements/my-interviews/">
+      <div class="nav-icon"><i class="fa-solid fa-calendar-days"></i></div>
+      Interviews
+    </a>
+    {% endif %}
+    {% if request.user.role == "recruiter" or request.user.role == "admin" %}
+    <a class="nav-item" href="/placements/my-applicants/">
+      <div class="nav-icon"><i class="fa-solid fa-users"></i></div>
+      My Applicants
+    </a>
+    {% endif %}
+    <a class="nav-item" href="/notifications/">
+      <div class="nav-icon"><i class="fa-solid fa-bell"></i></div>
+      Notifications
+      {% if unread_count %}<span class="nav-badge">{{ unread_count }}</span>{% endif %}
+    </a>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-section-label">Account</div>
+    <a class="nav-item" href="/students/profile/">
+      <div class="nav-icon"><i class="fa-solid fa-user"></i></div>
+      My Profile
+    </a>
+    <a class="nav-item" href="/students/edit-profile/">
+      <div class="nav-icon"><i class="fa-solid fa-pen"></i></div>
+      Edit Profile
+    </a>
+    {% if request.user.role == 'admin' %}
+    <a class="nav-item" href="/accounts/admin-dashboard/">
+      <div class="nav-icon"><i class="fa-solid fa-gauge-high"></i></div>
+      Admin Panel
+    </a>
+    {% endif %}
+    {% if request.user.role == 'recruiter' %}
+    <a class="nav-item" href="/placements/post-drive/">
+      <div class="nav-icon"><i class="fa-solid fa-plus"></i></div>
+      Post a Drive
+    </a>
+    {% endif %}
+  </div>
+
+  <div class="sidebar-user">
+    <div class="user-avatar">
+      {% if request.user.student_profile.profile_picture %}
+        <img src="{{ request.user.student_profile.profile_picture.url }}" alt="">
+      {% else %}
+        {{ request.user.first_name|first|upper }}{{ request.user.last_name|first|upper }}
+      {% endif %}
+    </div>
+    <div class="user-info">
+      <div class="user-name">{{ request.user.get_full_name|default:request.user.username }}</div>
+      <div class="user-role">{{ request.user.role|capfirst }}</div>
+    </div>
+    <a class="logout-btn" href="{% url 'logout' %}" title="Sign out">
+      <i class="fa-solid fa-arrow-right-from-bracket"></i>
+    </a>
+  </div>
+</aside>
+<div class="sidebar-overlay" id="overlay" onclick="closeSidebar()"></div>
+
+<!-- MAIN CONTENT -->
+<div class="main-content">
+  <!-- Top bar -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <h1>Good {% now "G" as hour %}{% if hour < 12 %}Morning{% elif hour < 17 %}Afternoon{% else %}Evening{% endif %}, {{ request.user.first_name|default:request.user.username }} 👋</h1>
+      <p>Here's what's happening with your placements today</p>
+    </div>
+    <div class="topbar-right">
+      <button class="hamburger" onclick="openSidebar()"><i class="fa-solid fa-bars"></i></button>
+      <a class="icon-btn" href="/notifications/" title="Notifications">
+        <i class="fa-solid fa-bell"></i>
+        {% if unread_count %}<span class="notif-dot"></span>{% endif %}
+      </a>
+      <a class="icon-btn" href="/students/profile/" title="Profile">
+        <i class="fa-solid fa-user"></i>
+      </a>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div class="content">
+
+    <!-- Stats -->
+    <div class="stats-row">
+      <div class="stat-card c-a animate d1">
+        <div class="stat-header">
+          <span class="stat-label-text">Open Drives</span>
+          <div class="stat-icon" style="background:var(--a-soft);color:var(--a2);"><i class="fa-solid fa-briefcase"></i></div>
+        </div>
+        <div class="stat-num" style="color:var(--a2);">{{ open_drives_count|default:"—" }}</div>
+        <div class="stat-change neutral"><i class="fa-solid fa-clock"></i> Active this season</div>
+      </div>
+      <div class="stat-card c-g animate d2">
+        <div class="stat-header">
+          <span class="stat-label-text">Applications</span>
+          <div class="stat-icon" style="background:var(--g-soft);color:var(--g);"><i class="fa-solid fa-file-lines"></i></div>
+        </div>
+        <div class="stat-num" style="color:var(--g);">{{ applications_count|default:"—" }}</div>
+        <div class="stat-change neutral"><i class="fa-solid fa-layer-group"></i> Total submitted</div>
+      </div>
+      <div class="stat-card c-y animate d3">
+        <div class="stat-header">
+          <span class="stat-label-text">Shortlisted</span>
+          <div class="stat-icon" style="background:var(--y-soft);color:var(--y);"><i class="fa-solid fa-star"></i></div>
+        </div>
+        <div class="stat-num" style="color:var(--y);">{{ shortlisted_count|default:"—" }}</div>
+        <div class="stat-change up"><i class="fa-solid fa-arrow-up"></i> Keep going!</div>
+      </div>
+      <div class="stat-card c-r animate d4">
+        <div class="stat-header">
+          <span class="stat-label-text">Interviews</span>
+          <div class="stat-icon" style="background:var(--r-soft);color:var(--r);"><i class="fa-solid fa-calendar"></i></div>
+        </div>
+        <div class="stat-num" style="color:var(--r);">{{ interviews_count|default:"—" }}</div>
+        <div class="stat-change neutral"><i class="fa-solid fa-clock"></i> Upcoming</div>
+      </div>
+    </div>
+
+    <!-- Main grid -->
+    <div class="dashboard-grid">
+      <!-- Left: Drives -->
+      <div style="display:flex;flex-direction:column;gap:20px;">
+        <!-- Recent Drives -->
+        <div class="panel animate">
+          <div class="panel-header">
+            <span class="panel-title">Latest Placement Drives</span>
+            <a class="panel-action" href="/placements/">View all <i class="fa-solid fa-arrow-right" style="font-size:11px;"></i></a>
+          </div>
+          {% if recent_drives %}
+            {% for drive in recent_drives %}
+            <div class="drive-item">
+              <div class="company-logo" style="background:var(--bg2);">🏢</div>
+              <div class="drive-info">
+                <div class="drive-title">{{ drive.role }}</div>
+                <div class="drive-meta">
+                  <span><i class="fa-solid fa-building" style="font-size:10px;"></i> {{ drive.company_name }}</span>
+                  <span><i class="fa-solid fa-indian-rupee-sign" style="font-size:10px;"></i> {{ drive.package }}</span>
+                  <span><i class="fa-solid fa-clock" style="font-size:10px;"></i> Closes {{ drive.deadline }}</span>
+                </div>
+              </div>
+              <div class="drive-right">
+                <span class="tag {% if drive.job_type == 'Full Time' %}tag-ft{% elif drive.job_type == 'Internship' %}tag-int{% else %}tag-pt{% endif %}">{{ drive.job_type }}</span>
+                <a class="apply-btn" href="/placements/{{ drive.id }}/">View →</a>
+              </div>
+            </div>
+            {% endfor %}
+          {% else %}
+            <div class="empty-state">
+              <div class="empty-icon"><i class="fa-solid fa-briefcase"></i></div>
+              <div class="empty-text">No drives posted yet. Check back soon!</div>
+            </div>
+          {% endif %}
+        </div>
+
+        <!-- My Applications -->
+        <div class="panel animate">
+          <div class="panel-header">
+            <span class="panel-title">My Applications</span>
+            <a class="panel-action" href="/placements/my-applications/">View all <i class="fa-solid fa-arrow-right" style="font-size:11px;"></i></a>
+          </div>
+          {% if my_applications %}
+            {% for app in my_applications|slice:":4" %}
+            <div class="drive-item">
+              <div class="company-logo" style="background:var(--bg2);">📋</div>
+              <div class="drive-info">
+                <div class="drive-title">{{ app.drive.role }}</div>
+                <div class="drive-meta">
+                  <span><i class="fa-solid fa-building" style="font-size:10px;"></i> {{ app.drive.company_name }}</span>
+                  <span><i class="fa-solid fa-clock" style="font-size:10px;"></i> Applied {{ app.applied_on }}</span>
+                </div>
+              </div>
+              <div class="drive-right">
+                <span class="tag tag-{{ app.status|lower }}">{{ app.status }}</span>
+              </div>
+            </div>
+            {% endfor %}
+          {% else %}
+            <div class="empty-state">
+              <div class="empty-icon"><i class="fa-solid fa-file-lines"></i></div>
+              <div class="empty-text">You haven't applied to any drives yet.</div>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Right sidebar -->
+      <div class="side-stack">
+
+        <!-- Profile completion -->
+        <div class="panel completion-card animate">
+          <div class="completion-header">
+            <div class="completion-avatar">
+              {% if request.user.student_profile.profile_picture %}
+                <img src="{{ request.user.student_profile.profile_picture.url }}" alt="">
+              {% else %}
+                {{ request.user.first_name|first|upper }}{{ request.user.last_name|first|upper }}
+              {% endif %}
+            </div>
+            <div>
+              <div class="completion-name">{{ request.user.get_full_name|default:request.user.username }}</div>
+              <div class="completion-role">{{ request.user.role|capfirst }} · {{ request.user.student_profile.branch|default:"Branch not set" }}</div>
+            </div>
+          </div>
+          <div class="completion-label">
+            <span>Profile Completion</span>
+            <span>{{ profile_completion|default:"0" }}%</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" style="width:{{ profile_completion|default:'0' }}%;"></div>
+          </div>
+          <div class="completion-tips">
+            <div class="tip {% if request.user.student_profile.phone %}done{% endif %}">
+              <i class="fa-solid {% if request.user.student_profile.phone %}fa-check{% else %}fa-circle{% endif %}"></i>
+              Add phone number
+            </div>
+            <div class="tip {% if request.user.student_profile.resume %}done{% endif %}">
+              <i class="fa-solid {% if request.user.student_profile.resume %}fa-check{% else %}fa-circle{% endif %}"></i>
+              Upload resume
+            </div>
+            <div class="tip {% if request.user.student_profile.skills %}done{% endif %}">
+              <i class="fa-solid {% if request.user.student_profile.skills %}fa-check{% else %}fa-circle{% endif %}"></i>
+              Add skills
+            </div>
+            <div class="tip {% if request.user.student_profile.linkedin %}done{% endif %}">
+              <i class="fa-solid {% if request.user.student_profile.linkedin %}fa-check{% else %}fa-circle{% endif %}"></i>
+              Add LinkedIn
+            </div>
+          </div>
+        </div>
+
+        <!-- Upcoming Interviews -->
+        <div class="panel animate">
+          <div class="panel-header">
+            <span class="panel-title">Upcoming Interviews</span>
+            <a class="panel-action" href="/placements/my-interviews/">All <i class="fa-solid fa-arrow-right" style="font-size:11px;"></i></a>
+          </div>
+          <div class="interview-card" style="padding:0;">
+            {% if upcoming_interviews %}
+              {% for interview in upcoming_interviews|slice:":2" %}
+              <div style="padding:16px 20px;border-bottom:1px solid var(--border);">
+                <div class="interview-item" style="margin-bottom:0;">
+                  <div class="int-company">{{ interview.application.drive.company_name }}</div>
+                  <div class="int-details">
+                    <div class="int-detail"><i class="fa-solid fa-briefcase"></i> {{ interview.application.drive.role }}</div>
+                    <div class="int-detail"><i class="fa-solid fa-calendar"></i> {{ interview.date }}</div>
+                    <div class="int-detail"><i class="fa-solid fa-clock"></i> {{ interview.time }}</div>
+                    {% if interview.location %}<div class="int-detail"><i class="fa-solid fa-location-dot"></i> {{ interview.location }}</div>{% endif %}
+                  </div>
+                  {% if interview.meeting_link %}
+                  <a class="join-link" href="{{ interview.meeting_link }}" target="_blank">
+                    <i class="fa-solid fa-video"></i> Join Meeting
+                  </a>
+                  {% endif %}
+                </div>
+              </div>
+              {% endfor %}
+            {% else %}
+              <div class="empty-state">
+                <div class="empty-icon"><i class="fa-solid fa-calendar"></i></div>
+                <div class="empty-text">No interviews scheduled yet.</div>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Notifications -->
+        <div class="panel animate">
+          <div class="panel-header">
+            <span class="panel-title">Notifications</span>
+            <a class="panel-action" href="/notifications/">All <i class="fa-solid fa-arrow-right" style="font-size:11px;"></i></a>
+          </div>
+          <div class="notif-list">
+            {% if notifications %}
+              {% for notif in notifications|slice:":4" %}
+              <div class="notif-item">
+                <div class="notif-icon" style="background:var(--a-soft);color:var(--a2);">
+                  <i class="fa-solid fa-bell"></i>
+                </div>
+                <div class="notif-body">
+                  <div class="notif-text">{{ notif.message }}</div>
+                  <div class="notif-time">{{ notif.created_at|timesince }} ago</div>
+                </div>
+              </div>
+              {% endfor %}
+            {% else %}
+              <div class="empty-state">
+                <div class="empty-icon"><i class="fa-solid fa-bell-slash"></i></div>
+                <div class="empty-text">No notifications yet.</div>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function openSidebar() {
+  document.getElementById('sidebar').classList.add('open');
+  document.getElementById('overlay').classList.add('open');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('overlay').classList.remove('open');
+}
+</script>
+</body>
+</html>
+

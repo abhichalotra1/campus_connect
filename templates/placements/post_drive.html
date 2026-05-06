@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="row justify-content-center mt-3">
+    <div class="col-md-8">
+        <div class="card p-4">
+            <h3 class="mb-4"><i class="fas fa-plus-circle text-primary me-2"></i>Post a Placement Drive</h3>
+            <form method="POST">{% csrf_token %}
+                <div class="row">
+                    <div class="col-md-6 mb-3"><label class="form-label">Company Name</label><input type="text" name="company" class="form-control" required></div>
+                    <div class="col-md-6 mb-3"><label class="form-label">Role</label><input type="text" name="role" class="form-control" required></div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3"><label class="form-label">Location</label><input type="text" name="location" class="form-control" required></div>
+                    <div class="col-md-6 mb-3"><label class="form-label">Package</label><input type="text" name="package" class="form-control" placeholder="e.g. 6 LPA" required></div>
+                </div>
+                <div class="mb-3"><label class="form-label">Job Description</label><textarea name="description" class="form-control" rows="4" required></textarea></div>
+                <div class="row">
+                    <div class="col-md-4 mb-3"><label class="form-label">Job Type</label>
+                        <select name="job_type" class="form-select">
+                            <option value="full_time">Full Time</option>
+                            <option value="internship">Internship</option>
+                            <option value="part_time">Part Time</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4 mb-3"><label class="form-label">Eligible Branch</label>
+                        <select name="eligible_branch" class="form-select">
+                            <option value="ALL">All Branches</option>
+                            <option value="CSE">CSE</option><option value="ECE">ECE</option>
+                            <option value="ME">ME</option><option value="CE">CE</option>
+                            <option value="EE">EE</option><option value="IT">IT</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4 mb-3"><label class="form-label">Minimum CGPA</label><input type="number" name="min_cgpa" class="form-control" step="0.01" min="0" max="10" value="0"></div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3"><label class="form-label">Skills Required</label><input type="text" name="skills_required" class="form-control" placeholder="Python, Django, SQL..."></div>
+                    <div class="col-md-6 mb-3"><label class="form-label">Application Deadline</label><input type="date" name="deadline" class="form-control" required></div>
+                </div>
+                <button type="submit" class="btn btn-primary w-100"><i class="fas fa-paper-plane me-2"></i>Post Drive</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Create Account — Campus Connect</title>
+<link href="https://fonts.googleapis.com/css2?family=Clash+Display:wght@400;500;600;700&family=Cabinet+Grotesk:wght@300;400;500;700;800&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:#08090d; --bg2:#0e1018; --bg3:#13151f;
+  --surface:#181b26; --surface2:#1e2130;
+  --border:rgba(255,255,255,0.06); --border2:rgba(255,255,255,0.11);
+  --ink:#eef0ff; --ink2:#9298b8; --ink3:#4e5370;
+  --a:#5b6cff; --a2:#7d8bff; --a-glow:rgba(91,108,255,0.22); --a-soft:rgba(91,108,255,0.10);
+  --g:#1ed98a; --g-soft:rgba(30,217,138,0.10);
+  --r:#ff5470; --r-soft:rgba(255,84,112,0.10);
+  --y:#f5c842; --y-soft:rgba(245,200,66,0.10);
+  --radius:14px; --radius-lg:20px;
+}
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Cabinet Grotesk', sans-serif;
+  background: var(--bg); color: var(--ink);
+  min-height: 100vh; display: flex; flex-direction: column;
+  overflow-x: hidden;
+}
+body::before {
+  content: ''; position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+  pointer-events: none; z-index: 0; opacity: 0.6;
+}
+.bg-glow {
+  position: fixed; top: 0; left: 50%; transform: translateX(-50%);
+  width: 900px; height: 500px;
+  background: radial-gradient(ellipse at 50% 0%, rgba(91,108,255,0.12) 0%, transparent 65%);
+  pointer-events: none; z-index: 0;
+}
+.bg-grid {
+  position: fixed; inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.022) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.022) 1px, transparent 1px);
+  background-size: 60px 60px;
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 30%, transparent 100%);
+  pointer-events: none; z-index: 0;
+}
+
+nav {
+  position: relative; z-index: 10;
+  padding: 20px 5%;
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+  background: rgba(8,9,13,0.6); backdrop-filter: blur(20px);
+}
+.nav-logo {
+  font-family: 'Clash Display', sans-serif; font-size: 19px; font-weight: 700;
+  color: var(--ink); text-decoration: none; display: flex; align-items: center; gap: 9px;
+}
+.logo-mark {
+  width: 30px; height: 30px; border-radius: 8px; background: var(--a);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; color: #fff; position: relative;
+}
+.logo-mark::after {
+  content: ''; position: absolute; inset: -3px;
+  border-radius: 11px; border: 1px solid rgba(91,108,255,0.35);
+}
+.nav-back { font-size: 13px; color: var(--ink2); text-decoration: none; display: flex; align-items: center; gap: 7px; transition: color 0.18s; }
+.nav-back:hover { color: var(--ink); }
+
+main {
+  flex: 1; position: relative; z-index: 1;
+  display: flex; align-items: center; justify-content: center;
+  padding: 48px 20px;
+}
+
+.auth-card {
+  width: 100%; max-width: 480px;
+  animation: fadeUp 0.6s ease both;
+}
+.auth-header { text-align: center; margin-bottom: 28px; }
+.auth-eyebrow {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 5px 12px 5px 8px; border-radius: 50px;
+  border: 1px solid rgba(91,108,255,0.3); background: rgba(91,108,255,0.08);
+  font-size: 11.5px; font-weight: 700; color: var(--a2);
+  letter-spacing: 0.3px; text-transform: uppercase; margin-bottom: 16px;
+}
+.live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--g); box-shadow: 0 0 0 3px var(--g-soft); animation: blink 2s ease infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+.auth-title { font-family: 'Clash Display', sans-serif; font-size: 30px; font-weight: 700; letter-spacing: -1px; margin-bottom: 7px; }
+.auth-sub { font-size: 14px; color: var(--ink2); line-height: 1.6; }
+
+.form-box {
+  background: var(--surface); border: 1px solid var(--border2);
+  border-radius: var(--radius-lg); padding: 32px;
+  position: relative; overflow: hidden;
+}
+.form-box::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--a), transparent); opacity: 0.5;
+}
+
+/* ROLE SELECTOR */
+.role-selector { display: flex; gap: 8px; margin-bottom: 24px; }
+.role-option { flex: 1; }
+.role-option input[type="radio"] { display: none; }
+.role-label {
+  display: flex; flex-direction: column; align-items: center; gap: 7px;
+  padding: 14px 10px; border-radius: 10px;
+  border: 1.5px solid var(--border2); background: var(--bg2);
+  cursor: pointer; transition: all 0.18s; text-align: center;
+}
+.role-label .role-icon-wrap {
+  width: 36px; height: 36px; border-radius: 9px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; transition: all 0.18s;
+  background: var(--bg3);
+}
+.role-label .role-name { font-size: 13px; font-weight: 700; color: var(--ink2); transition: color 0.18s; }
+.role-label .role-desc { font-size: 11px; color: var(--ink3); line-height: 1.4; transition: color 0.18s; }
+
+.role-option input:checked + .role-label {
+  border-color: var(--a); background: var(--a-soft);
+}
+.role-option input:checked + .role-label .role-name { color: var(--ink); }
+.role-option input:checked + .role-label .role-icon-wrap { background: var(--a); color: #fff; }
+.role-option input:checked + .role-label .role-desc { color: var(--ink2); }
+
+/* 2-col grid for name fields */
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+.field { margin-bottom: 16px; }
+.field > label {
+  display: block; font-size: 13px; font-weight: 600; color: var(--ink2);
+  margin-bottom: 7px; letter-spacing: 0.2px;
+}
+.input-wrap { position: relative; }
+.input-wrap .input-icon {
+  position: absolute; left: 13px; top: 50%; transform: translateY(-50%);
+  color: var(--ink3); font-size: 12px; pointer-events: none; transition: color 0.18s;
+}
+.input-wrap input {
+  width: 100%; padding: 11px 13px 11px 38px;
+  background: var(--bg2); border: 1px solid var(--border2);
+  border-radius: 9px; color: var(--ink);
+  font-family: 'Cabinet Grotesk', sans-serif; font-size: 14px; font-weight: 500;
+  outline: none; transition: all 0.18s; -webkit-appearance: none;
+}
+.input-wrap input::placeholder { color: var(--ink3); }
+.input-wrap input:focus { border-color: var(--a); background: var(--bg3); box-shadow: 0 0 0 3px var(--a-soft); }
+.input-wrap:focus-within .input-icon { color: var(--a2); }
+.eye-btn {
+  position: absolute; right: 11px; top: 50%; transform: translateY(-50%);
+  background: none; border: none; color: var(--ink3); cursor: pointer;
+  font-size: 13px; padding: 4px; transition: color 0.15s;
+}
+.eye-btn:hover { color: var(--ink2); }
+
+/* Password strength */
+.strength-bar { display: flex; gap: 4px; margin-top: 8px; }
+.strength-seg {
+  flex: 1; height: 3px; border-radius: 3px;
+  background: var(--border2); transition: background 0.3s;
+}
+.strength-seg.weak { background: var(--r); }
+.strength-seg.fair { background: var(--y); }
+.strength-seg.strong { background: var(--g); }
+.strength-label { font-size: 11px; margin-top: 5px; color: var(--ink3); }
+
+/* oauth */
+.oauth-row { display: flex; gap: 10px; margin-bottom: 20px; }
+.oauth-btn {
+  flex: 1; padding: 10px 12px; border-radius: 10px;
+  background: var(--bg3); border: 1px solid var(--border2);
+  color: var(--ink); font-family: 'Cabinet Grotesk', sans-serif;
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: all 0.18s;
+}
+.oauth-btn:hover { background: var(--surface2); border-color: rgba(255,255,255,0.16); transform: translateY(-1px); }
+.divider { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+.divider-line { flex: 1; height: 1px; background: var(--border); }
+.divider-text { font-size: 12px; color: var(--ink3); font-weight: 500; white-space: nowrap; }
+
+.terms-row { display: flex; align-items: flex-start; gap: 9px; margin-bottom: 20px; margin-top: 4px; }
+.custom-check {
+  width: 17px; height: 17px; border-radius: 5px;
+  border: 1.5px solid var(--border2); background: var(--bg2);
+  cursor: pointer; flex-shrink: 0; position: relative;
+  transition: all 0.15s; appearance: none; -webkit-appearance: none; margin-top: 2px;
+}
+.custom-check:checked { background: var(--a); border-color: var(--a); }
+.custom-check:checked::after {
+  content: '✓'; position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; color: #fff; font-weight: 700;
+}
+.terms-row label { font-size: 12.5px; color: var(--ink2); cursor: pointer; line-height: 1.5; }
+.terms-row label a { color: var(--a2); text-decoration: none; }
+
+.btn-submit {
+  width: 100%; padding: 13px; border-radius: 10px; border: none;
+  background: var(--a); color: #fff;
+  font-family: 'Cabinet Grotesk', sans-serif; font-size: 15px; font-weight: 700;
+  cursor: pointer; position: relative; overflow: hidden; transition: all 0.2s;
+}
+.btn-submit::before { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(255,255,255,0.16) 0%, transparent 55%); }
+.btn-submit:hover { background: var(--a2); transform: translateY(-1px); box-shadow: 0 8px 24px var(--a-glow); }
+
+.messages { margin-bottom: 16px; }
+.msg { padding: 11px 14px; border-radius: 9px; font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 9px; margin-bottom: 8px; }
+.msg.error { background: var(--r-soft); border: 1px solid rgba(255,84,112,0.25); color: #ff8099; }
+.msg.success { background: var(--g-soft); border: 1px solid rgba(30,217,138,0.25); color: var(--g); }
+.field-errors { margin-top: 5px; }
+.field-error { font-size: 12px; color: var(--r); display: flex; align-items: center; gap: 5px; }
+
+.auth-footer { text-align: center; margin-top: 20px; font-size: 13.5px; color: var(--ink2); }
+.auth-footer a { color: var(--a2); text-decoration: none; font-weight: 600; transition: color 0.15s; }
+.auth-footer a:hover { color: var(--ink); }
+
+/* Benefits strip */
+.benefits-strip {
+  display: flex; justify-content: center; gap: 20px;
+  margin-top: 24px; flex-wrap: wrap;
+}
+.benefit { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink3); }
+.benefit i { color: var(--g); font-size: 11px; }
+
+@keyframes fadeUp { from{opacity:0;transform:translateY(22px)} to{opacity:1;transform:translateY(0)} }
+
+@media (max-width: 480px) {
+  .form-box { padding: 22px 18px; }
+  .field-row { grid-template-columns: 1fr; }
+  .oauth-row { flex-direction: column; }
+  .role-selector { flex-direction: column; }
+}
+</style>
+</head>
+<body>
+<div class="bg-glow"></div>
+<div class="bg-grid"></div>
+
+<nav>
+  <a class="nav-logo" href="/">
+    <div class="logo-mark"><i class="fa-solid fa-graduation-cap"></i></div>
+    Campus Connect
+  </a>
+  <a class="nav-back" href="/accounts/login/">
+    <i class="fa-solid fa-arrow-left" style="font-size:11px;"></i>
+    Sign in instead
+  </a>
+</nav>
+
+<main>
+  <div class="auth-card">
+    <div class="auth-header">
+      <div class="auth-eyebrow">
+        <span class="live-dot"></span>
+        Free to join
+      </div>
+      <h1 class="auth-title">Create your account</h1>
+      <p class="auth-sub">Join Campus Connect and start your placement journey today.</p>
+    </div>
+
+    <div class="form-box">
+
+      {% if messages %}
+      <div class="messages">
+        {% for message in messages %}
+        <div class="msg {{ message.tags }}">
+          <i class="fa-solid {% if message.tags == 'error' %}fa-circle-exclamation{% elif message.tags == 'success' %}fa-circle-check{% else %}fa-circle-info{% endif %}"></i>
+          {{ message }}
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <!-- OAuth -->
+      <div class="oauth-row">
+        <a href="{% url 'socialaccount_signup' %}" class="oauth-btn">
+          <svg width="15" height="15" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+          Google
+        </a>
+        <a href="{% url 'github_login' %}" class="oauth-btn">
+          <i class="fa-brands fa-github" style="font-size:15px;"></i>
+          GitHub
+        </a>
+      </div>
+
+      <div class="divider">
+        <div class="divider-line"></div>
+        <span class="divider-text">or register with email</span>
+        <div class="divider-line"></div>
+      </div>
+
+      <form method="post" action="{% url 'register' %}">
+        {% csrf_token %}
+
+        <!-- Role selector -->
+        <div class="field">
+          <label style="display:block;font-size:13px;font-weight:600;color:var(--ink2);margin-bottom:10px;">I am a…</label>
+          <div class="role-selector">
+            <div class="role-option">
+              <input type="radio" id="role_student" name="role" value="student" required
+                {% if form.role.value == 'student' or not form.role.value %}checked{% endif %}>
+              <label class="role-label" for="role_student">
+                <div class="role-icon-wrap">🎓</div>
+                <div class="role-name">Student</div>
+                <div class="role-desc">Looking for jobs & internships</div>
+              </label>
+            </div>
+            <div class="role-option">
+              <input type="radio" id="role_recruiter" name="role" value="recruiter"
+                {% if form.role.value == 'recruiter' %}checked{% endif %}>
+              <label class="role-label" for="role_recruiter">
+                <div class="role-icon-wrap">🏢</div>
+                <div class="role-name">Recruiter</div>
+                <div class="role-desc">Hiring campus talent</div>
+              </label>
+            </div>
+          </div>
+          {% if form.role.errors %}
+          <div class="field-errors">{% for e in form.role.errors %}<div class="field-error"><i class="fa-solid fa-circle-exclamation"></i> {{ e }}</div>{% endfor %}</div>
+          {% endif %}
+        </div>
+
+        <!-- Name row -->
+        <div class="field-row">
+          <div class="field">
+            <label for="id_first_name">First name</label>
+            <div class="input-wrap">
+              <i class="fa-solid fa-user input-icon"></i>
+              <input type="text" id="id_first_name" name="first_name"
+                placeholder="First name"
+                value="{{ form.first_name.value|default:'' }}">
+            </div>
+          </div>
+          <div class="field">
+            <label for="id_last_name">Last name</label>
+            <div class="input-wrap">
+              <i class="fa-solid fa-user input-icon"></i>
+              <input type="text" id="id_last_name" name="last_name"
+                placeholder="Last name"
+                value="{{ form.last_name.value|default:'' }}">
+            </div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="id_username">Username</label>
+          <div class="input-wrap">
+            <i class="fa-solid fa-at input-icon"></i>
+            <input type="text" id="id_username" name="username"
+              placeholder="Choose a username"
+              value="{{ form.username.value|default:'' }}"
+              autocomplete="username" required>
+          </div>
+          {% if form.username.errors %}
+          <div class="field-errors">{% for e in form.username.errors %}<div class="field-error"><i class="fa-solid fa-circle-exclamation"></i> {{ e }}</div>{% endfor %}</div>
+          {% endif %}
+        </div>
+
+        <div class="field">
+          <label for="id_email">Email address</label>
+          <div class="input-wrap">
+            <i class="fa-solid fa-envelope input-icon"></i>
+            <input type="email" id="id_email" name="email"
+              placeholder="you@college.edu"
+              value="{{ form.email.value|default:'' }}"
+              autocomplete="email" required>
+          </div>
+          {% if form.email.errors %}
+          <div class="field-errors">{% for e in form.email.errors %}<div class="field-error"><i class="fa-solid fa-circle-exclamation"></i> {{ e }}</div>{% endfor %}</div>
+          {% endif %}
+        </div>
+
+        <div class="field">
+          <label for="id_password1">Password</label>
+          <div class="input-wrap">
+            <i class="fa-solid fa-lock input-icon"></i>
+            <input type="password" id="id_password1" name="password1"
+              placeholder="Create a strong password"
+              autocomplete="new-password" required
+              oninput="checkStrength(this.value)">
+            <button type="button" class="eye-btn" onclick="togglePassword('id_password1', this)">
+              <i class="fa-solid fa-eye"></i>
+            </button>
+          </div>
+          <div class="strength-bar">
+            <div class="strength-seg" id="seg1"></div>
+            <div class="strength-seg" id="seg2"></div>
+            <div class="strength-seg" id="seg3"></div>
+            <div class="strength-seg" id="seg4"></div>
+          </div>
+          <div class="strength-label" id="strength-label"></div>
+          {% if form.password1.errors %}
+          <div class="field-errors">{% for e in form.password1.errors %}<div class="field-error"><i class="fa-solid fa-circle-exclamation"></i> {{ e }}</div>{% endfor %}</div>
+          {% endif %}
+        </div>
+
+        <div class="field">
+          <label for="id_password2">Confirm password</label>
+          <div class="input-wrap">
+            <i class="fa-solid fa-lock input-icon"></i>
+            <input type="password" id="id_password2" name="password2"
+              placeholder="Repeat your password"
+              autocomplete="new-password" required>
+            <button type="button" class="eye-btn" onclick="togglePassword('id_password2', this)">
+              <i class="fa-solid fa-eye"></i>
+            </button>
+          </div>
+          {% if form.password2.errors %}
+          <div class="field-errors">{% for e in form.password2.errors %}<div class="field-error"><i class="fa-solid fa-circle-exclamation"></i> {{ e }}</div>{% endfor %}</div>
+          {% endif %}
+        </div>
+
+        {% if form.non_field_errors %}
+        <div class="messages">
+          {% for err in form.non_field_errors %}
+          <div class="msg error"><i class="fa-solid fa-circle-exclamation"></i> {{ err }}</div>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="terms-row">
+          <input type="checkbox" class="custom-check" id="terms" required>
+          <label for="terms">I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a></label>
+        </div>
+
+        <button type="submit" class="btn-submit">
+          <i class="fa-solid fa-user-plus" style="margin-right:8px;"></i>
+          Create Free Account
+        </button>
+      </form>
+    </div>
+
+    <div class="auth-footer">
+      Already have an account? <a href="{% url 'login' %}">Sign in →</a>
+    </div>
+
+    <div class="benefits-strip">
+      <span class="benefit"><i class="fa-solid fa-check"></i> Free forever</span>
+      <span class="benefit"><i class="fa-solid fa-check"></i> No credit card</span>
+      <span class="benefit"><i class="fa-solid fa-check"></i> Instant access</span>
+    </div>
+  </div>
+</main>
+
+<script>
+function togglePassword(id, btn) {
+  const input = document.getElementById(id);
+  const icon = btn.querySelector('i');
+  if (input.type === 'password') {
+    input.type = 'text';
+    icon.className = 'fa-solid fa-eye-slash';
+  } else {
+    input.type = 'password';
+    icon.className = 'fa-solid fa-eye';
+  }
+}
+
+function checkStrength(val) {
+  let score = 0;
+  if (val.length >= 8) score++;
+  if (/[A-Z]/.test(val)) score++;
+  if (/[0-9]/.test(val)) score++;
+  if (/[^A-Za-z0-9]/.test(val)) score++;
+
+  const segs = ['seg1','seg2','seg3','seg4'];
+  const label = document.getElementById('strength-label');
+  segs.forEach((id, i) => {
+    const el = document.getElementById(id);
+    el.className = 'strength-seg';
+    if (i < score) {
+      if (score <= 1) el.classList.add('weak');
+      else if (score <= 2) el.classList.add('fair');
+      else el.classList.add('strong');
+    }
+  });
+  const labels = ['', 'Weak', 'Fair', 'Good', 'Strong'];
+  const colors = ['', 'var(--r)', 'var(--y)', 'var(--g)', 'var(--g)'];
+  label.textContent = val ? labels[score] || 'Weak' : '';
+  label.style.color = colors[score] || 'var(--r)';
+}
+</script>
+</body>
+</html>
