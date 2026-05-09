@@ -90,7 +90,7 @@ body::before {
 }
 .user-avatar img { width: 100%; height: 100%; object-fit: cover; }
 .user-info { flex: 1; min-width: 0; }
-.user-name { font-size: 13px; font-weight: 700; color: var(--ink); truncate: ellipsis; white-space: nowrap; overflow: hidden; }
+.user-name { font-size: 13px; font-weight: 700; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .user-role { font-size: 11px; color: var(--ink3); }
 .logout-btn {
   width: 28px; height: 28px; border-radius: 7px; background: none;
@@ -236,7 +236,6 @@ body::before {
 .tip:not(.done) i { color: var(--ink3); }
 
 /* Notifications */
-.notif-list { }
 .notif-item {
   padding: 14px 20px; border-bottom: 1px solid var(--border);
   display: flex; gap: 11px; align-items: flex-start; transition: background 0.15s;
@@ -254,9 +253,6 @@ body::before {
 .notif-time { font-size: 11px; color: var(--ink3); margin-top: 3px; }
 
 /* Interview card */
-.interview-card { padding: 20px 22px; }
-.interview-header { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
-.interview-header .int-badge { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; background: var(--a-soft); color: var(--a2); }
 .interview-item {
   padding: 12px; border-radius: 10px; background: var(--bg3);
   border: 1px solid var(--border); margin-bottom: 10px;
@@ -273,6 +269,22 @@ body::before {
 .empty-state { padding: 40px 20px; text-align: center; }
 .empty-icon { font-size: 32px; margin-bottom: 12px; opacity: 0.4; }
 .empty-text { font-size: 13px; color: var(--ink3); }
+
+/* Recruiter / Admin quick stats card */
+.info-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 22px; margin-bottom: 0;
+}
+.info-card h6 {
+  font-size: 10.5px; font-weight: 700; letter-spacing: 1.2px;
+  text-transform: uppercase; color: var(--ink3);
+  margin-bottom: 16px; padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+.info-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); }
+.info-row:last-child { border-bottom: none; }
+.info-row-label { font-size: 13px; color: var(--ink2); }
+.info-row-value { font-size: 14px; font-weight: 700; color: var(--ink); }
 
 /* Mobile hamburger */
 .hamburger { display: none; background: none; border: none; color: var(--ink); font-size: 18px; cursor: pointer; }
@@ -325,7 +337,8 @@ body::before {
       Job Drives
       {% if open_drives_count %}<span class="nav-badge">{{ open_drives_count }}</span>{% endif %}
     </a>
-    {% if request.user.role == "student" %}
+
+    {% if user.role == "student" %}
     <a class="nav-item" href="/placements/my-applications/">
       <div class="nav-icon"><i class="fa-solid fa-file-lines"></i></div>
       My Applications
@@ -335,12 +348,14 @@ body::before {
       Interviews
     </a>
     {% endif %}
-    {% if request.user.role == "recruiter" or request.user.role == "admin" %}
+
+    {% if user.role == "recruiter" or user.role == "admin" %}
     <a class="nav-item" href="/placements/my-applicants/">
       <div class="nav-icon"><i class="fa-solid fa-users"></i></div>
       My Applicants
     </a>
     {% endif %}
+
     <a class="nav-item" href="/notifications/">
       <div class="nav-icon"><i class="fa-solid fa-bell"></i></div>
       Notifications
@@ -358,13 +373,13 @@ body::before {
       <div class="nav-icon"><i class="fa-solid fa-pen"></i></div>
       Edit Profile
     </a>
-    {% if request.user.role == 'admin' %}
+    {% if user.role == 'admin' %}
     <a class="nav-item" href="/accounts/admin-dashboard/">
       <div class="nav-icon"><i class="fa-solid fa-gauge-high"></i></div>
       Admin Panel
     </a>
     {% endif %}
-    {% if request.user.role == 'recruiter' %}
+    {% if user.role == 'recruiter' %}
     <a class="nav-item" href="/placements/post-drive/">
       <div class="nav-icon"><i class="fa-solid fa-plus"></i></div>
       Post a Drive
@@ -374,15 +389,19 @@ body::before {
 
   <div class="sidebar-user">
     <div class="user-avatar">
-      {% if request.user.student_profile.profile_picture %}
-        <img src="{{ request.user.student_profile.profile_picture.url }}" alt="">
+      {% if user.role == 'student' %}
+        {% if request.user.studentprofile.profile_pic %}
+          <img src="{{ request.user.studentprofile.profile_pic.url }}" alt="">
+        {% else %}
+          {{ user.first_name|first|upper }}{{ user.last_name|first|upper }}
+        {% endif %}
       {% else %}
-        {{ request.user.first_name|first|upper }}{{ request.user.last_name|first|upper }}
+        {{ user.first_name|first|upper }}{{ user.last_name|first|upper }}
       {% endif %}
     </div>
     <div class="user-info">
-      <div class="user-name">{{ request.user.get_full_name|default:request.user.username }}</div>
-      <div class="user-role">{{ request.user.role|capfirst }}</div>
+      <div class="user-name">{{ user.get_full_name|default:user.username }}</div>
+      <div class="user-role">{{ user.role|capfirst }}</div>
     </div>
     <a class="logout-btn" href="{% url 'logout' %}" title="Sign out">
       <i class="fa-solid fa-arrow-right-from-bracket"></i>
@@ -396,8 +415,12 @@ body::before {
   <!-- Top bar -->
   <div class="topbar">
     <div class="topbar-left">
-      <h1>Good {% now "G" as hour %}{% if hour < 12 %}Morning{% elif hour < 17 %}Afternoon{% else %}Evening{% endif %}, {{ request.user.first_name|default:request.user.username }} 👋</h1>
-      <p>Here's what's happening with your placements today</p>
+      <h1>Good {% now "G" as hour %}{% if hour < 12 %}Morning{% elif hour < 17 %}Afternoon{% else %}Evening{% endif %}, {{ user.first_name|default:user.username }} 👋</h1>
+      <p>
+        {% if user.role == 'student' %}Here's what's happening with your placements today{% endif %}
+        {% if user.role == 'recruiter' %}Manage your drives and applicants{% endif %}
+        {% if user.role == 'admin' %}Platform overview and administration{% endif %}
+      </p>
     </div>
     <div class="topbar-right">
       <button class="hamburger" onclick="openSidebar()"><i class="fa-solid fa-bars"></i></button>
@@ -414,47 +437,71 @@ body::before {
   <!-- Content -->
   <div class="content">
 
-    <!-- Stats -->
+    <!-- ─── STATS ROW ─── -->
     <div class="stats-row">
+      <!-- Open Drives (all roles) -->
       <div class="stat-card c-a animate d1">
         <div class="stat-header">
           <span class="stat-label-text">Open Drives</span>
           <div class="stat-icon" style="background:var(--a-soft);color:var(--a2);"><i class="fa-solid fa-briefcase"></i></div>
         </div>
-        <div class="stat-num" style="color:var(--a2);">{{ open_drives_count|default:"—" }}</div>
+        <div class="stat-num" style="color:var(--a2);">{{ open_drives_count|default:"0" }}</div>
         <div class="stat-change neutral"><i class="fa-solid fa-clock"></i> Active this season</div>
       </div>
+
+      <!-- Applications (label differs by role) -->
       <div class="stat-card c-g animate d2">
         <div class="stat-header">
-          <span class="stat-label-text">Applications</span>
+          <span class="stat-label-text">
+            {% if user.role == 'recruiter' %}Total Applicants
+            {% elif user.role == 'admin' %}Total Applications
+            {% else %}My Applications{% endif %}
+          </span>
           <div class="stat-icon" style="background:var(--g-soft);color:var(--g);"><i class="fa-solid fa-file-lines"></i></div>
         </div>
-        <div class="stat-num" style="color:var(--g);">{{ applications_count|default:"—" }}</div>
+        <div class="stat-num" style="color:var(--g);">{{ applications_count|default:"0" }}</div>
         <div class="stat-change neutral"><i class="fa-solid fa-layer-group"></i> Total submitted</div>
       </div>
+
+      <!-- Shortlisted (all roles) -->
       <div class="stat-card c-y animate d3">
         <div class="stat-header">
           <span class="stat-label-text">Shortlisted</span>
           <div class="stat-icon" style="background:var(--y-soft);color:var(--y);"><i class="fa-solid fa-star"></i></div>
         </div>
-        <div class="stat-num" style="color:var(--y);">{{ shortlisted_count|default:"—" }}</div>
-        <div class="stat-change up"><i class="fa-solid fa-arrow-up"></i> Keep going!</div>
+        <div class="stat-num" style="color:var(--y);">{{ shortlisted_count|default:"0" }}</div>
+        <div class="stat-change up"><i class="fa-solid fa-arrow-up"></i>
+          {% if user.role == 'student' %}Keep going!{% else %}Candidates{% endif %}
+        </div>
       </div>
+
+      <!-- 4th stat: differs by role -->
       <div class="stat-card c-r animate d4">
         <div class="stat-header">
-          <span class="stat-label-text">Interviews</span>
+          <span class="stat-label-text">
+            {% if user.role == 'admin' %}Total Students
+            {% elif user.role == 'recruiter' %}Interviews Scheduled
+            {% else %}Interviews{% endif %}
+          </span>
           <div class="stat-icon" style="background:var(--r-soft);color:var(--r);"><i class="fa-solid fa-calendar"></i></div>
         </div>
-        <div class="stat-num" style="color:var(--r);">{{ interviews_count|default:"—" }}</div>
-        <div class="stat-change neutral"><i class="fa-solid fa-clock"></i> Upcoming</div>
+        <div class="stat-num" style="color:var(--r);">
+          {% if user.role == 'admin' %}{{ total_students|default:"0" }}
+          {% else %}{{ interviews_count|default:"0" }}{% endif %}
+        </div>
+        <div class="stat-change neutral"><i class="fa-solid fa-clock"></i>
+          {% if user.role == 'admin' %}Registered{% else %}Upcoming{% endif %}
+        </div>
       </div>
     </div>
 
-    <!-- Main grid -->
+    <!-- ─── MAIN GRID ─── -->
     <div class="dashboard-grid">
-      <!-- Left: Drives -->
+
+      <!-- Left column -->
       <div style="display:flex;flex-direction:column;gap:20px;">
-        <!-- Recent Drives -->
+
+        <!-- Latest Placement Drives (all roles) -->
         <div class="panel animate">
           <div class="panel-header">
             <span class="panel-title">Latest Placement Drives</span>
@@ -467,13 +514,12 @@ body::before {
               <div class="drive-info">
                 <div class="drive-title">{{ drive.role }}</div>
                 <div class="drive-meta">
-                  <span><i class="fa-solid fa-building" style="font-size:10px;"></i> {{ drive.company_name }}</span>
+                  <span><i class="fa-solid fa-building" style="font-size:10px;"></i> {{ drive.company }}</span>
                   <span><i class="fa-solid fa-indian-rupee-sign" style="font-size:10px;"></i> {{ drive.package }}</span>
-                  <span><i class="fa-solid fa-clock" style="font-size:10px;"></i> Closes {{ drive.deadline }}</span>
+                  <span><i class="fa-solid fa-clock" style="font-size:10px;"></i> Closes {{ drive.last_date }}</span>
                 </div>
               </div>
               <div class="drive-right">
-                <span class="tag {% if drive.job_type == 'Full Time' %}tag-ft{% elif drive.job_type == 'Internship' %}tag-int{% else %}tag-pt{% endif %}">{{ drive.job_type }}</span>
                 <a class="apply-btn" href="/placements/{{ drive.id }}/">View →</a>
               </div>
             </div>
@@ -486,21 +532,22 @@ body::before {
           {% endif %}
         </div>
 
-        <!-- My Applications -->
+        <!-- My Applications — STUDENTS ONLY -->
+        {% if user.role == 'student' %}
         <div class="panel animate">
           <div class="panel-header">
             <span class="panel-title">My Applications</span>
             <a class="panel-action" href="/placements/my-applications/">View all <i class="fa-solid fa-arrow-right" style="font-size:11px;"></i></a>
           </div>
           {% if my_applications %}
-            {% for app in my_applications|slice:":4" %}
+            {% for app in my_applications %}
             <div class="drive-item">
               <div class="company-logo" style="background:var(--bg2);">📋</div>
               <div class="drive-info">
                 <div class="drive-title">{{ app.drive.role }}</div>
                 <div class="drive-meta">
-                  <span><i class="fa-solid fa-building" style="font-size:10px;"></i> {{ app.drive.company_name }}</span>
-                  <span><i class="fa-solid fa-clock" style="font-size:10px;"></i> Applied {{ app.applied_on }}</span>
+                  <span><i class="fa-solid fa-building" style="font-size:10px;"></i> {{ app.drive.company }}</span>
+                  <span><i class="fa-solid fa-clock" style="font-size:10px;"></i> Applied {{ app.applied_at|date:"d M Y" }}</span>
                 </div>
               </div>
               <div class="drive-right">
@@ -515,24 +562,87 @@ body::before {
             </div>
           {% endif %}
         </div>
+        {% endif %}
+
+        <!-- My Posted Drives — RECRUITERS ONLY -->
+        {% if user.role == 'recruiter' %}
+        <div class="panel animate">
+          <div class="panel-header">
+            <span class="panel-title">My Posted Drives</span>
+            <a class="panel-action" href="/placements/post-drive/">+ Post New <i class="fa-solid fa-arrow-right" style="font-size:11px;"></i></a>
+          </div>
+          {% if my_drives %}
+            {% for drive in my_drives %}
+            <div class="drive-item">
+              <div class="company-logo" style="background:var(--bg2);">🏢</div>
+              <div class="drive-info">
+                <div class="drive-title">{{ drive.role }}</div>
+                <div class="drive-meta">
+                  <span><i class="fa-solid fa-users" style="font-size:10px;"></i> {{ drive.application_set.count }} applicants</span>
+                  <span><i class="fa-solid fa-clock" style="font-size:10px;"></i> Closes {{ drive.last_date }}</span>
+                </div>
+              </div>
+              <div class="drive-right">
+                <a class="apply-btn" href="/placements/{{ drive.id }}/">View →</a>
+              </div>
+            </div>
+            {% endfor %}
+          {% else %}
+            <div class="empty-state">
+              <div class="empty-icon"><i class="fa-solid fa-briefcase"></i></div>
+              <div class="empty-text">You haven't posted any drives yet.</div>
+            </div>
+          {% endif %}
+        </div>
+        {% endif %}
+
+        <!-- Admin quick info — ADMIN ONLY -->
+        {% if user.role == 'admin' %}
+        <div class="panel animate">
+          <div class="panel-header">
+            <span class="panel-title">Platform Overview</span>
+            <a class="panel-action" href="/accounts/admin-dashboard/">Admin Panel <i class="fa-solid fa-arrow-right" style="font-size:11px;"></i></a>
+          </div>
+          <div style="padding:20px;">
+            <div class="info-row">
+              <span class="info-row-label">Total Students</span>
+              <span class="info-row-value">{{ total_students|default:"0" }}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-row-label">Total Recruiters</span>
+              <span class="info-row-value">{{ total_recruiters|default:"0" }}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-row-label">Total Applications</span>
+              <span class="info-row-value">{{ applications_count|default:"0" }}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-row-label">Shortlisted</span>
+              <span class="info-row-value">{{ shortlisted_count|default:"0" }}</span>
+            </div>
+          </div>
+        </div>
+        {% endif %}
+
       </div>
 
       <!-- Right sidebar -->
       <div class="side-stack">
 
-        <!-- Profile completion -->
+        <!-- Profile Completion — STUDENTS ONLY -->
+        {% if user.role == 'student' %}
         <div class="panel completion-card animate">
           <div class="completion-header">
             <div class="completion-avatar">
-              {% if request.user.student_profile.profile_picture %}
-                <img src="{{ request.user.student_profile.profile_picture.url }}" alt="">
+              {% if request.user.studentprofile.profile_pic %}
+                <img src="{{ request.user.studentprofile.profile_pic.url }}" alt="">
               {% else %}
-                {{ request.user.first_name|first|upper }}{{ request.user.last_name|first|upper }}
+                {{ user.first_name|first|upper }}{{ user.last_name|first|upper }}
               {% endif %}
             </div>
             <div>
-              <div class="completion-name">{{ request.user.get_full_name|default:request.user.username }}</div>
-              <div class="completion-role">{{ request.user.role|capfirst }} · {{ request.user.student_profile.branch|default:"Branch not set" }}</div>
+              <div class="completion-name">{{ user.get_full_name|default:user.username }}</div>
+              <div class="completion-role">Student · {{ request.user.studentprofile.branch|default:"Branch not set" }}</div>
             </div>
           </div>
           <div class="completion-label">
@@ -543,86 +653,103 @@ body::before {
             <div class="progress-fill" style="width:{{ profile_completion|default:'0' }}%;"></div>
           </div>
           <div class="completion-tips">
-            <div class="tip {% if request.user.student_profile.phone %}done{% endif %}">
-              <i class="fa-solid {% if request.user.student_profile.phone %}fa-check{% else %}fa-circle{% endif %}"></i>
+            <div class="tip {% if request.user.phone %}done{% endif %}">
+              <i class="fa-solid {% if request.user.phone %}fa-check{% else %}fa-circle{% endif %}"></i>
               Add phone number
             </div>
-            <div class="tip {% if request.user.student_profile.resume %}done{% endif %}">
-              <i class="fa-solid {% if request.user.student_profile.resume %}fa-check{% else %}fa-circle{% endif %}"></i>
+            <div class="tip {% if request.user.studentprofile.resume %}done{% endif %}">
+              <i class="fa-solid {% if request.user.studentprofile.resume %}fa-check{% else %}fa-circle{% endif %}"></i>
               Upload resume
             </div>
-            <div class="tip {% if request.user.student_profile.skills %}done{% endif %}">
-              <i class="fa-solid {% if request.user.student_profile.skills %}fa-check{% else %}fa-circle{% endif %}"></i>
+            <div class="tip {% if request.user.studentprofile.skills %}done{% endif %}">
+              <i class="fa-solid {% if request.user.studentprofile.skills %}fa-check{% else %}fa-circle{% endif %}"></i>
               Add skills
             </div>
-            <div class="tip {% if request.user.student_profile.linkedin %}done{% endif %}">
-              <i class="fa-solid {% if request.user.student_profile.linkedin %}fa-check{% else %}fa-circle{% endif %}"></i>
+            <div class="tip {% if request.user.studentprofile.linkedin %}done{% endif %}">
+              <i class="fa-solid {% if request.user.studentprofile.linkedin %}fa-check{% else %}fa-circle{% endif %}"></i>
               Add LinkedIn
             </div>
           </div>
         </div>
+        {% endif %}
 
-        <!-- Upcoming Interviews -->
+        <!-- Upcoming Interviews — STUDENTS ONLY -->
+        {% if user.role == 'student' %}
         <div class="panel animate">
           <div class="panel-header">
             <span class="panel-title">Upcoming Interviews</span>
             <a class="panel-action" href="/placements/my-interviews/">All <i class="fa-solid fa-arrow-right" style="font-size:11px;"></i></a>
           </div>
-          <div class="interview-card" style="padding:0;">
-            {% if upcoming_interviews %}
-              {% for interview in upcoming_interviews|slice:":2" %}
-              <div style="padding:16px 20px;border-bottom:1px solid var(--border);">
-                <div class="interview-item" style="margin-bottom:0;">
-                  <div class="int-company">{{ interview.application.drive.company_name }}</div>
-                  <div class="int-details">
-                    <div class="int-detail"><i class="fa-solid fa-briefcase"></i> {{ interview.application.drive.role }}</div>
-                    <div class="int-detail"><i class="fa-solid fa-calendar"></i> {{ interview.date }}</div>
-                    <div class="int-detail"><i class="fa-solid fa-clock"></i> {{ interview.time }}</div>
-                    {% if interview.location %}<div class="int-detail"><i class="fa-solid fa-location-dot"></i> {{ interview.location }}</div>{% endif %}
-                  </div>
-                  {% if interview.meeting_link %}
-                  <a class="join-link" href="{{ interview.meeting_link }}" target="_blank">
-                    <i class="fa-solid fa-video"></i> Join Meeting
-                  </a>
-                  {% endif %}
+          {% if upcoming_interviews %}
+            {% for interview in upcoming_interviews %}
+            <div style="padding:16px 20px;border-bottom:1px solid var(--border);">
+              <div class="interview-item" style="margin-bottom:0;">
+                <div class="int-company">{{ interview.application.drive.company }}</div>
+                <div class="int-details">
+                  <div class="int-detail"><i class="fa-solid fa-briefcase"></i> {{ interview.application.drive.role }}</div>
+                  <div class="int-detail"><i class="fa-solid fa-calendar"></i> {{ interview.date }}</div>
+                  <div class="int-detail"><i class="fa-solid fa-clock"></i> {{ interview.time }}</div>
+                  {% if interview.location %}<div class="int-detail"><i class="fa-solid fa-location-dot"></i> {{ interview.location }}</div>{% endif %}
                 </div>
+                {% if interview.meeting_link %}
+                <a class="join-link" href="{{ interview.meeting_link }}" target="_blank">
+                  <i class="fa-solid fa-video"></i> Join Meeting
+                </a>
+                {% endif %}
               </div>
-              {% endfor %}
-            {% else %}
-              <div class="empty-state">
-                <div class="empty-icon"><i class="fa-solid fa-calendar"></i></div>
-                <div class="empty-text">No interviews scheduled yet.</div>
-              </div>
-            {% endif %}
-          </div>
+            </div>
+            {% endfor %}
+          {% else %}
+            <div class="empty-state">
+              <div class="empty-icon"><i class="fa-solid fa-calendar"></i></div>
+              <div class="empty-text">No interviews scheduled yet.</div>
+            </div>
+          {% endif %}
         </div>
+        {% endif %}
 
-        <!-- Notifications -->
+        <!-- Recruiter quick links — RECRUITERS ONLY -->
+        {% if user.role == 'recruiter' %}
+        <div class="panel animate" style="padding:20px;">
+          <div style="font-size:10.5px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--ink3);margin-bottom:14px;">Quick Actions</div>
+          <a href="/placements/post-drive/" class="apply-btn" style="display:block;text-align:center;margin-bottom:10px;padding:10px;">+ Post a New Drive</a>
+          <a href="/placements/my-applicants/" class="apply-btn" style="display:block;text-align:center;background:var(--surface2);border:1px solid var(--border2);padding:10px;">View My Applicants</a>
+        </div>
+        {% endif %}
+
+        <!-- Admin quick links — ADMIN ONLY -->
+        {% if user.role == 'admin' %}
+        <div class="panel animate" style="padding:20px;">
+          <div style="font-size:10.5px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--ink3);margin-bottom:14px;">Quick Actions</div>
+          <a href="/accounts/admin-dashboard/" class="apply-btn" style="display:block;text-align:center;margin-bottom:10px;padding:10px;">Admin Dashboard</a>
+          <a href="/accounts/stats/" class="apply-btn" style="display:block;text-align:center;background:var(--surface2);border:1px solid var(--border2);padding:10px;">View Statistics</a>
+        </div>
+        {% endif %}
+
+        <!-- Notifications (all roles) -->
         <div class="panel animate">
           <div class="panel-header">
             <span class="panel-title">Notifications</span>
             <a class="panel-action" href="/notifications/">All <i class="fa-solid fa-arrow-right" style="font-size:11px;"></i></a>
           </div>
-          <div class="notif-list">
-            {% if notifications %}
-              {% for notif in notifications|slice:":4" %}
-              <div class="notif-item">
-                <div class="notif-icon" style="background:var(--a-soft);color:var(--a2);">
-                  <i class="fa-solid fa-bell"></i>
-                </div>
-                <div class="notif-body">
-                  <div class="notif-text">{{ notif.message }}</div>
-                  <div class="notif-time">{{ notif.created_at|timesince }} ago</div>
-                </div>
+          {% if notifications %}
+            {% for notif in notifications %}
+            <div class="notif-item">
+              <div class="notif-icon" style="background:var(--a-soft);color:var(--a2);">
+                <i class="fa-solid fa-bell"></i>
               </div>
-              {% endfor %}
-            {% else %}
-              <div class="empty-state">
-                <div class="empty-icon"><i class="fa-solid fa-bell-slash"></i></div>
-                <div class="empty-text">No notifications yet.</div>
+              <div class="notif-body">
+                <div class="notif-text">{{ notif.message }}</div>
+                <div class="notif-time">{{ notif.created_at|timesince }} ago</div>
               </div>
-            {% endif %}
-          </div>
+            </div>
+            {% endfor %}
+          {% else %}
+            <div class="empty-state">
+              <div class="empty-icon"><i class="fa-solid fa-bell-slash"></i></div>
+              <div class="empty-text">No notifications yet.</div>
+            </div>
+          {% endif %}
         </div>
 
       </div>
@@ -642,4 +769,3 @@ function closeSidebar() {
 </script>
 </body>
 </html>
-

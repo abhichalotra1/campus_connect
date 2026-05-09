@@ -105,8 +105,9 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 ACCOUNT_EMAIL_VERIFICATION = 'none'
-ACCOUNT_LOGIN_METHODS = {'username', 'email'}
+ACCOUNT_LOGIN_METHODS = ['username', 'email']
 ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_LOGIN_URL = '/accounts/login/'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/accounts/login/'
 SOCIALACCOUNT_AUTO_SIGNUP = True
@@ -120,4 +121,6 @@ EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
 DEFAULT_FROM_EMAIL = 'Campus Connect <your_email@gmail.com>'
 
+# Add this anywhere in settings.py
+SOCIALACCOUNT_ADAPTER = 'accounts.adapters.CustomSocialAccountAdapter'
 

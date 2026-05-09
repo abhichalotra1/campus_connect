@@ -1,22 +1,20 @@
-
 from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from accounts import views as account_views
 from django.contrib.auth import views as auth_views
-from .views import landing 
+from django.views.generic import RedirectView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-
     # App URLs
     path('accounts/', include('accounts.urls')),
     path('auth/', include('allauth.urls')),
     path('students/', include('students.urls')),
     path('placements/', include('placements.urls')),
     path('notifications/', include('notifications.urls')),
-    
+
     # Password Reset
     path('password-reset/',
          auth_views.PasswordResetView.as_view(
@@ -50,4 +48,3 @@ urlpatterns = [
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-

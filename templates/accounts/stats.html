@@ -2,13 +2,85 @@
 {% block content %}
 <div class="row mt-3">
     <div class="col-12">
-        <h3><i class="fas fa-chart-bar text-primary me-2"></i>Placement Statistics</h3>
-        <p class="text-muted">Overview of placement season 2025-26</p>
+        <h3><i class="fas fa-chart-bar text-primary me-2"></i>
+            {% if role == 'student' %}My Placement Statistics
+            {% elif role == 'recruiter' %}Recruiter Statistics
+            {% else %}Placement Statistics{% endif %}
+        </h3>
+        <p class="text-muted">
+            {% if role == 'student' %}Your personal application overview
+            {% elif role == 'recruiter' %}Overview of your drives and applicants
+            {% else %}Overview of placement season 2025-26{% endif %}
+        </p>
     </div>
 </div>
 
 <!-- Summary Cards -->
 <div class="row mt-3">
+
+    {% if role == 'student' %}
+    <div class="col-md-3">
+        <div class="card p-3 text-center">
+            <i class="fas fa-briefcase fa-2x text-warning mb-2"></i>
+            <h3>{{ total_drives }}</h3>
+            <p class="text-muted mb-0">Open Drives</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card p-3 text-center">
+            <i class="fas fa-file-alt fa-2x text-info mb-2"></i>
+            <h3>{{ total_applications }}</h3>
+            <p class="text-muted mb-0">My Applications</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card p-3 text-center">
+            <i class="fas fa-star fa-2x text-warning mb-2"></i>
+            <h3>{{ shortlisted_count }}</h3>
+            <p class="text-muted mb-0">Shortlisted</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card p-3 text-center">
+            <i class="fas fa-trophy fa-2x text-success mb-2"></i>
+            <h3>{{ selected_count }}</h3>
+            <p class="text-muted mb-0">Selected</p>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if role == 'recruiter' %}
+    <div class="col-md-3">
+        <div class="card p-3 text-center">
+            <i class="fas fa-briefcase fa-2x text-primary mb-2"></i>
+            <h3>{{ total_drives }}</h3>
+            <p class="text-muted mb-0">My Drives</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card p-3 text-center">
+            <i class="fas fa-file-alt fa-2x text-info mb-2"></i>
+            <h3>{{ total_applications }}</h3>
+            <p class="text-muted mb-0">Total Applicants</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card p-3 text-center">
+            <i class="fas fa-star fa-2x text-warning mb-2"></i>
+            <h3>{{ shortlisted_count }}</h3>
+            <p class="text-muted mb-0">Shortlisted</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card p-3 text-center">
+            <i class="fas fa-trophy fa-2x text-success mb-2"></i>
+            <h3>{{ selected_count }}</h3>
+            <p class="text-muted mb-0">Selected</p>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if role == 'admin' %}
     <div class="col-md-3">
         <div class="card p-3 text-center">
             <i class="fas fa-user-graduate fa-2x text-primary mb-2"></i>
@@ -37,33 +109,17 @@
             <p class="text-muted mb-0">Placement Rate</p>
         </div>
     </div>
+    {% endif %}
+
 </div>
 
-<!-- Charts Row 1 -->
+<!-- Charts Row 1 — all roles get status + monthly -->
 <div class="row mt-4">
     <div class="col-md-6">
         <div class="card p-3">
             <h5><i class="fas fa-chart-pie text-primary me-2"></i>Application Status Breakdown</h5>
             <hr>
             <canvas id="statusChart" height="250"></canvas>
-        </div>
-    </div>
-    <div class="col-md-6">
-        <div class="card p-3">
-            <h5><i class="fas fa-chart-bar text-success me-2"></i>Placements by Branch</h5>
-            <hr>
-            <canvas id="branchChart" height="250"></canvas>
-        </div>
-    </div>
-</div>
-
-<!-- Charts Row 2 -->
-<div class="row mt-4">
-    <div class="col-md-6">
-        <div class="card p-3">
-            <h5><i class="fas fa-building text-warning me-2"></i>Top Companies by Placements</h5>
-            <hr>
-            <canvas id="companyChart" height="250"></canvas>
         </div>
     </div>
     <div class="col-md-6">
@@ -75,11 +131,34 @@
     </div>
 </div>
 
+<!-- Charts Row 2 — admin and recruiter get extra charts -->
+{% if role == 'admin' or role == 'recruiter' %}
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card p-3">
+            <h5><i class="fas fa-building text-warning me-2"></i>
+                {% if role == 'admin' %}Top Companies by Placements{% else %}Top Roles by Selections{% endif %}
+            </h5>
+            <hr>
+            <canvas id="companyChart" height="250"></canvas>
+        </div>
+    </div>
+    {% if role == 'admin' %}
+    <div class="col-md-6">
+        <div class="card p-3">
+            <h5><i class="fas fa-chart-bar text-success me-2"></i>Placements by Branch</h5>
+            <hr>
+            <canvas id="branchChart" height="250"></canvas>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 const COLORS = ['#5b6cff','#1ed98a','#f5c842','#ff5470','#a78bfa','#38bdf8','#fb923c','#34d399'];
 
-// Status Pie Chart
 new Chart(document.getElementById('statusChart'), {
     type: 'doughnut',
     data: {
@@ -89,15 +168,16 @@ new Chart(document.getElementById('statusChart'), {
     options: { plugins: { legend: { labels: { color: '#9298b8' } } } }
 });
 
-// Branch Bar Chart
-new Chart(document.getElementById('branchChart'), {
-    type: 'bar',
+new Chart(document.getElementById('monthlyChart'), {
+    type: 'line',
     data: {
-        labels: {{ branch_labels|safe }},
+        labels: {{ monthly_labels|safe }},
         datasets: [{
-            label: 'Students Placed',
-            data: {{ branch_counts|safe }},
-            backgroundColor: '#5b6cff'
+            label: 'Applications',
+            data: {{ monthly_counts|safe }},
+            borderColor: '#f5c842',
+            backgroundColor: 'rgba(245,200,66,0.1)',
+            tension: 0.4, fill: true
         }]
     },
     options: {
@@ -109,7 +189,7 @@ new Chart(document.getElementById('branchChart'), {
     }
 });
 
-// Company Bar Chart
+{% if role == 'admin' or role == 'recruiter' %}
 new Chart(document.getElementById('companyChart'), {
     type: 'bar',
     data: {
@@ -129,19 +209,17 @@ new Chart(document.getElementById('companyChart'), {
         }
     }
 });
+{% endif %}
 
-// Monthly Line Chart
-new Chart(document.getElementById('monthlyChart'), {
-    type: 'line',
+{% if role == 'admin' %}
+new Chart(document.getElementById('branchChart'), {
+    type: 'bar',
     data: {
-        labels: {{ monthly_labels|safe }},
+        labels: {{ branch_labels|safe }},
         datasets: [{
-            label: 'Applications',
-            data: {{ monthly_counts|safe }},
-            borderColor: '#f5c842',
-            backgroundColor: 'rgba(245,200,66,0.1)',
-            tension: 0.4,
-            fill: true
+            label: 'Students Placed',
+            data: {{ branch_counts|safe }},
+            backgroundColor: '#5b6cff'
         }]
     },
     options: {
@@ -152,5 +230,6 @@ new Chart(document.getElementById('monthlyChart'), {
         }
     }
 });
+{% endif %}
 </script>
 {% endblock %}

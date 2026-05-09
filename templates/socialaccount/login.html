@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sign In Via Social — Campus Connect</title>
+<link href="https://fonts.googleapis.com/css2?family=Clash+Display:wght@400;500;600;700&family=Cabinet+Grotesk:wght@300;400;500;700;800&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:#08090d; --bg2:#0e1018; --bg3:#13151f;
+  --surface:#181b26; --surface2:#1e2130;
+  --border:rgba(255,255,255,0.06); --border2:rgba(255,255,255,0.11);
+  --ink:#eef0ff; --ink2:#9298b8; --ink3:#4e5370;
+  --a:#5b6cff; --a2:#7d8bff;
+  --a-glow:rgba(91,108,255,0.22); --a-soft:rgba(91,108,255,0.10);
+  --g:#1ed98a; --g-soft:rgba(30,217,138,0.10);
+  --r:#ff5470; --r-soft:rgba(255,84,112,0.10);
+  --radius:14px; --radius-lg:20px;
+}
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Cabinet Grotesk', sans-serif;
+  background: var(--bg); color: var(--ink);
+  min-height: 100vh; display: flex; flex-direction: column; overflow-x: hidden;
+}
+body::before {
+  content: ''; position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+  pointer-events: none; z-index: 0; opacity: 0.6;
+}
+.bg-glow {
+  position: fixed; top: 0; left: 50%; transform: translateX(-50%);
+  width: 800px; height: 500px;
+  background: radial-gradient(ellipse at 50% 0%, rgba(91,108,255,0.13) 0%, transparent 65%);
+  pointer-events: none; z-index: 0;
+}
+.bg-grid {
+  position: fixed; inset: 0;
+  background-image: linear-gradient(rgba(255,255,255,0.022) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.022) 1px, transparent 1px);
+  background-size: 60px 60px;
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 30%, transparent 100%);
+  pointer-events: none; z-index: 0;
+}
+nav {
+  position: relative; z-index: 10; padding: 20px 5%;
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+  background: rgba(8,9,13,0.6); backdrop-filter: blur(20px);
+}
+.nav-logo {
+  font-family: 'Clash Display', sans-serif; font-size: 19px; font-weight: 700;
+  color: var(--ink); text-decoration: none; display: flex; align-items: center; gap: 9px;
+}
+.logo-mark {
+  width: 30px; height: 30px; border-radius: 8px; background: var(--a);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; color: #fff; position: relative;
+}
+.logo-mark::after {
+  content: ''; position: absolute; inset: -3px;
+  border-radius: 11px; border: 1px solid rgba(91,108,255,0.35);
+}
+.nav-back {
+  font-size: 13px; color: var(--ink2); text-decoration: none;
+  display: flex; align-items: center; gap: 7px; transition: color 0.18s;
+}
+.nav-back:hover { color: var(--ink); }
+main {
+  flex: 1; position: relative; z-index: 1;
+  display: flex; align-items: center; justify-content: center; padding: 48px 20px;
+}
+.auth-card { width: 100%; max-width: 440px; animation: fadeUp 0.6s ease both; }
+.auth-header { text-align: center; margin-bottom: 32px; }
+.auth-eyebrow {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 5px 12px 5px 8px; border-radius: 50px;
+  border: 1px solid rgba(91,108,255,0.3); background: rgba(91,108,255,0.08);
+  font-size: 11.5px; font-weight: 700; color: var(--a2);
+  letter-spacing: 0.3px; text-transform: uppercase; margin-bottom: 18px;
+}
+.live-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--g); box-shadow: 0 0 0 3px var(--g-soft);
+  animation: blink 2s ease infinite;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+.auth-title {
+  font-family: 'Clash Display', sans-serif; font-size: 32px; font-weight: 700;
+  letter-spacing: -1px; margin-bottom: 8px;
+}
+.auth-sub { font-size: 14px; color: var(--ink2); line-height: 1.6; }
+.form-box {
+  background: var(--surface); border: 1px solid var(--border2);
+  border-radius: var(--radius-lg); padding: 32px;
+  position: relative; overflow: hidden;
+}
+.form-box::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--a), transparent); opacity: 0.5;
+}
+
+/* Provider badge */
+.provider-badge {
+  display: flex; align-items: center; gap: 14px;
+  padding: 16px 18px; border-radius: 12px;
+  background: var(--bg2); border: 1px solid var(--border2);
+  margin-bottom: 24px;
+}
+.provider-icon {
+  width: 42px; height: 42px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; flex-shrink: 0;
+  background: var(--surface2); border: 1px solid var(--border2);
+}
+.provider-icon.google { color: #ea4335; }
+.provider-icon.github { color: var(--ink); }
+.provider-icon.facebook { color: #1877f2; }
+.provider-icon.linkedin { color: #0a66c2; }
+.provider-info { flex: 1; }
+.provider-name {
+  font-size: 14px; font-weight: 700; color: var(--ink); margin-bottom: 2px;
+}
+.provider-desc { font-size: 12px; color: var(--ink2); }
+
+/* Info box */
+.info-box {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 12px 14px; border-radius: 10px;
+  background: var(--a-soft); border: 1px solid rgba(91,108,255,0.2);
+  margin-bottom: 28px; font-size: 13px; color: var(--ink2); line-height: 1.5;
+}
+.info-box i { color: var(--a2); font-size: 14px; margin-top: 1px; flex-shrink: 0; }
+
+.btn-submit {
+  width: 100%; padding: 13px; border-radius: 10px; border: none;
+  background: var(--a); color: #fff;
+  font-family: 'Cabinet Grotesk', sans-serif;
+  font-size: 15px; font-weight: 700; cursor: pointer;
+  position: relative; overflow: hidden; transition: all 0.2s; letter-spacing: 0.2px;
+  display: flex; align-items: center; justify-content: center; gap: 9px;
+}
+.btn-submit::before {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.16) 0%, transparent 55%);
+}
+.btn-submit:hover { background: var(--a2); transform: translateY(-1px); box-shadow: 0 8px 24px var(--a-glow); }
+.btn-submit:active { transform: translateY(0); }
+
+.btn-cancel {
+  width: 100%; padding: 12px; border-radius: 10px; margin-top: 10px;
+  border: 1px solid var(--border2); background: transparent; color: var(--ink2);
+  font-family: 'Cabinet Grotesk', sans-serif;
+  font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.18s;
+  text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.btn-cancel:hover { border-color: var(--border2); background: var(--surface2); color: var(--ink); }
+
+.auth-footer { text-align: center; margin-top: 22px; font-size: 13.5px; color: var(--ink2); }
+.auth-footer a { color: var(--a2); text-decoration: none; font-weight: 600; }
+.auth-footer a:hover { color: var(--ink); }
+
+@keyframes fadeUp { from{opacity:0;transform:translateY(22px)} to{opacity:1;transform:translateY(0)} }
+@media (max-width: 480px) { .form-box { padding: 24px 20px; } }
+</style>
+</head>
+<body>
+<div class="bg-glow"></div>
+<div class="bg-grid"></div>
+
+<nav>
+  <a class="nav-logo" href="/">
+    <div class="logo-mark"><i class="fa-solid fa-graduation-cap"></i></div>
+    Campus Connect
+  </a>
+  <a class="nav-back" href="/accounts/login/">
+    <i class="fa-solid fa-arrow-left" style="font-size:11px;"></i>
+    Back to login
+  </a>
+</nav>
+
+<main>
+  <div class="auth-card">
+    <div class="auth-header">
+      <div class="auth-eyebrow"><span class="live-dot"></span>Social Login</div>
+      <h1 class="auth-title">Sign In Via {{ account.get_provider.name }}</h1>
+      <p class="auth-sub">You're one click away from accessing your Campus Connect account.</p>
+    </div>
+
+    <div class="form-box">
+
+      <!-- Provider Badge -->
+      <div class="provider-badge">
+        <div class="provider-icon {% if 'google' in account.get_provider.id %}google{% elif 'github' in account.get_provider.id %}github{% elif 'facebook' in account.get_provider.id %}facebook{% else %}linkedin{% endif %}">
+          {% if 'google' in account.get_provider.id %}
+            <i class="fa-brands fa-google"></i>
+          {% elif 'github' in account.get_provider.id %}
+            <i class="fa-brands fa-github"></i>
+          {% elif 'facebook' in account.get_provider.id %}
+            <i class="fa-brands fa-facebook"></i>
+          {% else %}
+            <i class="fa-brands fa-linkedin"></i>
+          {% endif %}
+        </div>
+        <div class="provider-info">
+          <div class="provider-name">{{ account.get_provider.name }} Account</div>
+          <div class="provider-desc">
+            {% if account.extra_data.email %}{{ account.extra_data.email }}{% else %}Authenticated successfully{% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Info -->
+      <div class="info-box">
+        <i class="fa-solid fa-shield-halved"></i>
+        <span>You are about to sign in using your <strong style="color:var(--ink);">{{ account.get_provider.name }}</strong> account. Click continue to proceed securely.</span>
+      </div>
+
+      <!-- Continue form -->
+      <form method="post" action="{{ request.path }}">
+        {% csrf_token %}
+        <input type="hidden" name="process" value="{{ process }}" />
+        <input type="hidden" name="scope" value="{{ scope }}" />
+        <input type="hidden" name="auth_params" value="{{ auth_params }}" />
+
+        <button type="submit" class="btn-submit">
+          <i class="fa-solid fa-arrow-right-to-bracket"></i>
+          Continue with {{ account.get_provider.name }}
+        </button>
+      </form>
+
+      <a href="/accounts/login/" class="btn-cancel">
+        <i class="fa-solid fa-xmark"></i>
+        Cancel
+      </a>
+
+    </div>
+
+    <div class="auth-footer">
+      New to Campus Connect? <a href="/accounts/signup/">Create an account →</a>
+    </div>
+  </div>
+</main>
+</body>
+</html>

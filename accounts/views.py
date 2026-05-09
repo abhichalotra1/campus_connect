@@ -18,14 +18,14 @@ def register_view(request):
     if request.user.is_authenticated:
         return redirect('dashboard')
     if request.method == 'POST':
-        username = request.POST['username']
-        email = request.POST['email']
-        password1 = request.POST['password1']
-        password2 = request.POST['password2']
-        first_name = request.POST['first_name']
-        last_name = request.POST['last_name']
-        phone = request.POST['phone']
-        role = request.POST['role']
+        username   = request.POST.get('username', '')
+        email      = request.POST.get('email', '')
+        password1  = request.POST.get('password1', '')
+        password2  = request.POST.get('password2', '')
+        first_name = request.POST.get('first_name', '')
+        last_name  = request.POST.get('last_name', '')
+        phone      = request.POST.get('phone', '')
+        role       = request.POST.get('role', 'student')
 
         if password1 != password2:
             messages.error(request, 'Passwords do not match!')
@@ -78,7 +78,66 @@ def logout_view(request):
 def dashboard_view(request):
     if not request.user.is_authenticated:
         return redirect('login')
-    return render(request, 'dashboard.html', {'user': request.user})
+
+    from django.utils import timezone
+
+    user = request.user
+    context = {'user': user}
+
+    # Common: open drives
+    open_drives = PlacementDrive.objects.filter(status='active')
+    context['open_drives_count'] = open_drives.count()
+    context['recent_drives'] = open_drives.order_by('-created_at')[:5]
+
+    # Notifications (common)
+    try:
+        from notifications.models import Notification
+        context['notifications'] = Notification.objects.filter(user=user).order_by('-created_at')[:4]
+        context['unread_count'] = Notification.objects.filter(user=user, is_read=False).count()
+    except Exception:
+        context['notifications'] = []
+        context['unread_count'] = 0
+
+    if user.role == 'student':
+        apps = Application.objects.filter(student=user)
+        context['applications_count'] = apps.count()
+        context['shortlisted_count'] = apps.filter(status='shortlisted').count()
+        context['my_applications'] = apps.order_by('-applied_at')[:4]
+
+        try:
+            from placements.models import Interview
+            interviews = Interview.objects.filter(
+                application__student=user,
+                date__gte=timezone.now().date()
+            ).order_by('date')
+            context['interviews_count'] = interviews.count()
+            context['upcoming_interviews'] = interviews[:2]
+        except Exception:
+            context['interviews_count'] = 0
+            context['upcoming_interviews'] = []
+
+        try:
+            context['profile_completion'] = user.studentprofile.profile_completion
+        except Exception:
+            context['profile_completion'] = 0
+
+    elif user.role == 'recruiter':
+        my_drives = PlacementDrive.objects.filter(posted_by=user)
+        apps = Application.objects.filter(drive__in=my_drives)
+        context['applications_count'] = apps.count()
+        context['shortlisted_count'] = apps.filter(status='shortlisted').count()
+        context['interviews_count'] = apps.filter(status='interview').count()
+        context['my_drives'] = my_drives.order_by('-created_at')[:5]
+
+    elif user.role == 'admin':
+        apps = Application.objects.all()
+        context['applications_count'] = apps.count()
+        context['shortlisted_count'] = apps.filter(status='shortlisted').count()
+        context['interviews_count'] = apps.filter(status='interview').count()
+        context['total_students'] = User.objects.filter(role='student').count()
+        context['total_recruiters'] = User.objects.filter(role='recruiter').count()
+
+    return render(request, 'dashboard.html', context)
 
 
 def admin_dashboard_view(request):
@@ -86,26 +145,26 @@ def admin_dashboard_view(request):
         messages.error(request, 'Access denied!')
         return redirect('dashboard')
 
-    students = User.objects.filter(role='student')
+    students  = User.objects.filter(role='student')
     recruiters = User.objects.filter(role='recruiter')
-    drives = PlacementDrive.objects.all().order_by('-created_at')
-    apps = Application.objects.all().order_by('-applied_at')
+    drives    = PlacementDrive.objects.all().order_by('-created_at')
+    apps      = Application.objects.all().order_by('-applied_at')
 
-    total_students = students.count()
+    total_students   = students.count()
     total_recruiters = recruiters.count()
-    total_drives = drives.count()
-    total_apps = apps.count()
+    total_drives     = drives.count()
+    total_apps       = apps.count()
     selected_students = apps.filter(status='selected').count()
 
     return render(request, 'accounts/admin_dashboard.html', {
-        'students': students,
-        'recruiters': recruiters,
-        'drives': drives,
-        'apps': apps,
-        'total_students': total_students,
-        'total_recruiters': total_recruiters,
-        'total_drives': total_drives,
-        'total_apps': total_apps,
+        'students':          students,
+        'recruiters':        recruiters,
+        'drives':            drives,
+        'apps':              apps,
+        'total_students':    total_students,
+        'total_recruiters':  total_recruiters,
+        'total_drives':      total_drives,
+        'total_apps':        total_apps,
         'selected_students': selected_students,
     })
 
@@ -115,7 +174,7 @@ def update_application_status(request, pk):
         messages.error(request, 'Access denied!')
         return redirect('dashboard')
 
-    app = get_object_or_404(Application, pk=pk)
+    app    = get_object_or_404(Application, pk=pk)
     status = request.POST.get('status')
 
     if status in ['applied', 'shortlisted', 'rejected', 'selected']:
@@ -139,12 +198,11 @@ def update_application_status(request, pk):
 
 @login_required
 def stats_view(request):
-    from placements.models import PlacementDrive, Application
     from django.db.models import Count
     from django.db.models.functions import TruncMonth
 
-    total_students = User.objects.filter(role='student').count()
-    total_drives = PlacementDrive.objects.count()
+    total_students    = User.objects.filter(role='student').count()
+    total_drives      = PlacementDrive.objects.count()
     total_applications = Application.objects.count()
     selected_students = Application.objects.filter(status='selected').count()
 
@@ -176,17 +234,17 @@ def stats_view(request):
     )
 
     return render(request, 'accounts/stats.html', {
-        'total_students': total_students,
-        'total_drives': total_drives,
+        'total_students':    total_students,
+        'total_drives':      total_drives,
         'total_applications': total_applications,
         'selected_students': selected_students,
-        'placement_rate': round((selected_students / total_students * 100), 1) if total_students else 0,
-        'branch_labels': [b['student__studentprofile__branch'] or 'Unknown' for b in branch_data],
-        'branch_counts': [b['count'] for b in branch_data],
+        'placement_rate':    round((selected_students / total_students * 100), 1) if total_students else 0,
+        'branch_labels':  [b['student__studentprofile__branch'] or 'Unknown' for b in branch_data],
+        'branch_counts':  [b['count'] for b in branch_data],
         'company_labels': [c['drive__company'] for c in company_data],
         'company_counts': [c['count'] for c in company_data],
-        'status_labels': [s['status'] for s in status_data],
-        'status_counts': [s['count'] for s in status_data],
+        'status_labels':  [s['status'] for s in status_data],
+        'status_counts':  [s['count'] for s in status_data],
         'monthly_labels': [m['month'].strftime('%b %Y') for m in monthly_data if m['month']],
         'monthly_counts': [m['count'] for m in monthly_data if m['month']],
     })
@@ -196,29 +254,89 @@ def stats_view(request):
 def export_students_csv(request):
     if request.user.role != 'admin':
         return redirect('dashboard')
+
     import csv
     from django.http import HttpResponse
+
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = 'attachment; filename="students.csv"'
     writer = csv.writer(response)
-    writer.writerow(['Name', 'Email', 'Username', 'Branch', 'CGPA', 'Roll Number', 'Passing Year', 'Skills', 'LinkedIn', 'GitHub'])
+    writer.writerow(['Name', 'Email', 'Username', 'Branch', 'CGPA',
+                     'Roll Number', 'Passing Year', 'Skills', 'LinkedIn', 'GitHub'])
+
     for user in User.objects.filter(role='student'):
         try:
             p = user.studentprofile
-            writer.writerow([user.get_full_name(), user.email, user.username, p.branch, p.cgpa, p.roll_number, p.passing_year, p.skills, p.linkedin, p.github])
-        except:
-            writer.writerow([user.get_full_name(), user.email, user.username, '', '', '', '', '', '', ''])
+            writer.writerow([
+                user.get_full_name(), user.email, user.username,
+                p.branch, p.cgpa, p.roll_number, p.passing_year,
+                p.skills, p.linkedin, p.github
+            ])
+        except Exception:
+            writer.writerow([user.get_full_name(), user.email, user.username,
+                             '', '', '', '', '', '', ''])
     return response
+
+
+@login_required
+def export_students_excel(request):
+    if request.user.role != 'admin':
+        return redirect('dashboard')
+
+    import openpyxl
+    from django.http import HttpResponse
+    from openpyxl.styles import Font, PatternFill, Alignment
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Students"
+
+    headers = ['Name', 'Email', 'Username', 'Phone', 'Branch', 'CGPA',
+               'Roll Number', 'Passing Year', 'Skills', 'LinkedIn', 'GitHub']
+
+    header_fill = PatternFill(start_color="5B6CFF", end_color="5B6CFF", fill_type="solid")
+    header_font = Font(bold=True, color="FFFFFF")
+
+    for col, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col, value=header)
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = Alignment(horizontal='center')
+
+    for user in User.objects.filter(role='student'):
+        try:
+            p = user.studentprofile
+            ws.append([
+                user.get_full_name(), user.email, user.username, user.phone,
+                p.branch, p.cgpa, p.roll_number, p.passing_year,
+                p.skills, p.linkedin, p.github
+            ])
+        except Exception:
+            ws.append([user.get_full_name(), user.email, user.username,
+                       user.phone, '', '', '', '', '', '', ''])
+
+    for col in ws.columns:
+        max_len = max((len(str(cell.value or '')) for cell in col), default=10)
+        ws.column_dimensions[col[0].column_letter].width = min(max_len + 4, 40)
+
+    response = HttpResponse(
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    response['Content-Disposition'] = 'attachment; filename="students.xlsx"'
+    wb.save(response)
+    return response
+
 
 @login_required
 def search_students_view(request):
     if request.user.role not in ['recruiter', 'admin']:
         return redirect('dashboard')
-    from students.models import StudentProfile
-    students = StudentProfile.objects.select_related('user').all()
-    branch = request.GET.get('branch', '')
-    skill = request.GET.get('skill', '')
-    min_cgpa = request.GET.get('min_cgpa', '')
+
+    students  = StudentProfile.objects.select_related('user').all()
+    branch    = request.GET.get('branch', '')
+    skill     = request.GET.get('skill', '')
+    min_cgpa  = request.GET.get('min_cgpa', '')
+
     if branch:
         students = students.filter(branch=branch)
     if skill:
@@ -228,9 +346,10 @@ def search_students_view(request):
             students = students.filter(cgpa__gte=float(min_cgpa))
         except ValueError:
             pass
+
     return render(request, 'accounts/search_students.html', {
         'students': students,
-        'branch': branch,
-        'skill': skill,
+        'branch':   branch,
+        'skill':    skill,
         'min_cgpa': min_cgpa,
     })
