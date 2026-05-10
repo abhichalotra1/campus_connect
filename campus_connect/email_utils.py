@@ -1,99 +1,144 @@
-from django.core.mail import send_mail
+"""
+campus_connect/email_utils.py
+─────────────────────────────
+Drop this file at: campus_connect/email_utils.py
+(same folder as settings.py and wsgi.py)
+
+All email logic lives here. Views just call these functions.
+Never raises — logs errors so the app never crashes on email failure.
+"""
+
+import logging
+from django.core.mail import EmailMultiAlternatives
+from django.template.loader import render_to_string
 from django.conf import settings
+from django.utils.html import strip_tags
 
+logger = logging.getLogger(__name__)
+
+
+def _send(subject, template, context, to_email):
+    """Internal helper — renders HTML template and sends email."""
+    try:
+        html_body  = render_to_string(template, context)
+        plain_body = strip_tags(html_body)
+
+        msg = EmailMultiAlternatives(
+            subject    = subject,
+            body       = plain_body,
+            from_email = settings.DEFAULT_FROM_EMAIL,
+            to         = [to_email],
+        )
+        msg.attach_alternative(html_body, "text/html")
+        msg.send(fail_silently=False)
+        logger.info(f"[EMAIL] ✓ '{subject}' → {to_email}")
+    except Exception as e:
+        logger.error(f"[EMAIL] ✗ '{subject}' → {to_email} | Error: {e}")
+
+
+# ─────────────────────────────────────────
+#  1. WELCOME EMAIL  (triggered on register)
+# ─────────────────────────────────────────
+def send_welcome_email(user):
+    """Send welcome email to newly registered user."""
+    _send(
+        subject  = "Welcome to Campus Connect 🎓",
+        template = "emails/welcome.html",
+        context  = {'user': user},
+        to_email = user.email,
+    )
+
+
+# ─────────────────────────────────────────
+#  2. APPLICATION CONFIRMATION  (student applied)
+# ─────────────────────────────────────────
 def send_application_email(student, drive):
-    send_mail(
-        subject=f'Application Received - {drive.company}',
-        message=f'''Dear {student.first_name},
-
-Your application for {drive.role} at {drive.company} has been received successfully!
-
-We will notify you once the recruiter reviews your application.
-
-Details:
-- Company: {drive.company}
-- Role: {drive.role}
-- Package: {drive.package}
-- Deadline: {drive.deadline}
-
-Best of luck!
-The Campus Connect Team''',
-        from_email=settings.DEFAULT_FROM_EMAIL,
-        recipient_list=[student.email],
-        fail_silently=True,
+    """Confirm to student that their application was received."""
+    _send(
+        subject  = f"Application Received – {drive.company} ({drive.role})",
+        template = "emails/application_confirmation.html",
+        context  = {'student': student, 'drive': drive},
+        to_email = student.email,
     )
 
 
-def send_status_update_email(student, drive, status):
-    status_messages = {
-        'shortlisted': f'Congratulations! You have been SHORTLISTED for {drive.role} at {drive.company}!',
-        'selected':    f'Congratulations! You have been SELECTED for {drive.role} at {drive.company}!',
-        'rejected':    f'We regret to inform you that your application for {drive.role} at {drive.company} was not successful this time.',
-    }
-
-    message = status_messages.get(status, f'Your application status has been updated to {status}')
-
-    send_mail(
-        subject=f'Application Update - {drive.company}',
-        message=f'''Dear {student.first_name},
-
-{message}
-
-Keep applying and never give up!
-
-Best Regards,
-The Campus Connect Team''',
-        from_email=settings.DEFAULT_FROM_EMAIL,
-        recipient_list=[student.email],
-        fail_silently=True,
-    )
-
-
+# ─────────────────────────────────────────
+#  3. RECRUITER NOTIFICATION  (new applicant)
+# ─────────────────────────────────────────
 def send_recruiter_email(recruiter, student, drive):
-    send_mail(
-        subject=f'New Application - {drive.role}',
-        message=f'''Dear {recruiter.first_name},
-
-A new student has applied for your placement drive!
-
-Student Details:
-- Name: {student.get_full_name()}
-- Email: {student.email}
-- Username: {student.username}
-
-Drive Details:
-- Role: {drive.role}
-- Company: {drive.company}
-
-Login to Campus Connect admin panel to review and update application status.
-
-The Campus Connect Team''',
-        from_email=settings.DEFAULT_FROM_EMAIL,
-        recipient_list=[recruiter.email],
-        fail_silently=True,
+    """Notify recruiter that a new student applied to their drive."""
+    _send(
+        subject  = f"New Application – {student.get_full_name() or student.username} applied for {drive.role}",
+        template = "emails/recruiter_new_applicant.html",
+        context  = {'recruiter': recruiter, 'student': student, 'drive': drive},
+        to_email = recruiter.email,
     )
 
 
-def send_interview_email(student, drive, scheduled_at, location, meeting_link, notes):
-    send_mail(
-        subject=f'Interview Scheduled - {drive.company}',
-        message=f'''Dear {student.first_name},
+# ─────────────────────────────────────────
+#  4. WITHDRAWAL CONFIRMATION  (student withdrew)
+# ─────────────────────────────────────────
+def send_withdrawal_email(student, drive):
+    """Confirm to student that their application was withdrawn."""
+    _send(
+        subject  = f"Application Withdrawn – {drive.company}",
+        template = "emails/withdrawal_confirmation.html",
+        context  = {'student': student, 'drive': drive},
+        to_email = student.email,
+    )
 
-Your interview has been scheduled!
 
-Details:
-- Company: {drive.company}
-- Role: {drive.role}
-- Date & Time: {scheduled_at}
-- Location: {location}
-- Meeting Link: {meeting_link if meeting_link else 'Will be shared later'}
+# ─────────────────────────────────────────
+#  5. STATUS UPDATE  (shortlisted / selected / rejected)
+# ─────────────────────────────────────────
+def send_status_update_email(student, drive, status):
+    """
+    Notify student their application status changed.
+    status must be one of: 'shortlisted', 'selected', 'rejected'
+    """
+    subject_map = {
+        'shortlisted': f"🎉 You've been Shortlisted – {drive.company}",
+        'selected'   : f"🏆 Congratulations! You're Selected – {drive.company}",
+        'rejected'   : f"Application Update – {drive.company}",
+    }
+    subject = subject_map.get(status, f"Application Update – {drive.company}")
 
-Notes: {notes if notes else 'No additional notes'}
+    _send(
+        subject  = subject,
+        template = "emails/status_update.html",
+        context  = {'student': student, 'drive': drive, 'status': status},
+        to_email = student.email,
+    )
 
-Please be on time and all the best!
 
-The Campus Connect Team''',
-        from_email=settings.DEFAULT_FROM_EMAIL,
-        recipient_list=[student.email],
-        fail_silently=True,
+# ─────────────────────────────────────────
+#  6. INTERVIEW SCHEDULED
+# ─────────────────────────────────────────
+def send_interview_email(student, drive, scheduled_at, location='', meeting_link='', notes=''):
+    """Notify student their interview has been scheduled."""
+    _send(
+        subject  = f"📅 Interview Scheduled – {drive.company} ({drive.role})",
+        template = "emails/interview_scheduled.html",
+        context  = {
+            'student'      : student,
+            'drive'        : drive,
+            'scheduled_at' : scheduled_at,
+            'location'     : location,
+            'meeting_link' : meeting_link,
+            'notes'        : notes,
+        },
+        to_email = student.email,
+    )
+
+
+# ─────────────────────────────────────────
+#  7. DEADLINE REMINDER  (called by management command)
+# ─────────────────────────────────────────
+def send_deadline_reminder_email(student, drive):
+    """Remind student about a drive deadline 2 days away."""
+    _send(
+        subject  = f"⏰ Deadline Reminder – {drive.company} closes in 2 days!",
+        template = "emails/deadline_reminder.html",
+        context  = {'student': student, 'drive': drive},
+        to_email = student.email,
     )

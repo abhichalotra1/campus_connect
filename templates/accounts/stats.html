@@ -1,233 +1,222 @@
 ﻿{% extends 'base.html' %}
+
 {% block content %}
-<div class="row mt-3">
-    <div class="col-12">
-        <h3><i class="fas fa-chart-bar text-primary me-2"></i>
-            {% if role == 'student' %}My Placement Statistics
-            {% elif role == 'recruiter' %}Recruiter Statistics
-            {% else %}Placement Statistics{% endif %}
-        </h3>
-        <p class="text-muted">
-            {% if role == 'student' %}Your personal application overview
-            {% elif role == 'recruiter' %}Overview of your drives and applicants
-            {% else %}Overview of placement season 2025-26{% endif %}
-        </p>
-    </div>
+<div class="mt-4 mb-4">
+    <h3 style="font-family: var(--font-display); font-weight: 800; letter-spacing: -0.5px;">
+        <i class="fas fa-chart-bar me-2" style="color: var(--primary);"></i>
+        {% if user.role == 'student' %}My Placement Statistics
+        {% elif user.role == 'recruiter' %}Recruitment Analytics
+        {% else %}Platform Overview{% endif %}
+    </h3>
 </div>
 
-<!-- Summary Cards -->
-<div class="row mt-3">
-
-    {% if role == 'student' %}
-    <div class="col-md-3">
-        <div class="card p-3 text-center">
-            <i class="fas fa-briefcase fa-2x text-warning mb-2"></i>
-            <h3>{{ total_drives }}</h3>
-            <p class="text-muted mb-0">Open Drives</p>
+<!-- STAT CARDS (Same as before, compact) -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 28px;">
+    {% if user.role == 'student' %}
+        <div class="card p-3" style="border-radius: var(--radius-lg); border-top: 3px solid var(--primary);">
+            <div style="font-size: 11px; color: var(--ink3); text-transform: uppercase; font-weight: 700; font-family: var(--font-mono);">Applied</div>
+            <div style="font-size: 28px; font-family: var(--font-display); font-weight: 800; color: var(--primary2); margin-top: 4px;">{{ total_applied|default:"0" }}</div>
         </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card p-3 text-center">
-            <i class="fas fa-file-alt fa-2x text-info mb-2"></i>
-            <h3>{{ total_applications }}</h3>
-            <p class="text-muted mb-0">My Applications</p>
+        <div class="card p-3" style="border-radius: var(--radius-lg); border-top: 3px solid var(--yellow);">
+            <div style="font-size: 11px; color: var(--ink3); text-transform: uppercase; font-weight: 700; font-family: var(--font-mono);">Shortlisted</div>
+            <div style="font-size: 28px; font-family: var(--font-display); font-weight: 800; color: var(--yellow); margin-top: 4px;">{{ shortlisted|default:"0" }}</div>
         </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card p-3 text-center">
-            <i class="fas fa-star fa-2x text-warning mb-2"></i>
-            <h3>{{ shortlisted_count }}</h3>
-            <p class="text-muted mb-0">Shortlisted</p>
+        <div class="card p-3" style="border-radius: var(--radius-lg); border-top: 3px solid var(--green);">
+            <div style="font-size: 11px; color: var(--ink3); text-transform: uppercase; font-weight: 700; font-family: var(--font-mono);">Selected</div>
+            <div style="font-size: 28px; font-family: var(--font-display); font-weight: 800; color: var(--green); margin-top: 4px;">{{ selected|default:"0" }}</div>
         </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card p-3 text-center">
-            <i class="fas fa-trophy fa-2x text-success mb-2"></i>
-            <h3>{{ selected_count }}</h3>
-            <p class="text-muted mb-0">Selected</p>
+        <div class="card p-3" style="border-radius: var(--radius-lg); border-top: 3px solid var(--red);">
+            <div style="font-size: 11px; color: var(--ink3); text-transform: uppercase; font-weight: 700; font-family: var(--font-mono);">Rejected</div>
+            <div style="font-size: 28px; font-family: var(--font-display); font-weight: 800; color: var(--red); margin-top: 4px;">{{ rejected|default:"0" }}</div>
         </div>
-    </div>
+    {% elif user.role == 'recruiter' %}
+        <div class="card p-3" style="border-radius: var(--radius-lg); border-top: 3px solid var(--primary);">
+            <div style="font-size: 11px; color: var(--ink3); text-transform: uppercase; font-weight: 700; font-family: var(--font-mono);">Active Drives</div>
+            <div style="font-size: 28px; font-family: var(--font-display); font-weight: 800; color: var(--primary2); margin-top: 4px;">{{ active_drives|default:"0" }}</div>
+        </div>
+        <div class="card p-3" style="border-radius: var(--radius-lg); border-top: 3px solid var(--ink2);">
+            <div style="font-size: 11px; color: var(--ink3); text-transform: uppercase; font-weight: 700; font-family: var(--font-mono);">Total Applicants</div>
+            <div style="font-size: 28px; font-family: var(--font-display); font-weight: 800; color: var(--ink); margin-top: 4px;">{{ total_applicants|default:"0" }}</div>
+        </div>
+        <div class="card p-3" style="border-radius: var(--radius-lg); border-top: 3px solid var(--green);">
+            <div style="font-size: 11px; color: var(--ink3); text-transform: uppercase; font-weight: 700; font-family: var(--font-mono);">Hired</div>
+            <div style="font-size: 28px; font-family: var(--font-display); font-weight: 800; color: var(--green); margin-top: 4px;">{{ selected|default:"0" }}</div>
+        </div>
+    {% elif user.role == 'admin' %}
+        <div class="card p-3" style="border-radius: var(--radius-lg); border-top: 3px solid var(--primary);">
+            <div style="font-size: 11px; color: var(--ink3); text-transform: uppercase; font-weight: 700; font-family: var(--font-mono);">Students</div>
+            <div style="font-size: 28px; font-family: var(--font-display); font-weight: 800; color: var(--primary2); margin-top: 4px;">{{ total_students|default:"0" }}</div>
+        </div>
+        <div class="card p-3" style="border-radius: var(--radius-lg); border-top: 3px solid var(--ink2);">
+            <div style="font-size: 11px; color: var(--ink3); text-transform: uppercase; font-weight: 700; font-family: var(--font-mono);">Recruiters</div>
+            <div style="font-size: 28px; font-family: var(--font-display); font-weight: 800; color: var(--ink); margin-top: 4px;">{{ total_recruiters|default:"0" }}</div>
+        </div>
+        <div class="card p-3" style="border-radius: var(--radius-lg); border-top: 3px solid var(--yellow);">
+            <div style="font-size: 11px; color: var(--ink3); text-transform: uppercase; font-weight: 700; font-family: var(--font-mono);">Total Drives</div>
+            <div style="font-size: 28px; font-family: var(--font-display); font-weight: 800; color: var(--yellow); margin-top: 4px;">{{ total_drives|default:"0" }}</div>
+        </div>
+        <div class="card p-3" style="border-radius: var(--radius-lg); border-top: 3px solid var(--green);">
+            <div style="font-size: 11px; color: var(--ink3); text-transform: uppercase; font-weight: 700; font-family: var(--font-mono);">Placement Rate</div>
+            <div style="font-size: 28px; font-family: var(--font-display); font-weight: 800; color: var(--green); margin-top: 4px;">{{ placement_rate }}%</div>
+        </div>
     {% endif %}
-
-    {% if role == 'recruiter' %}
-    <div class="col-md-3">
-        <div class="card p-3 text-center">
-            <i class="fas fa-briefcase fa-2x text-primary mb-2"></i>
-            <h3>{{ total_drives }}</h3>
-            <p class="text-muted mb-0">My Drives</p>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card p-3 text-center">
-            <i class="fas fa-file-alt fa-2x text-info mb-2"></i>
-            <h3>{{ total_applications }}</h3>
-            <p class="text-muted mb-0">Total Applicants</p>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card p-3 text-center">
-            <i class="fas fa-star fa-2x text-warning mb-2"></i>
-            <h3>{{ shortlisted_count }}</h3>
-            <p class="text-muted mb-0">Shortlisted</p>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card p-3 text-center">
-            <i class="fas fa-trophy fa-2x text-success mb-2"></i>
-            <h3>{{ selected_count }}</h3>
-            <p class="text-muted mb-0">Selected</p>
-        </div>
-    </div>
-    {% endif %}
-
-    {% if role == 'admin' %}
-    <div class="col-md-3">
-        <div class="card p-3 text-center">
-            <i class="fas fa-user-graduate fa-2x text-primary mb-2"></i>
-            <h3>{{ total_students }}</h3>
-            <p class="text-muted mb-0">Total Students</p>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card p-3 text-center">
-            <i class="fas fa-briefcase fa-2x text-warning mb-2"></i>
-            <h3>{{ total_drives }}</h3>
-            <p class="text-muted mb-0">Total Drives</p>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card p-3 text-center">
-            <i class="fas fa-file-alt fa-2x text-info mb-2"></i>
-            <h3>{{ total_applications }}</h3>
-            <p class="text-muted mb-0">Total Applications</p>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card p-3 text-center">
-            <i class="fas fa-trophy fa-2x text-success mb-2"></i>
-            <h3>{{ placement_rate }}%</h3>
-            <p class="text-muted mb-0">Placement Rate</p>
-        </div>
-    </div>
-    {% endif %}
-
 </div>
 
-<!-- Charts Row 1 — all roles get status + monthly -->
-<div class="row mt-4">
-    <div class="col-md-6">
-        <div class="card p-3">
-            <h5><i class="fas fa-chart-pie text-primary me-2"></i>Application Status Breakdown</h5>
-            <hr>
-            <canvas id="statusChart" height="250"></canvas>
-        </div>
-    </div>
-    <div class="col-md-6">
-        <div class="card p-3">
-            <h5><i class="fas fa-chart-line text-info me-2"></i>Monthly Applications</h5>
-            <hr>
-            <canvas id="monthlyChart" height="250"></canvas>
-        </div>
-    </div>
-</div>
-
-<!-- Charts Row 2 — admin and recruiter get extra charts -->
-{% if role == 'admin' or role == 'recruiter' %}
-<div class="row mt-4">
-    <div class="col-md-6">
-        <div class="card p-3">
-            <h5><i class="fas fa-building text-warning me-2"></i>
-                {% if role == 'admin' %}Top Companies by Placements{% else %}Top Roles by Selections{% endif %}
+<!-- CHARTS SECTION -->
+<div class="row">
+    <!-- PIE CHART (Status) -->
+    <div class="col-md-5 mb-4">
+        <div class="card p-4" style="border-radius: var(--radius-lg); height: 100%;">
+            <h5 style="font-family: var(--font-display); font-weight: 700; margin-bottom: 20px;">
+                <i class="fas fa-chart-pie me-2" style="color: var(--primary2);"></i>Application Status
             </h5>
-            <hr>
-            <canvas id="companyChart" height="250"></canvas>
+            <canvas id="statusChart"></canvas>
         </div>
     </div>
-    {% if role == 'admin' %}
-    <div class="col-md-6">
-        <div class="card p-3">
-            <h5><i class="fas fa-chart-bar text-success me-2"></i>Placements by Branch</h5>
-            <hr>
-            <canvas id="branchChart" height="250"></canvas>
+
+    {% if user.role == 'recruiter' %}
+    <!-- BAR CHART (Drive-wise Applicants) -->
+    <div class="col-md-7 mb-4">
+        <div class="card p-4" style="border-radius: var(--radius-lg); height: 100%;">
+            <h5 style="font-family: var(--font-display); font-weight: 700; margin-bottom: 20px;">
+                <i class="fas fa-chart-bar me-2" style="color: var(--yellow);"></i>Applicants per Drive
+            </h5>
+            <canvas id="driveChart"></canvas>
         </div>
     </div>
     {% endif %}
+
+    {% if user.role == 'admin' %}
+    <!-- BAR CHART (Branch-wise Placements) -->
+    <div class="col-md-7 mb-4">
+        <div class="card p-4" style="border-radius: var(--radius-lg); height: 100%;">
+            <h5 style="font-family: var(--font-display); font-weight: 700; margin-bottom: 20px;">
+                <i class="fas fa-graduation-cap me-2" style="color: var(--green);"></i>Branch-wise Placements
+            </h5>
+            <canvas id="branchChart"></canvas>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+{% if user.role == 'admin' %}
+<div class="row">
+    <!-- LINE CHART (Monthly Trend - Admin Only) -->
+    <div class="col-md-12 mb-4">
+        <div class="card p-4" style="border-radius: var(--radius-lg);">
+            <h5 style="font-family: var(--font-display); font-weight: 700; margin-bottom: 20px;">
+                <i class="fas fa-chart-line me-2" style="color: var(--red);"></i>Monthly Application Trend
+            </h5>
+            <canvas id="trendChart"></canvas>
+        </div>
+    </div>
 </div>
 {% endif %}
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-const COLORS = ['#5b6cff','#1ed98a','#f5c842','#ff5470','#a78bfa','#38bdf8','#fb923c','#34d399'];
+{% endblock %}
 
-new Chart(document.getElementById('statusChart'), {
+{% block extra_js %}
+<!-- Include Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+<script>
+// Global Chart Settings for Dark Mode
+Chart.defaults.color = '#8b92b8';
+Chart.defaults.borderColor = 'rgba(255,255,255,0.07)';
+
+// --- STATUS PIE CHART ---
+const statusCtx = document.getElementById('statusChart').getContext('2d');
+new Chart(statusCtx, {
     type: 'doughnut',
     data: {
         labels: {{ status_labels|safe }},
-        datasets: [{ data: {{ status_counts|safe }}, backgroundColor: COLORS }]
-    },
-    options: { plugins: { legend: { labels: { color: '#9298b8' } } } }
-});
-
-new Chart(document.getElementById('monthlyChart'), {
-    type: 'line',
-    data: {
-        labels: {{ monthly_labels|safe }},
         datasets: [{
-            label: 'Applications',
-            data: {{ monthly_counts|safe }},
-            borderColor: '#f5c842',
-            backgroundColor: 'rgba(245,200,66,0.1)',
-            tension: 0.4, fill: true
+            data: {{ status_data|safe }},
+            backgroundColor: [
+                'rgba(79, 70, 229, 0.8)',  // Applied - Primary
+                'rgba(245, 200, 66, 0.8)', // Shortlisted - Yellow
+                'rgba(34, 211, 160, 0.8)',  // Selected - Green
+                'rgba(244, 63, 94, 0.8)'   // Rejected - Red
+            ],
+            borderWidth: 0
         }]
     },
     options: {
-        plugins: { legend: { labels: { color: '#9298b8' } } },
-        scales: {
-            x: { ticks: { color: '#9298b8' }, grid: { color: 'rgba(255,255,255,0.05)' } },
-            y: { ticks: { color: '#9298b8' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+        responsive: true,
+        plugins: {
+            legend: { position: 'bottom', labels: { padding: 20, font: { family: "'Plus Jakarta Sans', sans-serif" } } }
         }
     }
 });
 
-{% if role == 'admin' or role == 'recruiter' %}
-new Chart(document.getElementById('companyChart'), {
+{% if user.role == 'recruiter' %}
+// --- DRIVE BAR CHART ---
+const driveCtx = document.getElementById('driveChart').getContext('2d');
+new Chart(driveCtx, {
     type: 'bar',
     data: {
-        labels: {{ company_labels|safe }},
+        labels: {{ drive_labels|safe }},
         datasets: [{
-            label: 'Students Placed',
-            data: {{ company_counts|safe }},
-            backgroundColor: '#1ed98a'
+            label: 'Applicants',
+            data: {{ drive_data|safe }},
+            backgroundColor: 'rgba(79, 70, 229, 0.6)',
+            borderColor: 'rgba(79, 70, 229, 1)',
+            borderWidth: 1,
+            borderRadius: 6
         }]
     },
     options: {
-        indexAxis: 'y',
-        plugins: { legend: { labels: { color: '#9298b8' } } },
-        scales: {
-            x: { ticks: { color: '#9298b8' }, grid: { color: 'rgba(255,255,255,0.05)' } },
-            y: { ticks: { color: '#9298b8' }, grid: { color: 'rgba(255,255,255,0.05)' } }
-        }
+        responsive: true,
+        scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
+        plugins: { legend: { display: false } }
     }
 });
 {% endif %}
 
-{% if role == 'admin' %}
-new Chart(document.getElementById('branchChart'), {
+{% if user.role == 'admin' %}
+// --- BRANCH BAR CHART ---
+const branchCtx = document.getElementById('branchChart').getContext('2d');
+new Chart(branchCtx, {
     type: 'bar',
     data: {
         labels: {{ branch_labels|safe }},
         datasets: [{
             label: 'Students Placed',
-            data: {{ branch_counts|safe }},
-            backgroundColor: '#5b6cff'
+            data: {{ branch_data|safe }},
+            backgroundColor: 'rgba(34, 211, 160, 0.6)',
+            borderColor: 'rgba(34, 211, 160, 1)',
+            borderWidth: 1,
+            borderRadius: 6
         }]
     },
     options: {
-        plugins: { legend: { labels: { color: '#9298b8' } } },
-        scales: {
-            x: { ticks: { color: '#9298b8' }, grid: { color: 'rgba(255,255,255,0.05)' } },
-            y: { ticks: { color: '#9298b8' }, grid: { color: 'rgba(255,255,255,0.05)' } }
-        }
+        responsive: true,
+        scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
+        plugins: { legend: { display: false } }
+    }
+});
+
+// --- MONTHLY TREND LINE CHART ---
+const trendCtx = document.getElementById('trendChart').getContext('2d');
+new Chart(trendCtx, {
+    type: 'line',
+    data: {
+        labels: {{ monthly_labels|safe }},
+        datasets: [{
+            label: 'Applications',
+            data: {{ monthly_data|safe }},
+            borderColor: 'rgba(79, 70, 229, 1)',
+            backgroundColor: 'rgba(79, 70, 229, 0.1)',
+            fill: true,
+            tension: 0.4, // Makes the line smooth/curved
+            pointBackgroundColor: 'rgba(79, 70, 229, 1)',
+            pointRadius: 4
+        }]
+    },
+    options: {
+        responsive: true,
+        scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
+        plugins: { legend: { display: false } }
     }
 });
 {% endif %}

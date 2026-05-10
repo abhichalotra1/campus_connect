@@ -108,6 +108,8 @@ code, pre, .mono { font-family: var(--font-mono); }
   transition: all 0.15s; white-space: nowrap;
 }
 .nav-links a:hover { color: var(--ink); background: var(--border); }
+/* Active Nav State */
+.nav-links a.active-nav { color: var(--primary2); background: var(--p-soft); font-weight: 700; }
 
 .nav-right {
   display: flex; align-items: center; gap: 8px;
@@ -238,7 +240,7 @@ main.cc-main {
 <body>
 
 <nav class="cc-nav" id="ccNav">
-  <a class="nav-logo" href="/">
+  <a class="nav-logo" href="{% url 'landing' %}">
     <div class="logo-icon"><i class="fa-solid fa-graduation-cap"></i></div>
     Campus Connect
   </a>
@@ -247,39 +249,46 @@ main.cc-main {
 
   {% if user.is_authenticated %}
     <ul class="nav-links">
-      <li><a href="/placements/">Drives</a></li>
+      <li><a href="{% url 'drive_list' %}" class="{% if request.resolver_match.url_name == 'drive_list' %}active-nav{% endif %}">Drives</a></li>
+      
       {% if user.role == 'student' %}
-        <li><a href="/placements/my-applications/">My Applications</a></li>
-        <li><a href="/placements/my-interviews/">Interviews</a></li>
+        <li><a href="{% url 'my_applications' %}" class="{% if request.resolver_match.url_name == 'my_applications' %}active-nav{% endif %}">My Applications</a></li>
+        <li><a href="{% url 'my_interviews' %}" class="{% if request.resolver_match.url_name == 'my_interviews' %}active-nav{% endif %}">Interviews</a></li>
       {% endif %}
+      
       {% if user.role == 'recruiter' %}
-        <li><a href="/placements/post-drive/">Post Drive</a></li>
-        <li><a href="/placements/my-applicants/">Applicants</a></li>
+        <li><a href="{% url 'recruiter_dashboard' %}" class="{% if request.resolver_match.url_name == 'recruiter_dashboard' %}active-nav{% endif %}">Recruiter Hub</a></li>
+        <li><a href="{% url 'post_drive' %}" class="{% if request.resolver_match.url_name == 'post_drive' %}active-nav{% endif %}">Post Drive</a></li>
+        <li><a href="{% url 'recruiter_applicants' %}" class="{% if request.resolver_match.url_name == 'recruiter_applicants' %}active-nav{% endif %}">Applicants</a></li>
       {% endif %}
+      
       {% if user.role == 'admin' %}
-        <li><a href="/accounts/admin-dashboard/">Admin</a></li>
-        <li><a href="/placements/post-drive/">Post Drive</a></li>
-        <li><a href="/placements/my-applicants/">Applicants</a></li>
+        <li><a href="{% url 'admin_dashboard' %}" class="{% if request.resolver_match.url_name == 'admin_dashboard' %}active-nav{% endif %}">Admin</a></li>
+        <li><a href="{% url 'post_drive' %}" class="{% if request.resolver_match.url_name == 'post_drive' %}active-nav{% endif %}">Post Drive</a></li>
+        <li><a href="{% url 'recruiter_applicants' %}" class="{% if request.resolver_match.url_name == 'recruiter_applicants' %}active-nav{% endif %}">Applicants</a></li>
       {% endif %}
+      
       <li>
-        <a href="/notifications/">
+        <a href="{% url 'notifications' %}" class="{% if request.resolver_match.url_name == 'notifications' %}active-nav{% endif %}">
           <i class="fas fa-bell"></i> Notifications
           {% if unread_count %}<span class="notif-badge">{{ unread_count }}</span>{% endif %}
         </a>
       </li>
-      <li><a href="/accounts/stats/">Statistics</a></li>
+      <li><a href="{% url 'stats' %}" class="{% if request.resolver_match.url_name == 'stats' %}active-nav{% endif %}">Statistics</a></li>
     </ul>
     <ul class="nav-right">
       <li><button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme"><i class="fa-solid fa-moon" id="themeIcon"></i></button></li>
-      <li><a class="nav-user" href="/students/profile/"><i class="fas fa-user"></i> {{ user.username }}</a></li>
-      <li><a class="nav-user" href="/accounts/logout/"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+      <li><a class="nav-user" href="{% url 'profile' %}"><i class="fas fa-user"></i> {{ user.username }}</a></li>
+      <li><a class="nav-user" href="{% url 'edit_profile' %}"><i class="fa-solid fa-pen"></i> Edit Profile</a></li>
+      <li><a class="nav-user" href="{% url 'password_change' %}"><i class="fa-solid fa-key"></i> Change Password</a></li>
+      <li><a class="nav-user" href="{% url 'logout' %}"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
     </ul>
   {% else %}
     <ul class="nav-links"></ul>
     <ul class="nav-right">
       <li><button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme"><i class="fa-solid fa-moon" id="themeIcon"></i></button></li>
-      <li><a class="nav-signin" href="/accounts/login/">Sign In</a></li>
-      <li><a class="nav-cta" href="/accounts/register/">Get Started →</a></li>
+      <li><a class="nav-signin" href="{% url 'login' %}">Sign In</a></li>
+      <li><a class="nav-cta" href="{% url 'register' %}">Get Started →</a></li>
     </ul>
   {% endif %}
 </nav>
@@ -301,7 +310,7 @@ main.cc-main {
 </main>
 
 <footer class="cc-footer">
-  &copy; 2026 Campus Connect &bull; Built with <i class="fa-brands fa-python" style="color:var(--primary2);"></i> Django
+  &copy; {% now "Y" %} Campus Connect &bull; Built with <i class="fa-brands fa-python" style="color:var(--primary2);"></i> Django
 </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
@@ -327,6 +336,27 @@ function _setIcon(t) {
 // ── MOBILE NAV ──
 function toggleNav() {
   document.getElementById('ccNav').classList.toggle('nav-collapse-open');
+}
+
+// ── GLOBAL LOADING STATE FOR FORMS ──
+function submitWithLoading(button, loadingText) {
+  const form = button.closest('form');
+  if (!form) return;
+
+  // Disable the button so it can't be clicked again
+  button.disabled = true;
+  
+  // Change the text to show it's loading
+  const originalText = button.innerHTML;
+  button.innerHTML = `<i class="fas fa-circle-notch fa-spin me-1"></i> ${loadingText || 'Processing...'}`;
+  
+  // Add a class to visually grey it out slightly
+  button.style.opacity = '0.7';
+
+  // Submit the form after a tiny 50ms delay so the UI updates first
+  setTimeout(() => {
+    form.submit();
+  }, 50);
 }
 </script>
 {% block extra_js %}{% endblock %}

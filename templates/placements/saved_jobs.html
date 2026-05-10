@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% block title %}Saved Jobs – Campus Connect{% endblock %}
+
+{% block content %}
+<div style="display:flex;align-items:center;gap:10px;margin-bottom:1.75rem;">
+  <i class="fas fa-bookmark" style="color:var(--primary2);font-size:22px;"></i>
+  <h1 style="font-family:var(--font-display);font-size:26px;font-weight:800;color:var(--ink);margin:0;">Saved Jobs</h1>
+</div>
+
+{% if bookmarks %}
+<div style="display:grid;gap:16px;">
+  {% for bookmark in bookmarks %}
+  <div style="background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:1.5rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;">
+    
+    <!-- Job Info -->
+    <div style="display:flex;align-items:center;gap:16px;">
+      {% if bookmark.drive.company_logo %}
+      <img src="{{ bookmark.drive.company_logo.url }}" alt="{{ bookmark.drive.company }}" style="width:50px;height:50px;border-radius:10px;object-fit:cover;">
+      {% else %}
+      <div style="width:50px;height:50px;border-radius:10px;background:var(--bg2);display:flex;align-items:center;justify-content:center;color:var(--ink3);font-size:20px;">
+        <i class="fas fa-building"></i>
+      </div>
+      {% endif %}
+      <div>
+        <a href="{% url 'drive_detail' bookmark.drive.pk %}" style="font-family:var(--font-display);font-size:17px;font-weight:700;color:var(--ink);text-decoration:none;">{{ bookmark.drive.role }}</a>
+        <div style="font-size:14px;color:var(--ink2);margin-top:2px;">{{ bookmark.drive.company }} &bull; {{ bookmark.drive.location }}</div>
+        <div style="display:flex;gap:8px;margin-top:6px;">
+          <span style="font-size:12px;background:var(--green-soft);color:var(--green);padding:3px 10px;border-radius:20px;font-weight:600;">{{ bookmark.drive.formatted_salary }}</span>
+          <span style="font-size:12px;background:var(--surface2);color:var(--ink2);padding:3px 10px;border-radius:20px;">{{ bookmark.drive.get_job_type_display }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end;">
+      {% if bookmark.drive.id in applied_ids %}
+        <span style="font-size:13px;font-weight:600;color:var(--green);background:var(--green-soft);padding:6px 14px;border-radius:8px;">
+          <i class="fas fa-check me-1"></i>Applied
+        </span>
+      {% else %}
+        <a href="{% url 'apply' bookmark.drive.pk %}" style="font-size:13px;font-weight:700;color:#fff;text-decoration:none;padding:7px 16px;border-radius:8px;background:var(--primary);">
+          Apply Now
+        </a>
+      {% endif %}
+      
+      <form method="POST" action="{% url 'unsave_drive' bookmark.drive.pk %}">
+        {% csrf_token %}
+        <button type="submit" onclick="submitWithLoading(this,'Removing...')" style="font-size:12px;font-weight:600;color:var(--red);background:var(--red-soft);border:1px solid rgba(244,63,94,0.3);padding:5px 12px;border-radius:7px;cursor:pointer;width:100%;">
+          <i class="fas fa-trash me-1"></i>Remove
+        </button>
+      </form>
+    </div>
+
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div style="background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:3rem;text-align:center;">
+  <i class="far fa-bookmark" style="font-size:40px;color:var(--ink3);margin-bottom:16px;display:block;"></i>
+  <h3 style="font-family:var(--font-display);font-weight:700;color:var(--ink);margin-bottom:8px;">No Saved Jobs Yet</h3>
+  <p style="color:var(--ink2);font-size:14px;margin-bottom:20px;">When you find a drive you like, click the bookmark icon to save it here for later.</p>
+  <a href="{% url 'drive_list' %}" style="font-size:13px;font-weight:700;color:#fff;text-decoration:none;padding:9px 18px;border-radius:9px;background:var(--primary);">Browse Drives</a>
+</div>
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+{% block title %}Verification Status – Campus Connect{% endblock %}
+
+{% block content %}
+<div style="max-width:580px; margin:0 auto; padding:2rem 0;">
+
+  {% if profile.verification_status == 'approved' %}
+  <!-- APPROVED -->
+  <div style="background:var(--surface); border:1px solid var(--border2); border-radius:var(--radius-lg); padding:2.5rem 2rem; text-align:center;">
+    <div style="width:64px;height:64px;border-radius:50%;background:var(--green-soft);border:2px solid var(--green);display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem;">
+      <i class="fas fa-check" style="color:var(--green);font-size:24px;"></i>
+    </div>
+    <h2 style="font-family:var(--font-display);font-size:22px;font-weight:800;color:var(--ink);margin-bottom:8px;">You're Verified!</h2>
+    <p style="color:var(--ink2);font-size:15px;line-height:1.6;margin-bottom:1.5rem;">Your recruiter account is verified. You can now post placement drives and access all recruiter features.</p>
+    <a href="{% url 'recruiter_dashboard' %}" class="btn btn-primary px-4 py-2" style="border-radius:10px;font-weight:700;">Go to Dashboard →</a>
+  </div>
+
+  {% elif profile.verification_status == 'pending' %}
+  <!-- PENDING -->
+  <div style="background:var(--surface); border:1px solid var(--border2); border-radius:var(--radius-lg); padding:2.5rem 2rem; text-align:center;">
+    <div style="width:64px;height:64px;border-radius:50%;background:var(--p-soft);border:2px solid var(--primary);display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem;">
+      <i class="fas fa-hourglass-half" style="color:var(--primary2);font-size:22px;"></i>
+    </div>
+    <h2 style="font-family:var(--font-display);font-size:22px;font-weight:800;color:var(--ink);margin-bottom:8px;">Request Under Review</h2>
+    <p style="color:var(--ink2);font-size:15px;line-height:1.6;margin-bottom:0.5rem;">Your verification request has been submitted. Our admin team will review it shortly.</p>
+    <p style="color:var(--ink3);font-size:13px;margin-bottom:1.75rem;">Submitted on {{ profile.verification_requested_at|date:"d M Y, h:i A" }}</p>
+
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem 1.5rem;text-align:left;margin-bottom:1.5rem;">
+      <p style="font-size:13px;color:var(--ink3);font-weight:600;margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">Submitted Details</p>
+      <div style="display:grid;gap:8px;">
+        <div style="display:flex;justify-content:space-between;font-size:14px;">
+          <span style="color:var(--ink2);">Company</span>
+          <span style="color:var(--ink);font-weight:600;">{{ profile.company_name|default:"—" }}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:14px;">
+          <span style="color:var(--ink2);">Designation</span>
+          <span style="color:var(--ink);font-weight:600;">{{ profile.designation|default:"—" }}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:14px;">
+          <span style="color:var(--ink2);">Industry</span>
+          <span style="color:var(--ink);font-weight:600;">{{ profile.industry|default:"—" }}</span>
+        </div>
+      </div>
+    </div>
+
+    <p style="color:var(--ink3);font-size:13px;">We'll notify you via email and notification once reviewed.</p>
+  </div>
+
+  {% elif profile.verification_status == 'rejected' %}
+  <!-- REJECTED -->
+  <div style="background:var(--surface); border:1px solid var(--border2); border-radius:var(--radius-lg); padding:2.5rem 2rem; text-align:center;">
+    <div style="width:64px;height:64px;border-radius:50%;background:var(--red-soft);border:2px solid var(--red);display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem;">
+      <i class="fas fa-times" style="color:var(--red);font-size:24px;"></i>
+    </div>
+    <h2 style="font-family:var(--font-display);font-size:22px;font-weight:800;color:var(--ink);margin-bottom:8px;">Verification Not Approved</h2>
+    <p style="color:var(--ink2);font-size:15px;line-height:1.6;margin-bottom:1rem;">Your verification request was reviewed but could not be approved at this time.</p>
+
+    {% if profile.admin_remark %}
+    <div style="background:var(--red-soft);border:1px solid rgba(244,63,94,0.25);border-radius:var(--radius);padding:1rem 1.25rem;text-align:left;margin-bottom:1.5rem;">
+      <p style="font-size:13px;font-weight:700;color:var(--red);margin-bottom:4px;">Admin Remark</p>
+      <p style="font-size:14px;color:var(--ink2);margin:0;">{{ profile.admin_remark }}</p>
+    </div>
+    {% endif %}
+
+    <p style="color:var(--ink3);font-size:13px;margin-bottom:1.5rem;">You may update your details and re-submit a request.</p>
+    <a href="{% url 'request_verification' %}" class="btn btn-primary px-4 py-2" style="border-radius:10px;font-weight:700;">Re-apply for Verification</a>
+  </div>
+
+  {% else %}
+  <!-- NOT REQUESTED -->
+  <div style="background:var(--surface); border:1px solid var(--border2); border-radius:var(--radius-lg); padding:2.5rem 2rem; text-align:center;">
+    <div style="width:64px;height:64px;border-radius:50%;background:var(--p-soft);border:2px solid var(--primary);display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem;">
+      <i class="fas fa-shield-alt" style="color:var(--primary2);font-size:22px;"></i>
+    </div>
+    <h2 style="font-family:var(--font-display);font-size:22px;font-weight:800;color:var(--ink);margin-bottom:8px;">Get Verified as a Recruiter</h2>
+    <p style="color:var(--ink2);font-size:15px;line-height:1.6;margin-bottom:1.75rem;">Verified recruiters can post placement drives, view student profiles, and manage applications. Submit your details to get started.</p>
+
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:2rem;">
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:1rem 0.75rem;">
+        <i class="fas fa-briefcase" style="color:var(--primary2);font-size:20px;margin-bottom:8px;display:block;"></i>
+        <p style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:2px;">Post Drives</p>
+        <p style="font-size:12px;color:var(--ink3);margin:0;">Reach top students</p>
+      </div>
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:1rem 0.75rem;">
+        <i class="fas fa-users" style="color:var(--green);font-size:20px;margin-bottom:8px;display:block;"></i>
+        <p style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:2px;">View Profiles</p>
+        <p style="font-size:12px;color:var(--ink3);margin:0;">Search by skill & CGPA</p>
+      </div>
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:1rem 0.75rem;">
+        <i class="fas fa-calendar-check" style="color:var(--primary2);font-size:20px;margin-bottom:8px;display:block;"></i>
+        <p style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:2px;">Schedule Interviews</p>
+        <p style="font-size:12px;color:var(--ink3);margin:0;">Manage hiring pipeline</p>
+      </div>
+    </div>
+
+    <a href="{% url 'request_verification' %}" class="btn btn-primary px-4 py-2" style="border-radius:10px;font-weight:700;font-size:15px;">Apply for Verification →</a>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

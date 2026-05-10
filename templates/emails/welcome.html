@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Welcome to Campus Connect</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #f0f2ff; font-family: 'Segoe UI', Arial, sans-serif; }
+  .wrapper { max-width: 600px; margin: 40px auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 24px rgba(79,70,229,0.10); }
+  .header { background: linear-gradient(135deg, #4f46e5 0%, #6c63ff 100%); padding: 40px 32px; text-align: center; }
+  .logo { display: inline-flex; align-items: center; gap: 10px; }
+  .logo-icon { width: 40px; height: 40px; background: rgba(255,255,255,0.2); border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; font-size: 20px; }
+  .logo-text { color: #fff; font-size: 20px; font-weight: 800; letter-spacing: -0.3px; }
+  .header h1 { color: #fff; font-size: 28px; font-weight: 800; margin-top: 20px; }
+  .header p { color: rgba(255,255,255,0.85); margin-top: 8px; font-size: 15px; }
+  .body { padding: 36px 32px; }
+  .greeting { font-size: 18px; font-weight: 700; color: #1a1d2a; margin-bottom: 12px; }
+  .text { color: #4a5080; font-size: 15px; line-height: 1.7; margin-bottom: 16px; }
+  .features { background: #f8f9ff; border-radius: 12px; padding: 24px; margin: 24px 0; }
+  .features h3 { color: #1a1d2a; font-size: 15px; font-weight: 700; margin-bottom: 16px; }
+  .feature-item { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 12px; }
+  .feature-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+  .feature-text { font-size: 14px; color: #4a5080; line-height: 1.5; }
+  .feature-text strong { color: #1a1d2a; display: block; font-size: 14px; }
+  .cta-btn { display: block; width: fit-content; margin: 28px auto 0; background: linear-gradient(135deg, #4f46e5, #6c63ff); color: #fff !important; text-decoration: none; padding: 14px 36px; border-radius: 10px; font-size: 15px; font-weight: 700; text-align: center; }
+  .footer { background: #f8f9ff; padding: 24px 32px; text-align: center; border-top: 1px solid #e8ecf5; }
+  .footer p { color: #9298b8; font-size: 13px; line-height: 1.6; }
+</style>
+</head>
+<body>
+<div class="wrapper">
+  <div class="header">
+    <div class="logo">
+      <div class="logo-icon">🎓</div>
+      <span class="logo-text">Campus Connect</span>
+    </div>
+    <h1>Welcome aboard! 🎉</h1>
+    <p>Your placement journey starts here</p>
+  </div>
+
+  <div class="body">
+    <p class="greeting">Hi {{ user.first_name|default:user.username }},</p>
+    <p class="text">
+      We're thrilled to have you on <strong>Campus Connect</strong> — your one-stop platform for placement drives, interviews, and career opportunities.
+    </p>
+    <p class="text">Your account is all set and ready to go. Here's what you can do:</p>
+
+    <div class="features">
+      <h3>🚀 Get Started</h3>
+      <div class="feature-item">
+        <div class="feature-icon" style="background:#eef0ff;">📋</div>
+        <div class="feature-text">
+          <strong>Browse Placement Drives</strong>
+          Explore active job openings and internships from top companies.
+        </div>
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon" style="background:#e6faf4;">👤</div>
+        <div class="feature-text">
+          <strong>Complete Your Profile</strong>
+          Add your CGPA, skills, resume and LinkedIn to stand out to recruiters.
+        </div>
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon" style="background:#fff4e6;">🔔</div>
+        <div class="feature-text">
+          <strong>Stay Updated</strong>
+          Get notified about application status, interviews, and deadlines.
+        </div>
+      </div>
+    </div>
+
+    <a href="http://127.0.0.1:8000/drives/" class="cta-btn">View Placement Drives →</a>
+
+    <p class="text" style="margin-top: 28px; font-size: 14px; color: #9298b8;">
+      If you have any questions, just reply to this email — we're always happy to help.
+    </p>
+  </div>
+
+  <div class="footer">
+    <p>© Campus Connect &bull; This email was sent because you registered on our platform.<br>
+    Please do not reply directly to this email.</p>
+  </div>
+</div>
+</body>
+</html>

@@ -8,17 +8,34 @@ from django.views.generic import RedirectView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    # App URLs
+    
+    # Our Custom Accounts App (Login, Register, Dashboard, Stats, etc.)
     path('accounts/', include('accounts.urls')),
+    
+    # Django Allauth (Google/GitHub OAuth)
+    # This MUST come after our custom accounts urls so our register page takes priority
     path('auth/', include('allauth.urls')),
+    
+    # Redirect Allauth's default /accounts/signup/ to our beautiful custom /accounts/register/
+    path('accounts/signup/', RedirectView.as_view(url='/accounts/register/', permanent=True)),
+
+    # Students App
     path('students/', include('students.urls')),
+    
+    # Placements App
     path('placements/', include('placements.urls')),
+    
+    # Notifications App
     path('notifications/', include('notifications.urls')),
 
-    # Password Reset
+    # Password Reset (Using Django's built-in views with our custom templates)
+    path('password-change/', auth_views.PasswordChangeView.as_view(template_name='accounts/password_change.html'), name='password_change'),
+    path('password-change/done/', auth_views.PasswordChangeDoneView.as_view(template_name='accounts/password_change_done.html'), name='password_change_done'),
     path('password-reset/',
          auth_views.PasswordResetView.as_view(
-             template_name='accounts/password_reset.html'
+             template_name='accounts/password_reset.html', # FIXED
+             email_template_name='accounts/password_reset_email.html',
+             subject_template_name='accounts/password_reset_subject.txt',   
          ),
          name='password_reset'),
 

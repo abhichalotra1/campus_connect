@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+{% block title %}Request Verification – Campus Connect{% endblock %}
+
+{% block content %}
+<div style="max-width:580px; margin:0 auto; padding:2rem 0;">
+
+  <!-- Header -->
+  <div style="margin-bottom:1.75rem;">
+    <a href="{% url 'verification_status' %}" style="font-size:13px;color:var(--ink3);text-decoration:none;display:inline-flex;align-items:center;gap:6px;margin-bottom:1rem;">
+      <i class="fas fa-arrow-left"></i> Back
+    </a>
+    <h1 style="font-family:var(--font-display);font-size:26px;font-weight:800;color:var(--ink);margin-bottom:6px;">Recruiter Verification</h1>
+    <p style="color:var(--ink2);font-size:15px;margin:0;">Fill in your company details. Our admin team will review and respond within 24–48 hours.</p>
+  </div>
+
+  <!-- Form Card -->
+  <div style="background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:2rem;">
+    <form method="POST">
+      {% csrf_token %}
+
+      <!-- Company Name -->
+      <div class="mb-3">
+        <label class="form-label">Company Name <span style="color:var(--red);">*</span></label>
+        <input type="text" name="company_name" class="form-control"
+               placeholder="e.g. Infosys, TCS, Google India"
+               value="{{ profile.company_name }}" required>
+      </div>
+
+      <!-- Designation -->
+      <div class="mb-3">
+        <label class="form-label">Your Designation <span style="color:var(--red);">*</span></label>
+        <input type="text" name="designation" class="form-control"
+               placeholder="e.g. HR Manager, Talent Acquisition Lead"
+               value="{{ profile.designation }}" required>
+      </div>
+
+      <!-- Industry -->
+      <div class="mb-3">
+        <label class="form-label">Industry <span style="color:var(--red);">*</span></label>
+        <select name="industry" class="form-select" required>
+          <option value="">— Select Industry —</option>
+          {% for val, label in profile.INDUSTRY_CHOICES %}
+          <option value="{{ val }}" {% if profile.industry == val %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Company Website -->
+      <div class="mb-3">
+        <label class="form-label">Company Website</label>
+        <input type="url" name="company_website" class="form-control"
+               placeholder="https://yourcompany.com"
+               value="{{ profile.company_website }}">
+      </div>
+
+      <!-- Note to Admin -->
+      <div class="mb-4">
+        <label class="form-label">Note to Admin</label>
+        <textarea name="verification_note" class="form-control" rows="3"
+                  placeholder="Briefly describe your company and hiring intent...">{{ profile.verification_note }}</textarea>
+        <div style="font-size:12px;color:var(--ink3);margin-top:5px;">Optional — helps admin verify faster.</div>
+      </div>
+
+      <!-- Info box -->
+      <div style="background:var(--p-soft);border:1px solid rgba(79,70,229,0.2);border-radius:var(--radius);padding:12px 16px;margin-bottom:1.5rem;display:flex;gap:12px;align-items:flex-start;">
+        <i class="fas fa-circle-info" style="color:var(--primary2);margin-top:2px;flex-shrink:0;"></i>
+        <p style="font-size:13px;color:var(--ink2);margin:0;line-height:1.6;">Once approved, you'll receive a notification and can immediately start posting placement drives.</p>
+      </div>
+
+      <button type="submit"
+              onclick="submitWithLoading(this, 'Submitting...')"
+              class="btn btn-primary w-100 py-2"
+              style="border-radius:10px;font-size:15px;font-weight:700;">
+        Submit Verification Request
+      </button>
+    </form>
+  </div>
+
+</div>
+{% endblock %}

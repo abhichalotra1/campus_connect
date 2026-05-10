@@ -1,78 +1,112 @@
 ﻿{% extends 'base.html' %}
+{% load placement_tags %}
+
 {% block content %}
-<div class="row justify-content-center mt-3">
-    <div class="col-md-8">
-        <div class="card p-4">
-            <h3 class="mb-4"><i class="fas fa-user-edit text-primary me-2"></i>Edit Profile</h3>
-            <form method="POST" enctype="multipart/form-data">
-                {% csrf_token %}
-                <h5 class="text-muted mb-3">Academic Details</h5>
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">Branch</label>
-                        <select name="branch" class="form-select">
-                            <option value="CSE" {% if profile.branch == 'CSE' %}selected{% endif %}>Computer Science</option>
-                            <option value="ECE" {% if profile.branch == 'ECE' %}selected{% endif %}>Electronics & Communication</option>
-                            <option value="ME"  {% if profile.branch == 'ME'  %}selected{% endif %}>Mechanical Engineering</option>
-                            <option value="CE"  {% if profile.branch == 'CE'  %}selected{% endif %}>Civil Engineering</option>
-                            <option value="EE"  {% if profile.branch == 'EE'  %}selected{% endif %}>Electrical Engineering</option>
-                            <option value="IT"  {% if profile.branch == 'IT'  %}selected{% endif %}>Information Technology</option>
-                        </select>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">CGPA</label>
-                        <input type="number" name="cgpa" step="0.01" max="10" class="form-control" value="{{ profile.cgpa|default:'' }}">
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">Roll Number</label>
-                        <input type="text" name="roll_number" class="form-control" value="{{ profile.roll_number|default:'' }}">
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">Passing Year</label>
-                        <input type="number" name="passing_year" class="form-control" value="{{ profile.passing_year|default:'2025' }}">
-                    </div>
-                </div>
-                <h5 class="text-muted mb-3 mt-2">Skills & About</h5>
-                <div class="mb-3">
-                    <label class="form-label">Skills <small class="text-muted">(comma separated)</small></label>
-                    <input type="text" name="skills" class="form-control" placeholder="Python, Django, SQL..." value="{{ profile.skills|default:'' }}">
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Certifications</label>
-                    <input type="text" name="certifications" class="form-control" value="{{ profile.certifications|default:'' }}">
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">About Me</label>
-                    <textarea name="about" class="form-control" rows="3" placeholder="Tell us about yourself...">{{ profile.about|default:'' }}</textarea>
-                </div>
-                <h5 class="text-muted mb-3 mt-2">Links & Documents</h5>
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">LinkedIn URL</label>
-                        <input type="url" name="linkedin" class="form-control" value="{{ profile.linkedin|default:'' }}">
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">GitHub URL</label>
-                        <input type="url" name="github" class="form-control" value="{{ profile.github|default:'' }}">
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">Resume (PDF)</label>
-                        <input type="file" name="resume" class="form-control" accept=".pdf">
-                        {% if profile.resume %}<small class="text-success">Resume uploaded</small>{% endif %}
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">Profile Picture</label>
-                        <input type="file" name="profile_pic" class="form-control" accept="image/*">
-                        {% if profile.profile_pic %}<small class="text-success">Picture uploaded</small>{% endif %}
-                    </div>
-                </div>
-                <button type="submit" class="btn btn-primary w-100"><i class="fas fa-save me-2"></i>Save Profile</button>
-            </form>
+<div class="row justify-content-center mt-4">
+    <div class="col-md-10">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h3 style="font-family: var(--font-display); font-weight: 800; margin: 0;">
+                <i class="fas fa-pen me-2" style="color: var(--primary2);"></i>Edit Profile
+            </h3>
+            <a href="{% url 'profile' %}" style="font-size: 13px; color: var(--ink3); text-decoration: none; font-weight: 600;"><i class="fas fa-arrow-left me-1"></i> Back to Profile</a>
         </div>
+
+        <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            
+            <div class="row">
+                <!-- Left Column: Personal & Academic -->
+                <div class="col-md-6 mb-4">
+                    <div class="card p-4" style="border-radius: var(--radius-lg);">
+                        <h5 style="font-family: var(--font-display); font-weight: 700; margin-bottom: 20px; color: var(--primary2);">Personal & Academic</h5>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">First Name</label>
+                            <input type="text" name="first_name" class="form-control" value="{{ user.first_name }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Last Name</label>
+                            <input type="text" name="last_name" class="form-control" value="{{ user.last_name }}">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Phone Number</label>
+                            <input type="text" name="phone" class="form-control" value="{{ user.phone }}">
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Branch</label>
+                                <select name="branch" class="form-select">
+                                    {% for value, label in branch_choices %}
+                                        <option value="{{ value }}" {% if profile.branch == value %}selected{% endif %}>{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">CGPA</label>
+                                <input type="number" step="0.1" name="cgpa" class="form-control" value="{{ profile.cgpa }}" required>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Roll Number</label>
+                                <input type="text" name="roll_number" class="form-control" value="{{ profile.roll_number }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Passing Year</label>
+                                <input type="number" name="passing_year" class="form-control" value="{{ profile.passing_year }}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column: Skills & Links -->
+                <div class="col-md-6 mb-4">
+                    <div class="card p-4 mb-4" style="border-radius: var(--radius-lg);">
+                        <h5 style="font-family: var(--font-display); font-weight: 700; margin-bottom: 20px; color: var(--yellow);">Skills & Links</h5>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Skills (comma separated)</label>
+                            <input type="text" name="skills" class="form-control" value="{{ profile.skills }}" placeholder="e.g., Python, Django, SQL">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">LinkedIn URL</label>
+                            <input type="url" name="linkedin" class="form-control" value="{{ profile.linkedin }}" placeholder="https://linkedin.com/in/...">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">GitHub URL</label>
+                            <input type="url" name="github" class="form-control" value="{{ profile.github }}" placeholder="https://github.com/...">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">About / Objective</label>
+                            <textarea name="about" class="form-control" rows="4" placeholder="Tell recruiters about yourself...">{{ profile.about }}</textarea>
+                        </div>
+                    </div>
+
+                    <div class="card p-4" style="border-radius: var(--radius-lg);">
+                        <h5 style="font-family: var(--font-display); font-weight: 700; margin-bottom: 20px; color: var(--green);">Uploads</h5>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Profile Picture</label>
+                            {% if profile.profile_pic %}
+                                <small class="d-block mb-1" style="color: var(--ink3);">Current: <a href="{{ profile.profile_pic.url }}" target="_blank" style="color: var(--primary2);">View</a></small>
+                            {% endif %}
+                            <input type="file" name="profile_pic" class="form-control" accept="image/*">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Resume (PDF)</label>
+                            {% if profile.resume %}
+                                <small class="d-block mb-1" style="color: var(--ink3);">Current: <a href="{{ profile.resume.url }}" target="_blank" style="color: var(--primary2);">View Resume</a></small>
+                            {% endif %}
+                            <input type="file" name="resume" class="form-control" accept=".pdf,.doc,.docx">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100 mt-2" style="font-weight: 700; padding: 14px; border-radius: 12px; font-size: 16px;" onclick="submitWithLoading(this, 'Saving...')">
+    <i class="fas fa-check me-2"></i>Save Changes
+</button>
+        </form>
     </div>
 </div>
 {% endblock %}

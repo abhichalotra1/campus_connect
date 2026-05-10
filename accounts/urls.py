@@ -11,6 +11,11 @@ urlpatterns = [
     path('logout/',                      views.logout_view,             name='logout'),
     path('admin-dashboard/',             views.admin_dashboard_view,    name='admin_dashboard'),
     path('update-application/<int:pk>/', views.update_application_status, name='update_application'),
+    path('verification-status/',           views.verification_status_view,   name='verification_status'),
+    path('request-verification/',          views.request_verification_view,  name='request_verification'),
+    path('verify-recruiter/<int:user_id>/', views.admin_verify_recruiter,    name='admin_verify_recruiter'),
+    
+    # New Admin Moderation Routes
+    path('admin-toggle-drive/<int:drive_id>/', views.admin_toggle_drive_status, name='admin_toggle_drive'),
+    path('admin-toggle-user/<int:user_id>/',   views.admin_toggle_user_status,  name='admin_toggle_user'),
 ]
-
-

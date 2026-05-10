@@ -1,94 +1,200 @@
 ﻿{% extends 'base.html' %}
+{% load placement_tags %}
+
 {% block content %}
-<div class="row mt-3">
-    <div class="col-12">
-        <h3><i class="fas fa-users text-primary me-2"></i>My Drive Applicants</h3>
-        <p class="text-muted">Select a drive to view its applicants</p>
-    </div>
+<div class="d-flex justify-content-between align-items-center mt-4 mb-4">
+    <h3 style="font-family: var(--font-display); font-weight: 800; letter-spacing: -0.5px;">
+        <i class="fas fa-users me-2" style="color: var(--primary);"></i>Applicants
+    </h3>
 </div>
 
-<div class="card p-3 mt-3">
-    <form method="GET" class="row g-2 align-items-end">
-        <div class="col-md-8">
-            <label class="form-label">Select Drive</label>
-            <select name="drive" class="form-select">
-                <option value="">-- Choose a drive --</option>
+<!-- Drive Selection Dropdown -->
+<div class="card p-4 mb-4" style="border-radius: var(--radius-lg);">
+    <form method="GET" class="d-flex align-items-end gap-3">
+        <div style="flex: 1;">
+            <label class="form-label">Select a Drive to view applicants</label>
+            <select name="drive" class="form-select" onchange="this.form.submit()">
+                <option value="">-- Choose a Drive --</option>
                 {% for drive in drives %}
-                <option value="{{ drive.pk }}" {% if selected_drive.pk == drive.pk %}selected{% endif %}>
-                    {{ drive.company }} - {{ drive.role }}
-                </option>
+                    <option value="{{ drive.pk }}" {% if selected_drive and selected_drive.pk == drive.pk %}selected{% endif %}>
+                        {{ drive.role }} at {{ drive.company }} ({{ drive.application_set.count }} applicants)
+                    </option>
                 {% endfor %}
             </select>
-        </div>
-        <div class="col-md-4">
-            <button type="submit" class="btn btn-primary w-100">View Applicants</button>
         </div>
     </form>
 </div>
 
 {% if selected_drive %}
-<div class="card p-3 mt-4">
-    <div class="d-flex justify-content-between align-items-center">
-        <h5><i class="fas fa-building text-primary me-2"></i>{{ selected_drive.company }} - {{ selected_drive.role }}</h5>
-        <span class="badge bg-primary">{{ applications|length }} Applicants</span>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 style="font-family: var(--font-display); font-weight: 700; color: var(--ink2);">
+            {{ selected_drive.role }} - {{ selected_drive.company }}
+        </h5>
+        <span style="font-size: 13px; color: var(--ink3); font-family: var(--font-mono);">{{ applications|length }} total applicants</span>
     </div>
-    <hr>
+
     {% if applications %}
-    <div class="table-responsive">
-        <table class="table table-hover">
-            <thead>
-                <tr>
-                    <th>Student</th>
-                    <th>Branch</th>
-                    <th>CGPA</th>
-                    <th>Skills</th>
-                    <th>Applied On</th>
-                    <th>Status</th>
-                    <th>Resume</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for app in applications %}
-                <tr>
-                    <td>
-                        <strong>{{ app.student.get_full_name }}</strong><br>
-                        <small class="text-muted">{{ app.student.email }}</small>
-                    </td>
-                    <td>{{ app.student.studentprofile.branch|default:'-' }}</td>
-                    <td>{{ app.student.studentprofile.cgpa|default:'-' }}</td>
-                    <td>
-                        {% if app.student.studentprofile.skills %}
-                            {% for skill in app.student.studentprofile.skills.split %}
-                                <span class="badge bg-secondary me-1">{{ skill }}</span>
-                            {% endfor %}
-                        {% else %}-{% endif %}
-                    </td>
-                    <td>{{ app.applied_at|date:"d M Y" }}</td>
-                    <td>
-                        {% if app.status == 'applied' %}<span class="badge bg-primary">Applied</span>
-                        {% elif app.status == 'shortlisted' %}<span class="badge bg-warning">Shortlisted</span>
-                        {% elif app.status == 'selected' %}<span class="badge bg-success">Selected</span>
-                        {% elif app.status == 'rejected' %}<span class="badge bg-danger">Rejected</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if app.student.studentprofile.resume %}
-                            <a href="{{ app.student.studentprofile.resume.url }}" target="_blank" class="btn btn-outline-primary btn-sm">
-                                <i class="fas fa-file-pdf me-1"></i>View
+        <!-- Applicant Cards -->
+        <div style="display: flex; flex-direction: column; gap: 14px;">
+            {% for app in applications %}
+            <div class="card p-4" style="border-radius: var(--radius-lg); transition: all 0.2s;">
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-start gap-3">
+                    
+                    <!-- Left: Student Info -->
+                    <div style="display: flex; align-items: center; gap: 16px;">
+                        <!-- Student Avatar -->
+                        <div style="width: 48px; height: 48px; border-radius: 50%; background: var(--p-soft); color: var(--primary2); display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 800; flex-shrink: 0; overflow: hidden;">
+                            {% if app.student.studentprofile.profile_pic %}
+                                <img src="{{ app.student.studentprofile.profile_pic.url }}" style="width: 100%; height: 100%; object-fit: cover;">
+                            {% else %}
+                                {{ app.student.first_name|first|upper }}{{ app.student.last_name|first|upper }}
+                            {% endif %}
+                        </div>
+                        
+                        <div>
+                            <h5 style="font-family: var(--font-display); font-weight: 700; margin-bottom: 2px;">{{ app.student.get_full_name|default:app.student.username }}</h5>
+                            <div style="font-size: 13px; color: var(--ink3); display: flex; gap: 12px; flex-wrap: wrap;">
+                                <span><i class="fas fa-envelope me-1"></i> {{ app.student.email }}</span>
+                                {% if app.student.studentprofile.branch %}<span><i class="fas fa-code-branch me-1"></i> {{ app.student.studentprofile.branch }}</span>{% endif %}
+                                {% if app.student.studentprofile.cgpa %}<span><i class="fas fa-graduation-cap me-1"></i> CGPA: {{ app.student.studentprofile.cgpa }}</span>{% endif %}
+                            </div>
+                            {% if app.student.studentprofile.skills %}
+                            <div style="margin-top: 6px; display: flex; gap: 6px; flex-wrap: wrap;">
+                                {% for skill in app.student.studentprofile.skills|split:"," %}
+                                    <span style="padding: 2px 8px; border-radius: 12px; background: var(--bg2); border: 1px solid var(--border); color: var(--ink3); font-size: 11px;">{{ skill|trim }}</span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Right: Status & Actions -->
+                    <div class="d-flex flex-column align-items-md-end gap-2 flex-shrink-0">
+                        
+                        <!-- Status Dropdown Form -->
+                        <form method="POST" action="{% url 'update_application' app.pk %}" id="statusForm-{{ app.pk }}">
+                            {% csrf_token %}
+                            <select name="status" class="form-select form-select-sm" style="width: auto; min-width: 160px; border-radius: 8px;" onchange="confirmStatus(this, {{ app.pk }})">
+                                {% for value, label in status_choices %}
+                                    <option value="{{ value }}" {% if app.status == value %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </form>
+
+                        <!-- Action Buttons Row -->
+                        <div style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end;">
+
+                            <!-- ── CHAT / MESSAGE BUTTON ── -->
+                            {% if app.status == 'shortlisted' or app.status == 'selected' %}
+                            <a href="{% url 'start_chat' app.pk %}" style="font-size: 12px; font-weight: 700; color: #fff; text-decoration: none; padding: 5px 12px; border-radius: 7px; background: var(--primary); display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 2px 4px var(--p-glow);">
+                                <i class="fas fa-comment-dots"></i> Message
                             </a>
-                        {% else %}-{% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+                            {% endif %}
+
+                            <!-- ── SCHEDULE INTERVIEW BUTTON ── -->
+                            {% if app.status == 'shortlisted' or app.status == 'selected' %}
+                            <a href="{% url 'schedule_interview' app.pk %}" style="font-size: 12px; font-weight: 600; color: var(--green); text-decoration: none; padding: 5px 12px; border-radius: 7px; background: var(--green-soft); border: 1px solid rgba(34,211,160,0.3); display: inline-flex; align-items: center; gap: 5px;">
+                                <i class="fas fa-calendar-plus"></i> Schedule
+                            </a>
+                            {% endif %}
+
+                            <!-- Resume Link -->
+                            {% if app.student.studentprofile.resume %}
+                            <a href="{{ app.student.studentprofile.resume.url }}" target="_blank" style="font-size: 12px; color: var(--primary2); text-decoration: none; font-weight: 600; padding: 5px 0; display: inline-flex; align-items: center; gap: 5px;">
+                                <i class="fas fa-file-pdf"></i> Resume
+                            </a>
+                            {% endif %}
+
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+            {% endfor %}
+        </div>
     {% else %}
-    <div class="text-center mt-3">
-        <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
-        <h5 class="text-muted">No applicants yet for this drive!</h5>
-    </div>
+        <div class="card p-5 text-center" style="border-radius: var(--radius-lg);">
+            <i class="fas fa-inbox fa-3x mb-3" style="color: var(--ink3);"></i>
+            <h5 style="color: var(--ink2);">No applicants yet</h5>
+            <p style="color: var(--ink3); font-size: 13px;">Students will appear here once they apply for this drive.</p>
+        </div>
     {% endif %}
-</div>
+{% else %}
+    <div class="card p-5 text-center" style="border-radius: var(--radius-lg);">
+        <i class="fas fa-hand-pointer fa-3x mb-3" style="color: var(--ink3);"></i>
+        <h5 style="color: var(--ink2);">Select a Drive</h5>
+        <p style="color: var(--ink3); font-size: 13px;">Choose one of your posted drives from the dropdown above to view its applicants.</p>
+    </div>
 {% endif %}
+
+<!-- Confirmation Modal -->
+<div id="statusModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:9999; justify-content:center; align-items:center;">
+    <div class="card p-5 text-center" style="border-radius: var(--radius-lg); max-width: 420px; width: 90%; border: 2px solid var(--border2);">
+        <i id="modalIcon" class="fas fa-exclamation-triangle fa-2x mb-3" style="color: var(--yellow);"></i>
+        <h4 style="font-family: var(--font-display); font-weight: 800;">Confirm Status Change</h4>
+        <p style="color: var(--ink2); font-size: 14px; margin-top: 10px; line-height: 1.6;">
+            Are you sure you want to change the status to <strong id="modalStatus" style="color: var(--primary2);"></strong>? <br>
+            <span style="color: var(--red); font-size: 12px; font-weight: 600;">The student will be notified immediately.</span>
+        </p>
+        <div style="display: flex; gap: 10px; justify-content: center; margin-top: 20px;">
+            <button onclick="closeModal()" style="padding: 10px 20px; border-radius: 10px; background: var(--surface2); border: 1px solid var(--border2); color: var(--ink); font-weight: 600; cursor: pointer;">Cancel</button>
+            <button id="modalConfirmBtn" onclick="submitWithLoading(this, 'Updating...')" style="padding: 10px 20px; border-radius: 10px; background: var(--primary); border: none; color: #fff; font-weight: 700; cursor: pointer;">Yes, Update</button>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentSelect = null;
+let originalValue = null;
+
+function confirmStatus(selectElement, appId) {
+    currentSelect = selectElement;
+    originalValue = selectElement.dataset.original || selectElement.querySelector('option[selected]').value;
+    
+    // If they clicked back to the original status, do nothing
+    if (selectElement.value === originalValue) return;
+
+    const statusText = selectElement.options[selectElement.selectedIndex].text;
+    
+    // Update modal text
+    document.getElementById('modalStatus').innerText = statusText;
+    
+    // Change modal icon color based on status
+    const icon = document.getElementById('modalIcon');
+    if (selectElement.value === 'selected') {
+        icon.className = 'fas fa-check-circle fa-2x mb-3';
+        icon.style.color = 'var(--green)';
+    } else if (selectElement.value === 'rejected') {
+        icon.className = 'fas fa-times-circle fa-2x mb-3';
+        icon.style.color = 'var(--red)';
+    } else if (selectElement.value === 'shortlisted') {
+        icon.className = 'fas fa-star fa-2x mb-3';
+        icon.style.color = 'var(--yellow)';
+    } else {
+        icon.className = 'fas fa-exclamation-triangle fa-2x mb-3';
+        icon.style.color = 'var(--primary2)';
+    }
+
+    // Show modal
+    const modal = document.getElementById('statusModal');
+    modal.style.display = 'flex';
+
+    // Set up confirm button
+    const confirmBtn = document.getElementById('modalConfirmBtn');
+    confirmBtn.onclick = function() {
+        document.getElementById('statusForm-' + appId).submit();
+    };
+}
+
+function closeModal() {
+    const modal = document.getElementById('statusModal');
+    modal.style.display = 'none';
+    
+    // Revert the dropdown back to original value if cancelled
+    if (currentSelect) {
+        currentSelect.value = originalValue;
+    }
+}
+</script>
+
 {% endblock %}

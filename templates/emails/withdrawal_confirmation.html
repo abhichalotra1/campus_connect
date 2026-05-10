@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Application Withdrawn</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #f0f2ff; font-family: 'Segoe UI', Arial, sans-serif; }
+  .wrapper { max-width: 600px; margin: 40px auto; background: #fff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 24px rgba(79,70,229,0.10); }
+  .header { background: linear-gradient(135deg, #6b7280 0%, #9ca3af 100%); padding: 36px 32px; text-align: center; }
+  .logo-text { color: #fff; font-size: 18px; font-weight: 800; }
+  .header h1 { color: #fff; font-size: 24px; font-weight: 800; margin-top: 16px; }
+  .header p { color: rgba(255,255,255,0.85); margin-top: 6px; font-size: 14px; }
+  .body { padding: 36px 32px; }
+  .greeting { font-size: 17px; font-weight: 700; color: #1a1d2a; margin-bottom: 12px; }
+  .text { color: #4a5080; font-size: 15px; line-height: 1.7; margin-bottom: 16px; }
+  .drive-card { border: 1px solid #e8ecf5; border-radius: 12px; padding: 20px 24px; margin: 20px 0; background: #f8f9ff; }
+  .drive-company { font-size: 19px; font-weight: 800; color: #1a1d2a; }
+  .drive-role { font-size: 14px; color: #9298b8; font-weight: 600; margin-top: 4px; }
+  .note-box { background: #fffbeb; border-left: 4px solid #f59e0b; border-radius: 0 10px 10px 0; padding: 14px 18px; margin: 20px 0; }
+  .note-box p { font-size: 14px; color: #78350f; line-height: 1.6; }
+  .cta-btn { display: block; width: fit-content; margin: 24px auto 0; background: linear-gradient(135deg, #4f46e5, #6c63ff); color: #fff !important; text-decoration: none; padding: 13px 32px; border-radius: 10px; font-size: 14px; font-weight: 700; }
+  .footer { background: #f8f9ff; padding: 20px 32px; text-align: center; border-top: 1px solid #e8ecf5; }
+  .footer p { color: #9298b8; font-size: 13px; line-height: 1.6; }
+</style>
+</head>
+<body>
+<div class="wrapper">
+  <div class="header">
+    <div class="logo-text">🎓 Campus Connect</div>
+    <h1>Application Withdrawn</h1>
+    <p>Your application has been removed</p>
+  </div>
+
+  <div class="body">
+    <p class="greeting">Hi {{ student.first_name|default:student.username }},</p>
+    <p class="text">
+      This email confirms that your application has been successfully withdrawn. The recruiter will no longer see your application for this drive.
+    </p>
+
+    <div class="drive-card">
+      <div class="drive-company">{{ drive.company }}</div>
+      <div class="drive-role">{{ drive.role }} &bull; Withdrawn</div>
+    </div>
+
+    <div class="note-box">
+      <p>⚠️ <strong>Changed your mind?</strong> You can re-apply to this drive before the deadline closes, as long as it's still active and accepting applications.</p>
+    </div>
+
+    <a href="http://127.0.0.1:8000/drives/" class="cta-btn">Browse Drives →</a>
+  </div>
+
+  <div class="footer">
+    <p>© Campus Connect &bull; You're receiving this because you withdrew an application.<br>Please do not reply directly to this email.</p>
+  </div>
+</div>
+</body>
+</html>

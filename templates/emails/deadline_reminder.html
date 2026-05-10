@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Deadline Reminder</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #f0f2ff; font-family: 'Segoe UI', Arial, sans-serif; }
+  .wrapper { max-width: 600px; margin: 40px auto; background: #fff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 24px rgba(79,70,229,0.10); }
+  .header { background: linear-gradient(135deg, #d97706 0%, #f59e0b 100%); padding: 36px 32px; text-align: center; }
+  .logo-text { color: #fff; font-size: 18px; font-weight: 800; }
+  .header h1 { color: #fff; font-size: 26px; font-weight: 800; margin-top: 16px; }
+  .header p { color: rgba(255,255,255,0.9); margin-top: 6px; font-size: 14px; }
+  .countdown { background: rgba(255,255,255,0.2); border-radius: 10px; padding: 10px 20px; display: inline-block; margin-top: 16px; color: #fff; font-size: 22px; font-weight: 800; }
+  .body { padding: 36px 32px; }
+  .greeting { font-size: 17px; font-weight: 700; color: #1a1d2a; margin-bottom: 12px; }
+  .text { color: #4a5080; font-size: 15px; line-height: 1.7; margin-bottom: 16px; }
+  .drive-card { border: 2px solid #f59e0b; border-radius: 12px; padding: 20px 24px; margin: 20px 0; background: #fffbeb; }
+  .drive-company { font-size: 20px; font-weight: 800; color: #1a1d2a; }
+  .drive-role { font-size: 14px; color: #d97706; font-weight: 600; margin-top: 4px; }
+  .drive-meta { display: flex; gap: 20px; margin-top: 14px; flex-wrap: wrap; }
+  .meta-item { font-size: 13px; color: #78350f; }
+  .meta-item span { font-weight: 700; color: #1a1d2a; display: block; }
+  .deadline-highlight { background: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px; padding: 10px 16px; margin-top: 14px; font-size: 14px; font-weight: 700; color: #78350f; text-align: center; }
+  .urgency-box { background: #fff7ed; border-left: 4px solid #f59e0b; border-radius: 0 10px 10px 0; padding: 14px 18px; margin: 20px 0; }
+  .urgency-box p { font-size: 14px; color: #78350f; line-height: 1.6; }
+  .cta-btn { display: block; width: fit-content; margin: 24px auto 0; background: linear-gradient(135deg, #d97706, #f59e0b); color: #fff !important; text-decoration: none; padding: 13px 32px; border-radius: 10px; font-size: 15px; font-weight: 700; }
+  .footer { background: #f8f9ff; padding: 20px 32px; text-align: center; border-top: 1px solid #e8ecf5; }
+  .footer p { color: #9298b8; font-size: 13px; line-height: 1.6; }
+</style>
+</head>
+<body>
+<div class="wrapper">
+  <div class="header">
+    <div class="logo-text">🎓 Campus Connect</div>
+    <h1>⏰ Deadline Alert!</h1>
+    <p>Don't miss this opportunity</p>
+    <div class="countdown">2 Days Left</div>
+  </div>
+
+  <div class="body">
+    <p class="greeting">Hi {{ student.first_name|default:student.username }},</p>
+    <p class="text">
+      This is a friendly reminder that the following placement drive is closing in <strong>2 days</strong>. If you haven't applied yet — now is the time!
+    </p>
+
+    <div class="drive-card">
+      <div class="drive-company">{{ drive.company }}</div>
+      <div class="drive-role">{{ drive.role }}</div>
+      <div class="drive-meta">
+        <div class="meta-item"><span>Location</span>{{ drive.location }}</div>
+        <div class="meta-item"><span>Package</span>{{ drive.formatted_salary }}</div>
+        <div class="meta-item"><span>Type</span>{{ drive.get_job_type_display }}</div>
+        <div class="meta-item"><span>Min CGPA</span>{{ drive.min_cgpa }}</div>
+      </div>
+      <div class="deadline-highlight">🗓 Deadline: {{ drive.deadline }} — Only 2 days away!</div>
+    </div>
+
+    <div class="urgency-box">
+      <p>🚨 <strong>Act fast!</strong> Once the deadline passes, applications will be closed. Make sure your profile is complete before applying for the best chance of selection.</p>
+    </div>
+
+    <a href="http://127.0.0.1:8000/drives/{{ drive.pk }}/" class="cta-btn">Apply Now →</a>
+  </div>
+
+  <div class="footer">
+    <p>© Campus Connect &bull; You're receiving this reminder as a registered student.<br>Please do not reply directly to this email.</p>
+  </div>
+</div>
+</body>
+</html>

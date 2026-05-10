@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Application Received</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #f0f2ff; font-family: 'Segoe UI', Arial, sans-serif; }
+  .wrapper { max-width: 600px; margin: 40px auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 24px rgba(79,70,229,0.10); }
+  .header { background: linear-gradient(135deg, #4f46e5 0%, #6c63ff 100%); padding: 36px 32px; text-align: center; }
+  .logo-text { color: #fff; font-size: 18px; font-weight: 800; }
+  .header h1 { color: #fff; font-size: 26px; font-weight: 800; margin-top: 16px; }
+  .header p { color: rgba(255,255,255,0.85); margin-top: 6px; font-size: 14px; }
+  .body { padding: 36px 32px; }
+  .greeting { font-size: 17px; font-weight: 700; color: #1a1d2a; margin-bottom: 12px; }
+  .text { color: #4a5080; font-size: 15px; line-height: 1.7; margin-bottom: 16px; }
+  .drive-card { border: 1px solid #e8ecf5; border-radius: 12px; padding: 20px 24px; margin: 24px 0; background: #f8f9ff; }
+  .drive-company { font-size: 20px; font-weight: 800; color: #1a1d2a; }
+  .drive-role { font-size: 14px; color: #4f46e5; font-weight: 600; margin-top: 4px; }
+  .drive-meta { display: flex; gap: 20px; margin-top: 16px; flex-wrap: wrap; }
+  .meta-item { font-size: 13px; color: #4a5080; }
+  .meta-item span { font-weight: 700; color: #1a1d2a; display: block; }
+  .badge { display: inline-block; background: #eef0ff; color: #4f46e5; font-size: 12px; font-weight: 700; padding: 4px 12px; border-radius: 20px; margin-top: 12px; }
+  .tip-box { background: #e6faf4; border-left: 4px solid #22d3a0; border-radius: 0 10px 10px 0; padding: 16px 20px; margin: 20px 0; }
+  .tip-box p { font-size: 14px; color: #1a3a2e; line-height: 1.6; }
+  .cta-btn { display: block; width: fit-content; margin: 24px auto 0; background: linear-gradient(135deg, #4f46e5, #6c63ff); color: #fff !important; text-decoration: none; padding: 13px 32px; border-radius: 10px; font-size: 14px; font-weight: 700; }
+  .footer { background: #f8f9ff; padding: 20px 32px; text-align: center; border-top: 1px solid #e8ecf5; }
+  .footer p { color: #9298b8; font-size: 13px; line-height: 1.6; }
+</style>
+</head>
+<body>
+<div class="wrapper">
+  <div class="header">
+    <div class="logo-text">🎓 Campus Connect</div>
+    <h1>Application Received ✅</h1>
+    <p>We've got your application safe and sound</p>
+  </div>
+
+  <div class="body">
+    <p class="greeting">Hi {{ student.first_name|default:student.username }},</p>
+    <p class="text">
+      Great news — your application has been successfully submitted! The recruiter will review it and you'll be notified once there's an update.
+    </p>
+
+    <div class="drive-card">
+      <div class="drive-company">{{ drive.company }}</div>
+      <div class="drive-role">{{ drive.role }}</div>
+      <div class="drive-meta">
+        <div class="meta-item"><span>Location</span>{{ drive.location }}</div>
+        <div class="meta-item"><span>Package</span>{{ drive.formatted_salary }}</div>
+        <div class="meta-item"><span>Deadline</span>{{ drive.deadline }}</div>
+        <div class="meta-item"><span>Type</span>{{ drive.get_job_type_display }}</div>
+      </div>
+      <span class="badge">⏳ Under Review</span>
+    </div>
+
+    <div class="tip-box">
+      <p>💡 <strong>Pro Tip:</strong> Make sure your profile is complete with your latest resume, CGPA, and skills. Recruiters often check your profile before shortlisting!</p>
+    </div>
+
+    <a href="http://127.0.0.1:8000/applications/" class="cta-btn">Track My Applications →</a>
+  </div>
+
+  <div class="footer">
+    <p>© Campus Connect &bull; You're receiving this because you applied to a placement drive.<br>Please do not reply directly to this email.</p>
+  </div>
+</div>
+</body>
+</html>

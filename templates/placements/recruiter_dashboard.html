@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Recruiter Hub — Campus Connect</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+<style>
+/* [Minified Dashboard CSS] */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root { --font-display: 'Bricolage Grotesque', sans-serif; --font-body: 'Plus Jakarta Sans', sans-serif; --font-mono: 'DM Mono', monospace; --bg: #0d0f14; --bg2: #12141c; --bg3: #181b26; --surface: #1a1d2a; --surface2: #1e2230; --border: rgba(255,255,255,0.07); --border2: rgba(255,255,255,0.13); --ink: #eef0ff; --ink2: #8b92b8; --ink3: #454a6b; --primary: #4f46e5; --primary2: #6c63ff; --p-glow: rgba(79,70,229,0.28); --p-soft: rgba(79,70,229,0.10); --green: #22d3a0; --green-soft: rgba(34,211,160,0.10); --red: #f43f5e; --red-soft: rgba(244,63,94,0.10); --yellow: #f5c842; --yellow-soft: rgba(245,200,66,0.10); --sidebar-w: 240px; --radius: 12px; --radius-lg: 18px; }
+[data-theme="light"] { --bg:#f8fafc; --bg2:#f1f4fb; --bg3:#e8ecf5; --surface:#ffffff; --surface2:#f4f6fc; --border:rgba(0,0,0,0.07); --border2:rgba(0,0,0,0.12); --ink:#0d0f14; --ink2:#4a5080; --ink3:#9298b8; }
+html { scroll-behavior: smooth; }
+body { font-family: var(--font-body); background: var(--bg); color: var(--ink); min-height: 100vh; display: flex; overflow-x: hidden; transition: background 0.3s, color 0.3s; }
+.sidebar { width: var(--sidebar-w); flex-shrink: 0; background: var(--bg2); border-right: 1px solid var(--border); display: flex; flex-direction: column; position: fixed; top: 0; left: 0; height: 100vh; z-index: 50; overflow-y: auto; transition: transform 0.3s, background 0.3s; }
+.sidebar-logo { padding: 20px 18px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; text-decoration: none; flex-shrink: 0; }
+.logo-icon { width: 31px; height: 31px; border-radius: 9px; background: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 13px; color: #fff; box-shadow: 0 0 0 3px var(--p-soft); flex-shrink: 0; }
+.logo-text { font-family: var(--font-display); font-size: 16px; font-weight: 800; color: var(--ink); letter-spacing: -0.3px; }
+.nav-section { padding: 14px 10px 6px; }
+.nav-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 700; color: var(--ink3); padding: 0 8px; margin-bottom: 5px; font-family: var(--font-mono); }
+.nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 10px; margin-bottom: 2px; text-decoration: none; color: var(--ink2); font-size: 13.5px; font-weight: 500; transition: all 0.15s; cursor: pointer; border: 1px solid transparent; }
+.nav-item:hover { background: var(--surface); color: var(--ink); }
+.nav-item.active { background: var(--p-soft); color: var(--ink); border-color: rgba(79,70,229,0.18); }
+.nav-icon { width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0; background: var(--bg3); color: var(--ink3); transition: all 0.15s; }
+.nav-item.active .nav-icon { background: var(--primary); color: #fff; }
+.nav-item:hover .nav-icon { color: var(--ink2); }
+.sidebar-footer { margin-top: auto; padding: 14px; border-top: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+.user-avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--p-soft); color: var(--primary2); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; overflow: hidden; }
+.user-name { font-size: 13px; font-weight: 700; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.user-role { font-size: 11px; color: var(--ink3); font-family: var(--font-mono); }
+.logout-btn { width: 28px; height: 28px; border-radius: 7px; background: none; border: 1px solid var(--border); color: var(--ink3); cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: center; transition: all 0.15s; text-decoration: none; flex-shrink: 0; }
+.logout-btn:hover { background: var(--red-soft); color: var(--red); border-color: rgba(244,63,94,0.3); }
+.main-content { margin-left: var(--sidebar-w); flex: 1; display: flex; flex-direction: column; min-height: 100vh; position: relative; }
+.topbar { padding: 16px 28px; border-bottom: 1px solid var(--border); background: var(--bg2); backdrop-filter: blur(20px); display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 20; }
+.topbar-title { font-family: var(--font-display); font-size: 19px; font-weight: 800; letter-spacing: -0.4px; }
+.topbar-sub { font-size: 13px; color: var(--ink2); margin-top: 2px; }
+.topbar-right { display: flex; align-items: center; gap: 8px; }
+.icon-btn { width: 36px; height: 36px; border-radius: 9px; background: var(--surface); border: 1px solid var(--border2); display: flex; align-items: center; justify-content: center; color: var(--ink2); font-size: 14px; cursor: pointer; text-decoration: none; transition: all 0.15s; }
+.icon-btn:hover { color: var(--ink); border-color: var(--primary); }
+.hamburger { display: none; background: none; border: 1px solid var(--border2); border-radius: 8px; padding: 6px 10px; cursor: pointer; color: var(--ink2); }
+.content { padding: 28px; flex: 1; }
+.panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 20px; }
+.panel-head { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+.panel-title { font-family: var(--font-display); font-size: 15px; font-weight: 700; letter-spacing: -0.2px; }
+.drive-row { padding: 14px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; transition: background 0.15s; }
+.drive-row:last-child { border-bottom: none; }
+.drive-row:hover { background: var(--bg3); }
+.co-logo { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 17px; flex-shrink: 0; background: var(--bg2); border: 1px solid var(--border); }
+.drive-title { font-size: 14px; font-weight: 700; margin-bottom: 3px; }
+.drive-meta { font-size: 12px; color: var(--ink3); display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.drive-meta span { display: flex; align-items: center; gap: 4px; }
+.action-btn { padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: 700; font-family: var(--font-display); text-decoration: none; cursor: pointer; border: none; transition: all 0.18s; white-space: nowrap; }
+.btn-view { background: var(--p-soft); color: var(--primary2); }
+.btn-view:hover { background: var(--primary); color: #fff; }
+.btn-edit { background: var(--yellow-soft); color: var(--yellow); }
+.btn-edit:hover { background: var(--yellow); color: #000; }
+.btn-delete { background: var(--red-soft); color: var(--red); }
+.btn-delete:hover { background: var(--red); color: #fff; }
+.tag { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; font-family: var(--font-mono); }
+.tag-active { background: var(--green-soft); color: var(--green); }
+.tag-closed { background: var(--red-soft); color: var(--red); }
+.cc-alert { padding: 11px 16px; border-radius: 10px; font-size: 13.5px; font-weight: 500; display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.cc-alert.success { background: var(--green-soft); border: 1px solid rgba(34,211,160,0.3); color: var(--green); }
+.cc-alert.error { background: var(--red-soft); border: 1px solid rgba(244,63,94,0.3); color: var(--red); }
+.sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 40; }
+@media(max-width:768px) { .sidebar { transform: translateX(-100%); } .sidebar.open { transform: translateX(0); } .sidebar-overlay.open { display: block; } .main-content { margin-left: 0; } .hamburger { display: flex; } .content { padding: 18px; } }
+</style>
+</head>
+<body>
+
+<!-- ── SIDEBAR ── -->
+<aside class="sidebar" id="sidebar">
+  <a class="sidebar-logo" href="{% url 'landing' %}">
+    <div class="logo-icon"><i class="fa-solid fa-graduation-cap"></i></div>
+    <span class="logo-text">Campus Connect</span>
+  </a>
+
+  <div class="nav-section">
+    <div class="nav-label">Main</div>
+    <a class="nav-item" href="{% url 'dashboard' %}">
+      <div class="nav-icon"><i class="fa-solid fa-house"></i></div> General Dashboard
+    </a>
+    <a class="nav-item active" href="{% url 'recruiter_dashboard' %}">
+      <div class="nav-icon"><i class="fa-solid fa-gauge-high"></i></div> Recruiter Hub
+    </a>
+    <a class="nav-item" href="{% url 'drive_list' %}">
+      <div class="nav-icon"><i class="fa-solid fa-briefcase"></i></div> All Drives
+    </a>
+    <a class="nav-item" href="{% url 'recruiter_applicants' %}">
+      <div class="nav-icon"><i class="fa-solid fa-users"></i></div> Applicants
+    </a>
+    <a class="nav-item" href="{% url 'notifications' %}">
+      <div class="nav-icon"><i class="fa-solid fa-bell"></i></div> Notifications
+    </a>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">Account</div>
+    <a class="nav-item" href="{% url 'profile' %}">
+      <div class="nav-icon"><i class="fa-solid fa-user"></i></div> My Profile
+    </a>
+    <a class="nav-item" href="{% url 'edit_profile' %}">
+      <div class="nav-icon"><i class="fa-solid fa-pen"></i></div> Edit Profile
+    </a>
+  </div>
+
+  <div class="sidebar-footer">
+    <div class="user-avatar">{{ user.first_name|first|upper }}{{ user.last_name|first|upper }}</div>
+    <div style="flex:1;min-width:0;">
+      <div class="user-name">{{ user.get_full_name|default:user.username }}</div>
+      <div class="user-role">Recruiter</div>
+    </div>
+    <a class="logout-btn" href="{% url 'logout' %}" title="Sign out"><i class="fa-solid fa-arrow-right-from-bracket"></i></a>
+  </div>
+</aside>
+<div class="sidebar-overlay" id="overlay" onclick="closeSidebar()"></div>
+
+<!-- ── MAIN ── -->
+<div class="main-content">
+  <div class="topbar">
+    <div>
+      <div class="topbar-title">Recruiter Hub 👋</div>
+      <div class="topbar-sub">Manage your posted drives and applications</div>
+    </div>
+    <div class="topbar-right">
+      <button class="hamburger" onclick="openSidebar()"><i class="fa-solid fa-bars"></i></button>
+      <button class="icon-btn" onclick="toggleTheme()" title="Toggle theme"><i class="fa-solid fa-moon" id="themeIcon"></i></button>
+    </div>
+  </div>
+
+  <div class="content">
+    {% if messages %}
+      {% for message in messages %}
+      <div class="cc-alert {{ message.tags }}">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+
+    <!-- Post New Drive Button -->
+    <div style="margin-bottom: 24px;">
+        <a href="{% url 'post_drive' %}" style="padding: 10px 20px; border-radius: 10px; background: var(--primary); color: #fff; text-decoration: none; font-family: var(--font-display); font-weight: 700; font-size: 14px; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s; box-shadow: 0 4px 14px var(--p-glow);">
+            <i class="fa-solid fa-plus"></i> Post New Drive
+        </a>
+    </div>
+
+    <!-- My Posted Drives -->
+    <div class="panel">
+      <div class="panel-head">
+        <span class="panel-title">My Posted Drives</span>
+      </div>
+      {% if my_drives %}
+        {% for drive in my_drives %}
+        <div class="drive-row">
+          <!-- Smart Logo Logic -->
+          {% if drive.company_logo %}
+            <img src="{{ drive.company_logo.url }}" alt="{{ drive.company }}" class="co-logo" style="object-fit: contain; padding: 4px; background: #fff;">
+          {% else %}
+            <div class="co-logo" style="background: var(--p-soft); color: var(--primary2); font-family: var(--font-display); font-weight: 800; font-size: 16px;">
+              {{ drive.company|first|upper }}
+            </div>
+          {% endif %}
+          <div style="flex:1;min-width:0;">            <div class="drive-title">{{ drive.role }} <span style="color:var(--ink3); font-weight:400; font-size:12px;">at {{ drive.company }}</span></div>
+            <div class="drive-meta">
+              <span><i class="fa-solid fa-indian-rupee-sign"></i> {{ drive.formatted_salary }}</span>
+              <span><i class="fa-solid fa-users"></i> {{ drive.application_set.count }} Applicants</span>
+              <span><i class="fa-solid fa-calendar"></i> Deadline: {{ drive.deadline|date:"M d, Y" }}</span>
+              {% if drive.status == 'active' %}
+                <span class="tag tag-active">Active</span>
+              {% else %}
+                <span class="tag tag-closed">Closed</span>
+              {% endif %}
+            </div>
+          </div>
+          <div style="display: flex; gap: 6px;">
+            <a href="{% url 'drive_detail' drive.pk %}" class="action-btn btn-view" title="View"><i class="fas fa-eye"></i></a>
+            <a href="{% url 'edit_drive' drive.pk %}" class="action-btn btn-edit" title="Edit"><i class="fas fa-pen"></i></a>
+            <a href="{% url 'delete_drive' drive.pk %}" class="action-btn btn-delete" title="Delete"><i class="fas fa-trash"></i></a>
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div style="padding: 40px 20px; text-align: center;">
+          <i class="fas fa-briefcase" style="font-size: 28px; color: var(--ink3); margin-bottom: 10px;"></i>
+          <p style="color: var(--ink3);">You haven't posted any drives yet.</p>
+        </div>
+      {% endif %}
+    </div>
+
+  </div>
+</div>
+
+<script>
+const _h = document.documentElement; const _t = localStorage.getItem('cc-theme') || 'dark'; _h.setAttribute('data-theme', _t); _si(_t);
+function toggleTheme() { const cur = _h.getAttribute('data-theme'); const nxt = cur === 'dark' ? 'light' : 'dark'; _h.setAttribute('data-theme', nxt); localStorage.setItem('cc-theme', nxt); _si(nxt); }
+function _si(t) { const i = document.getElementById('themeIcon'); if (i) i.className = t === 'dark' ? 'fa-solid fa-sun' : 'fa-solid fa-moon'; }
+function openSidebar() { document.getElementById('sidebar').classList.add('open'); document.getElementById('overlay').classList.add('open'); }
+function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').classList.remove('open'); }
+</script>
+</body>
+</html>

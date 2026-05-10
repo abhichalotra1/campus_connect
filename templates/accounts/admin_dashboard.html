@@ -1,99 +1,348 @@
 ﻿{% extends 'base.html' %}
+{% block title %}Admin Dashboard – Campus Connect{% endblock %}
+
 {% block content %}
-<div class="row mt-3">
-    <div class="col-8"><h3><i class="fas fa-tachometer-alt text-primary me-2"></i>Admin Dashboard</h3></div>
-    <div class="col-4 text-end">
-        <a href="/accounts/export-students/" class="btn btn-success"><i class="fas fa-download me-2"></i>Export CSV</a>
-        <a href="/accounts/search-students/" class="btn btn-primary ms-2"><i class="fas fa-search me-2"></i>Search Students</a>
-    </div>
+<!-- Header -->
+<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:1.75rem;">
+  <div>
+    <h1 style="font-family:var(--font-display);font-size:26px;font-weight:800;color:var(--ink);margin:0;">Admin Dashboard</h1>
+    <p style="color:var(--ink2);font-size:14px;margin:4px 0 0;">Full platform overview and controls.</p>
+  </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;">
+    <a href="{% url 'export_students' %}" style="font-size:13px;font-weight:600;color:var(--green);text-decoration:none;padding:7px 14px;border-radius:9px;border:1px solid rgba(34,211,160,0.3);background:var(--green-soft);">
+      <i class="fas fa-download me-1"></i>Export CSV
+    </a>
+    <a href="{% url 'export_students_excel' %}" style="font-size:13px;font-weight:600;color:var(--green);text-decoration:none;padding:7px 14px;border-radius:9px;border:1px solid rgba(34,211,160,0.3);background:var(--green-soft);">
+      <i class="fas fa-file-excel me-1"></i>Export Excel
+    </a>
+    <a href="{% url 'search_students' %}" style="font-size:13px;font-weight:600;color:#fff;text-decoration:none;padding:7px 14px;border-radius:9px;background:var(--primary);">
+      <i class="fas fa-search me-1"></i>Search Students
+    </a>
+  </div>
 </div>
-<div class="row mt-3">
-    <div class="col-md-3"><div class="card p-3 text-center"><i class="fas fa-user-graduate fa-2x text-primary mb-2"></i><h3>{{ total_students }}</h3><p class="text-muted mb-0">Total Students</p></div></div>
-    <div class="col-md-3"><div class="card p-3 text-center"><i class="fas fa-building fa-2x text-success mb-2"></i><h3>{{ total_recruiters }}</h3><p class="text-muted mb-0">Total Recruiters</p></div></div>
-    <div class="col-md-3"><div class="card p-3 text-center"><i class="fas fa-briefcase fa-2x text-warning mb-2"></i><h3>{{ total_drives }}</h3><p class="text-muted mb-0">Total Drives</p></div></div>
-    <div class="col-md-3"><div class="card p-3 text-center"><i class="fas fa-trophy fa-2x text-danger mb-2"></i><h3>{{ selected_students }}</h3><p class="text-muted mb-0">Students Selected</p></div></div>
+
+<!-- Stats -->
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:2rem;">
+  <div style="background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);padding:1.25rem;text-align:center;">
+    <i class="fas fa-user-graduate" style="color:var(--primary2);font-size:22px;margin-bottom:8px;display:block;"></i>
+    <div style="font-family:var(--font-display);font-size:28px;font-weight:800;color:var(--ink);">{{ total_students }}</div>
+    <div style="font-size:13px;color:var(--ink2);margin-top:2px;">Students</div>
+  </div>
+  <div style="background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);padding:1.25rem;text-align:center;">
+    <i class="fas fa-building" style="color:var(--green);font-size:22px;margin-bottom:8px;display:block;"></i>
+    <div style="font-family:var(--font-display);font-size:28px;font-weight:800;color:var(--ink);">{{ total_recruiters }}</div>
+    <div style="font-size:13px;color:var(--ink2);margin-top:2px;">Recruiters</div>
+  </div>
+  <div style="background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);padding:1.25rem;text-align:center;">
+    <i class="fas fa-briefcase" style="color:#f59e0b;font-size:22px;margin-bottom:8px;display:block;"></i>
+    <div style="font-family:var(--font-display);font-size:28px;font-weight:800;color:var(--ink);">{{ total_drives }}</div>
+    <div style="font-size:13px;color:var(--ink2);margin-top:2px;">Drives</div>
+  </div>
+  <div style="background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);padding:1.25rem;text-align:center;">
+    <i class="fas fa-trophy" style="color:var(--red);font-size:22px;margin-bottom:8px;display:block;"></i>
+    <div style="font-family:var(--font-display);font-size:28px;font-weight:800;color:var(--ink);">{{ selected_students }}</div>
+    <div style="font-size:13px;color:var(--ink2);margin-top:2px;">Selected</div>
+  </div>
+  <div style="background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);padding:1.25rem;text-align:center;">
+    <i class="fas fa-file-alt" style="color:var(--primary2);font-size:22px;margin-bottom:8px;display:block;"></i>
+    <div style="font-family:var(--font-display);font-size:28px;font-weight:800;color:var(--ink);">{{ total_apps }}</div>
+    <div style="font-size:13px;color:var(--ink2);margin-top:2px;">Applications</div>
+  </div>
 </div>
-<div class="row mt-4">
-    <div class="col-12">
-        <div class="card p-3">
-            <h5><i class="fas fa-file-alt text-primary me-2"></i>All Applications</h5><hr>
-            <div class="table-responsive">
-                <table class="table table-hover">
-                    <thead><tr><th>Student</th><th>Company</th><th>Role</th><th>Applied On</th><th>Status</th><th>Action</th></tr></thead>
-                    <tbody>
-                        {% for app in apps %}
-                        <tr>
-                            <td>{{ app.student.get_full_name }}</td>
-                            <td>{{ app.drive.company }}</td>
-                            <td>{{ app.drive.role }}</td>
-                            <td>{{ app.applied_at|date:"d M Y" }}</td>
-                            <td>
-                                {% if app.status == 'applied' %}<span class="badge bg-primary">Applied</span>
-                                {% elif app.status == 'shortlisted' %}<span class="badge bg-warning">Shortlisted</span>
-                                {% elif app.status == 'selected' %}<span class="badge bg-success">Selected</span>
-                                {% elif app.status == 'rejected' %}<span class="badge bg-danger">Rejected</span>{% endif %}
-                            </td>
-                            <td>
-                                <form method="POST" action="/accounts/update-application/{{ app.pk }}/">
-                                    {% csrf_token %}
-                                    <div class="d-flex gap-1">
-                                        <select name="status" class="form-select form-select-sm">
-                                            <option value="applied" {% if app.status == 'applied' %}selected{% endif %}>Applied</option>
-                                            <option value="shortlisted" {% if app.status == 'shortlisted' %}selected{% endif %}>Shortlisted</option>
-                                            <option value="selected" {% if app.status == 'selected' %}selected{% endif %}>Selected</option>
-                                            <option value="rejected" {% if app.status == 'rejected' %}selected{% endif %}>Rejected</option>
-                                        </select>
-                                        <button type="submit" class="btn btn-primary btn-sm">Update</button>
-                                    </div>
-                                </form>
-                                <a href="/placements/schedule/{{ app.pk }}/" class="btn btn-success btn-sm mt-1">
-                                    <i class="fas fa-calendar me-1"></i>Schedule
-                                </a>
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr><td colspan="6" class="text-center text-muted">No applications yet!</td></tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+
+<!-- ── PENDING VERIFICATION ── -->
+{% if pending_recruiters %}
+<div style="background:var(--surface);border:1px solid rgba(245,158,11,0.35);border-radius:var(--radius-lg);padding:1.5rem;margin-bottom:2rem;">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:1rem;">
+    <i class="fas fa-shield-alt" style="color:#f59e0b;font-size:18px;"></i>
+    <h5 style="font-family:var(--font-display);font-weight:700;color:var(--ink);margin:0;">
+      Pending Verifications
+      <span style="background:rgba(245,158,11,0.15);color:#f59e0b;font-size:12px;font-weight:700;padding:2px 10px;border-radius:20px;margin-left:8px;">{{ pending_recruiters|length }}</span>
+    </h5>
+  </div>
+  <div style="display:grid;gap:12px;">
+    {% for recruiter in pending_recruiters %}
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:1rem 1.25rem;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+        <!-- Info -->
+        <div>
+          <div style="font-weight:700;color:var(--ink);font-size:15px;">{{ recruiter.get_full_name|default:recruiter.username }}</div>
+          <div style="font-size:13px;color:var(--ink2);margin-top:2px;">{{ recruiter.email }}</div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;">
+            {% with recruiter.recruiterprofile as rp %}
+            {% if rp.company_name %}
+            <span style="font-size:12px;background:var(--p-soft);color:var(--primary2);padding:3px 10px;border-radius:20px;font-weight:600;">
+              <i class="fas fa-building me-1"></i>{{ rp.company_name }}
+            </span>
+            {% endif %}
+            {% if rp.designation %}
+            <span style="font-size:12px;background:var(--surface2);color:var(--ink2);padding:3px 10px;border-radius:20px;">
+              {{ rp.designation }}
+            </span>
+            {% endif %}
+            {% if rp.verification_requested_at %}
+            <span style="font-size:12px;color:var(--ink3);">
+              <i class="fas fa-clock me-1"></i>{{ rp.verification_requested_at|date:"d M Y" }}
+            </span>
+            {% endif %}
+            {% endwith %}
+          </div>
+          {% if recruiter.recruiterprofile.verification_note %}
+          <div style="font-size:13px;color:var(--ink2);margin-top:8px;font-style:italic;">
+            "{{ recruiter.recruiterprofile.verification_note }}"
+          </div>
+          {% endif %}
         </div>
-    </div>
-</div>
-<div class="row mt-4">
-    <div class="col-md-6">
-        <div class="card p-3">
-            <h5><i class="fas fa-user-graduate text-primary me-2"></i>Registered Students</h5><hr>
-            <div class="table-responsive">
-                <table class="table table-hover">
-                    <thead><tr><th>Name</th><th>Email</th><th>Username</th></tr></thead>
-                    <tbody>
-                        {% for student in students %}
-                        <tr><td>{{ student.get_full_name }}</td><td>{{ student.email }}</td><td>{{ student.username }}</td></tr>
-                        {% empty %}
-                        <tr><td colspan="3" class="text-center text-muted">No students yet!</td></tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+        <!-- Actions -->
+        <div style="display:flex;flex-direction:column;gap:8px;min-width:200px;">
+          <!-- Approve -->
+          <form method="POST" action="{% url 'admin_verify_recruiter' recruiter.pk %}">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="approve">
+            <input type="text" name="admin_remark" class="form-control form-control-sm mb-1" placeholder="Optional remark...">
+            <button type="submit"
+                    onclick="submitWithLoading(this,'Approving...')"
+                    style="width:100%;padding:7px 14px;border-radius:8px;border:none;background:var(--green);color:#fff;font-size:13px;font-weight:700;cursor:pointer;">
+              <i class="fas fa-check me-1"></i>Approve
+            </button>
+          </form>
+          <!-- Reject -->
+          <form method="POST" action="{% url 'admin_verify_recruiter' recruiter.pk %}">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="reject">
+            <input type="text" name="admin_remark" class="form-control form-control-sm mb-1" placeholder="Reason for rejection...">
+            <button type="submit"
+                    onclick="submitWithLoading(this,'Rejecting...')"
+                    style="width:100%;padding:7px 14px;border-radius:8px;border:none;background:var(--red-soft);color:var(--red);border:1px solid rgba(244,63,94,0.3);font-size:13px;font-weight:700;cursor:pointer;">
+              <i class="fas fa-times me-1"></i>Reject
+            </button>
+          </form>
         </div>
+      </div>
     </div>
-    <div class="col-md-6">
-        <div class="card p-3">
-            <h5><i class="fas fa-building text-success me-2"></i>Registered Recruiters</h5><hr>
-            <div class="table-responsive">
-                <table class="table table-hover">
-                    <thead><tr><th>Name</th><th>Email</th><th>Username</th></tr></thead>
-                    <tbody>
-                        {% for recruiter in recruiters %}
-                        <tr><td>{{ recruiter.get_full_name }}</td><td>{{ recruiter.email }}</td><td>{{ recruiter.username }}</td></tr>
-                        {% empty %}
-                        <tr><td colspan="3" class="text-center text-muted">No recruiters yet!</td></tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
+    {% endfor %}
+  </div>
 </div>
+{% endif %}
+
+<!-- ── MANAGE DRIVES (MODERATION) ── -->
+<div style="background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:1.5rem;margin-bottom:2rem;">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:1rem;">
+    <i class="fas fa-briefcase" style="color:#f59e0b;font-size:18px;"></i>
+    <h5 style="font-family:var(--font-display);font-weight:700;color:var(--ink);margin:0;">
+      Platform Drives
+      <span style="background:var(--p-soft);color:var(--primary2);font-size:12px;font-weight:700;padding:2px 10px;border-radius:20px;margin-left:8px;">{{ drives.count }}</span>
+    </h5>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-hover" style="font-size:14px;">
+      <thead>
+        <tr style="color:var(--ink3);font-size:12px;text-transform:uppercase;letter-spacing:.5px;">
+          <th>Company</th><th>Role</th><th>Posted By</th><th>Deadline</th><th>Status</th><th>Admin Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for drive in drives %}
+        <tr>
+          <td style="color:var(--ink);font-weight:600;">{{ drive.company }}</td>
+          <td style="color:var(--ink2);">{{ drive.role }}</td>
+          <td style="color:var(--ink3);">{{ drive.posted_by.username }}</td>
+          <td style="color:var(--ink3);">{{ drive.deadline|date:"d M Y" }}</td>
+          <td>
+            {% if drive.status == 'active' %}
+              <span style="font-size:12px;background:var(--green-soft);color:var(--green);padding:3px 10px;border-radius:20px;font-weight:600;">Active</span>
+            {% else %}
+              <span style="font-size:12px;background:var(--red-soft);color:var(--red);padding:3px 10px;border-radius:20px;font-weight:600;">Closed</span>
+            {% endif %}
+          </td>
+          <td>
+            <form method="POST" action="{% url 'admin_toggle_drive' drive.pk %}" style="display:inline;">
+              {% csrf_token %}
+              {% if drive.status == 'active' %}
+                <button type="submit" onclick="submitWithLoading(this,'Closing...')" style="font-size:12px;font-weight:700;color:var(--red);background:var(--red-soft);border:1px solid rgba(244,63,94,0.3);padding:5px 12px;border-radius:7px;cursor:pointer;">
+                  <i class="fas fa-ban me-1"></i>Force Close
+                </button>
+              {% else %}
+                <button type="submit" onclick="submitWithLoading(this,'Reopening...')" style="font-size:12px;font-weight:700;color:var(--green);background:var(--green-soft);border:1px solid rgba(34,211,160,0.3);padding:5px 12px;border-radius:7px;cursor:pointer;">
+                  <i class="fas fa-door-open me-1"></i>Reopen
+                </button>
+              {% endif %}
+            </form>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" style="text-align:center;color:var(--ink3);padding:2rem;">No drives posted yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ── ALL APPLICATIONS ── -->
+<div style="background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:1.5rem;margin-bottom:2rem;">
+  <h5 style="font-family:var(--font-display);font-weight:700;color:var(--ink);margin-bottom:1rem;">
+    <i class="fas fa-file-alt" style="color:var(--primary2);margin-right:8px;"></i>All Applications
+  </h5>
+  <div class="table-responsive">
+    <table class="table table-hover" style="font-size:14px;">
+      <thead>
+        <tr style="color:var(--ink3);font-size:12px;text-transform:uppercase;letter-spacing:.5px;">
+          <th>Student</th><th>Company</th><th>Role</th><th>Applied On</th><th>Status</th><th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for app in apps %}
+        <tr>
+          <td style="color:var(--ink);font-weight:600;">{{ app.student.get_full_name }}</td>
+          <td style="color:var(--ink2);">{{ app.drive.company }}</td>
+          <td style="color:var(--ink2);">{{ app.drive.role }}</td>
+          <td style="color:var(--ink3);">{{ app.applied_at|date:"d M Y" }}</td>
+          <td>
+            {% if app.status == 'applied' %}<span style="font-size:12px;background:var(--p-soft);color:var(--primary2);padding:3px 10px;border-radius:20px;font-weight:600;">Applied</span>
+            {% elif app.status == 'shortlisted' %}<span style="font-size:12px;background:rgba(245,158,11,0.12);color:#f59e0b;padding:3px 10px;border-radius:20px;font-weight:600;">Shortlisted</span>
+            {% elif app.status == 'selected' %}<span style="font-size:12px;background:var(--green-soft);color:var(--green);padding:3px 10px;border-radius:20px;font-weight:600;">Selected</span>
+            {% elif app.status == 'rejected' %}<span style="font-size:12px;background:var(--red-soft);color:var(--red);padding:3px 10px;border-radius:20px;font-weight:600;">Rejected</span>{% endif %}
+          </td>
+          <td>
+            <form method="POST" action="{% url 'update_application' app.pk %}">
+              {% csrf_token %}
+              <div style="display:flex;gap:6px;">
+                <select name="status" class="form-select form-select-sm" style="font-size:13px;min-width:110px;">
+                  <option value="applied"      {% if app.status == 'applied' %}selected{% endif %}>Applied</option>
+                  <option value="shortlisted"  {% if app.status == 'shortlisted' %}selected{% endif %}>Shortlisted</option>
+                  <option value="selected"     {% if app.status == 'selected' %}selected{% endif %}>Selected</option>
+                  <option value="rejected"     {% if app.status == 'rejected' %}selected{% endif %}>Rejected</option>
+                </select>
+                <button type="submit" class="btn btn-primary btn-sm" style="font-size:13px;white-space:nowrap;">Update</button>
+              </div>
+            </form>
+            
+            <div style="display:flex; gap:6px; margin-top:8px; flex-wrap:wrap;">
+              <a href="/placements/schedule/{{ app.pk }}/" style="font-size:12px;color:var(--green);text-decoration:none;font-weight:600;">
+                <i class="fas fa-calendar me-1"></i>Schedule
+              </a>
+
+              <!-- ── ADMIN CHAT ACCESS (READ ONLY OBSERVER) ── -->
+              {% if app.status == 'shortlisted' or app.status == 'selected' %}
+              <a href="{% url 'start_chat' app.pk %}" style="font-size:12px; font-weight:600; color:var(--primary2); text-decoration:none; padding:4px 10px; border-radius:6px; background:var(--p-soft); border:1px solid rgba(79,70,229,0.3); display:inline-flex; align-items:center; gap:4px;">
+                <i class="fas fa-eye"></i> View Chat
+              </a>
+              {% endif %}
+            </div>
+
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" style="text-align:center;color:var(--ink3);padding:2rem;">No applications yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ── STUDENTS & RECRUITERS (WITH SOFT DELETE) ── -->
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1.5rem;">
+
+  <!-- Students -->
+  <div style="background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:1.5rem;">
+    <h5 style="font-family:var(--font-display);font-weight:700;color:var(--ink);margin-bottom:1rem;">
+      <i class="fas fa-user-graduate" style="color:var(--primary2);margin-right:8px;"></i>Students
+    </h5>
+    <div class="table-responsive">
+      <table class="table table-hover" style="font-size:14px;">
+        <thead>
+          <tr style="color:var(--ink3);font-size:12px;">
+            <th>Name</th><th>Email</th><th>Status</th><th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for student in students %}
+          <tr style="{% if not student.is_active %}opacity: 0.5;{% endif %}">
+            <td style="color:var(--ink);font-weight:600;">{{ student.get_full_name }}</td>
+            <td style="color:var(--ink2);">{{ student.email }}</td>
+            <td>
+              {% if student.is_active %}
+                <span style="font-size:12px;background:var(--green-soft);color:var(--green);padding:3px 10px;border-radius:20px;font-weight:600;">Active</span>
+              {% else %}
+                <span style="font-size:12px;background:var(--red-soft);color:var(--red);padding:3px 10px;border-radius:20px;font-weight:600;">Deactivated</span>
+              {% endif %}
+            </td>
+            <td>
+              <form method="POST" action="{% url 'admin_toggle_user' student.pk %}">
+                {% csrf_token %}
+                {% if student.is_active %}
+                  <button type="submit" onclick="submitWithLoading(this,'Deactivating...')" style="font-size:12px;font-weight:700;color:var(--red);background:var(--red-soft);border:1px solid rgba(244,63,94,0.3);padding:4px 10px;border-radius:7px;cursor:pointer;">
+                    <i class="fas fa-ban me-1"></i>Deactivate
+                  </button>
+                {% else %}
+                  <button type="submit" onclick="submitWithLoading(this,'Reactivating...')" style="font-size:12px;font-weight:700;color:var(--green);background:var(--green-soft);border:1px solid rgba(34,211,160,0.3);padding:4px 10px;border-radius:7px;cursor:pointer;">
+                    <i class="fas fa-check me-1"></i>Reactivate
+                  </button>
+                {% endif %}
+              </form>
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="4" style="text-align:center;color:var(--ink3);padding:1.5rem;">No students yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Recruiters -->
+  <div style="background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:1.5rem;">
+    <h5 style="font-family:var(--font-display);font-weight:700;color:var(--ink);margin-bottom:1rem;">
+      <i class="fas fa-building" style="color:var(--green);margin-right:8px;"></i>Recruiters
+    </h5>
+    <div class="table-responsive">
+      <table class="table table-hover" style="font-size:14px;">
+        <thead>
+          <tr style="color:var(--ink3);font-size:12px;">
+            <th>Name</th><th>Email</th><th>Verification</th><th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for recruiter in recruiters %}
+          <tr style="{% if not recruiter.is_active %}opacity: 0.5;{% endif %}">
+            <td style="color:var(--ink);font-weight:600;">{{ recruiter.get_full_name|default:recruiter.username }}</td>
+            <td style="color:var(--ink2);">{{ recruiter.email }}</td>
+            <td>
+              {% with recruiter.recruiterprofile as rp %}
+                {% if rp.is_verified %}
+                  <span style="font-size:12px;background:var(--green-soft);color:var(--green);padding:3px 10px;border-radius:20px;font-weight:600;">Verified</span>
+                {% elif rp.verification_status == 'pending' %}
+                  <span style="font-size:12px;background:rgba(245,158,11,0.12);color:#f59e0b;padding:3px 10px;border-radius:20px;font-weight:600;">Pending</span>
+                {% elif rp.verification_status == 'rejected' %}
+                  <span style="font-size:12px;background:var(--red-soft);color:var(--red);padding:3px 10px;border-radius:20px;font-weight:600;">Rejected</span>
+                {% else %}
+                  <span style="font-size:12px;background:var(--surface2);color:var(--ink3);padding:3px 10px;border-radius:20px;">Not Requested</span>
+                {% endif %}
+              {% endwith %}
+            </td>
+            <td>
+              <form method="POST" action="{% url 'admin_toggle_user' recruiter.pk %}">
+                {% csrf_token %}
+                {% if recruiter.is_active %}
+                  <button type="submit" onclick="submitWithLoading(this,'Deactivating...')" style="font-size:12px;font-weight:700;color:var(--red);background:var(--red-soft);border:1px solid rgba(244,63,94,0.3);padding:4px 10px;border-radius:7px;cursor:pointer;">
+                    <i class="fas fa-ban me-1"></i>Deactivate
+                  </button>
+                {% else %}
+                  <button type="submit" onclick="submitWithLoading(this,'Reactivating...')" style="font-size:12px;font-weight:700;color:var(--green);background:var(--green-soft);border:1px solid rgba(34,211,160,0.3);padding:4px 10px;border-radius:7px;cursor:pointer;">
+                    <i class="fas fa-check me-1"></i>Reactivate
+                  </button>
+                {% endif %}
+              </form>
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="4" style="text-align:center;color:var(--ink3);padding:1.5rem;">No recruiters yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
 {% endblock %}

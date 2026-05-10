@@ -1,39 +1,91 @@
 {% extends 'base.html' %}
 {% block content %}
-<div class="row mt-3">
-    <div class="col-12"><h3><i class="fas fa-file-alt text-primary me-2"></i>My Applications</h3></div>
+<div class="mt-4 mb-4">
+    <h3 style="font-family: var(--font-display); font-weight: 800; letter-spacing: -0.5px;">
+        <i class="fas fa-file-lines me-2" style="color: var(--primary);"></i>My Applications
+    </h3>
+    <p style="color: var(--ink3); font-size: 14px; margin-top: 4px;">Track the status of all your job applications.</p>
 </div>
-<div class="row mt-3">
-    {% for app in applications %}
-    <div class="col-md-6 mb-3">
-        <div class="card p-3">
-            <div class="d-flex justify-content-between align-items-start">
-                <div>
-                    <h5>{{ app.drive.company }}</h5>
-                    <p class="text-muted mb-1"><i class="fas fa-briefcase me-1"></i>{{ app.drive.role }}</p>
-                    <p class="text-muted mb-1"><i class="fas fa-calendar me-1"></i>Applied: {{ app.applied_at|date:"d M Y" }}</p>
+
+{% if applications %}
+    <div style="display: flex; flex-direction: column; gap: 14px;">
+        {% for app in applications %}
+        <div class="card p-4" style="border-radius: var(--radius-lg); transition: all 0.2s;">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-start gap-3">
+                
+                <!-- Left: Company Logo & Info -->
+                <div style="display: flex; align-items: center; gap: 16px;">
+                    <!-- Company Logo -->
+                    {% if app.drive.company_logo %}
+                        <img src="{{ app.drive.company_logo.url }}" alt="{{ app.drive.company }}" style="width: 48px; height: 48px; border-radius: 12px; object-fit: contain; background: #fff; padding: 4px; border: 1px solid var(--border);">
+                    {% else %}
+                        <div style="width: 48px; height: 48px; border-radius: 12px; background: var(--p-soft); color: var(--primary2); display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-weight: 800; font-size: 20px;">
+                            {{ app.drive.company|first|upper }}
+                        </div>
+                    {% endif %}
+                    
+                    <div>
+                        <a href="{% url 'drive_detail' app.drive.pk %}" style="text-decoration: none; color: inherit;">
+                            <h5 style="font-family: var(--font-display); font-weight: 700; margin-bottom: 2px;">{{ app.drive.role }}</h5>
+                        </a>
+                        <a href="{% url 'company_profile' app.drive.posted_by.pk %}" style="text-decoration: none; color: var(--primary2); font-size: 14px; font-weight: 500;">
+                            {{ app.drive.company }}
+                        </a>
+                        <div style="font-size: 12px; color: var(--ink3); margin-top: 4px; display: flex; gap: 12px;">
+                            <span><i class="fas fa-map-marker-alt me-1"></i> {{ app.drive.location }}</span>
+                            <span><i class="fas fa-indian-rupee-sign me-1"></i> {{ app.drive.formatted_salary }}</span>
+                            <span><i class="fas fa-calendar me-1"></i> Applied {{ app.applied_at|timesince }} ago</span>
+                        </div>
+                    </div>
                 </div>
-                <div class="text-end">
-                    {% if app.status == 'applied' %}<span class="badge bg-primary p-2">Applied</span>
-                    {% elif app.status == 'shortlisted' %}<span class="badge bg-warning p-2">Shortlisted</span>
-                    {% elif app.status == 'selected' %}<span class="badge bg-success p-2">Selected</span>
-                    {% elif app.status == 'rejected' %}<span class="badge bg-danger p-2">Rejected</span>{% endif %}
+
+                <!-- Right: Status & Action -->
+                <div class="d-flex align-items-center gap-3 flex-shrink-0">
+                    
+                    <!-- Status Badge -->
+                    {% if app.status == 'applied' %}
+                        <span style="padding: 6px 14px; border-radius: 20px; background: rgba(255,255,255,0.05); color: var(--ink2); font-size: 12px; font-weight: 700; border: 1px solid var(--border);">
+                            <i class="fas fa-clock me-1"></i> Applied
+                        </span>
+                    {% elif app.status == 'shortlisted' %}
+                        <span style="padding: 6px 14px; border-radius: 20px; background: rgba(245,158,11,0.12); color: #f59e0b; font-size: 12px; font-weight: 700;">
+                            <i class="fas fa-star me-1"></i> Shortlisted
+                        </span>
+                    {% elif app.status == 'selected' %}
+                        <span style="padding: 6px 14px; border-radius: 20px; background: var(--green-soft); color: var(--green); font-size: 12px; font-weight: 700;">
+                            <i class="fas fa-check-circle me-1"></i> Selected
+                        </span>
+                    {% elif app.status == 'rejected' %}
+                        <span style="padding: 6px 14px; border-radius: 20px; background: var(--red-soft); color: var(--red); font-size: 12px; font-weight: 700;">
+                            <i class="fas fa-times-circle me-1"></i> Rejected
+                        </span>
+                    {% endif %}
+
+                    <!-- ── NEW: CHAT BUTTON ── -->
+                    {% if app.status == 'shortlisted' or app.status == 'selected' %}
+                    <a href="{% url 'start_chat' app.pk %}" style="padding: 6px 14px; border-radius: 8px; background: var(--primary); color: #fff; font-size: 12px; font-weight: 700; text-decoration: none; transition: all 0.15s; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 2px 6px var(--p-glow);">
+                        <i class="fas fa-comment-dots"></i> Chat
+                    </a>
+                    {% endif %}
+
+                    <!-- Withdraw Button (Only show if status is 'applied') -->
+                    {% if app.status == 'applied' %}
+                        <a href="{% url 'withdraw' app.pk %}" style="padding: 6px 12px; border-radius: 8px; background: var(--surface2); border: 1px solid var(--border2); color: var(--ink3); font-size: 12px; font-weight: 600; text-decoration: none; transition: all 0.15s;">
+                            <i class="fas fa-trash-alt me-1"></i> Withdraw
+                        </a>
+                    {% endif %}
                 </div>
-            </div>
-            <div class="mt-2">
-                <a href="/placements/{{ app.drive.pk }}/" class="btn btn-outline-primary btn-sm me-2">View Drive</a>
-                {% if app.status == 'applied' %}
-                    <a href="/placements/withdraw/{{ app.pk }}/" class="btn btn-outline-danger btn-sm">Withdraw</a>
-                {% endif %}
+
             </div>
         </div>
+        {% endfor %}
     </div>
-    {% empty %}
-        <div class="col-12 text-center mt-4">
-            <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
-            <h5 class="text-muted">No applications yet!</h5>
-            <a href="/placements/" class="btn btn-primary mt-2">Browse Drives</a>
-        </div>
-    {% endfor %}
-</div>
+{% else %}
+    <div class="card p-5 text-center" style="border-radius: var(--radius-lg);">
+        <i class="fas fa-inbox fa-3x mb-3" style="color: var(--ink3);"></i>
+        <h5 style="color: var(--ink2);">No applications yet!</h5>
+        <p style="color: var(--ink3); font-size: 13px;">Start applying to placement drives to see them here.</p>
+        <a href="{% url 'drive_list' %}" class="btn btn-primary mt-2" style="font-weight: 700;">Browse Drives</a>
+    </div>
+{% endif %}
 {% endblock %}

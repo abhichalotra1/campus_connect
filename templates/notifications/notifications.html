@@ -1,35 +1,78 @@
 ﻿{% extends 'base.html' %}
+{% load tz %}
+
 {% block content %}
-<div class="row mt-3">
-    <div class="col-12"><h3><i class="fas fa-bell text-primary me-2"></i>Notifications</h3></div>
+<div class="d-flex justify-content-between align-items-center mt-4 mb-4">
+    <h3 style="font-family: var(--font-display); font-weight: 800; letter-spacing: -0.5px;">
+        <i class="fas fa-bell me-2" style="color: var(--primary);"></i>Notifications
+    </h3>
+    
+    {% if notifications.exists %}
+        <form method="POST" action="{% url 'mark_all_read' %}" style="display:inline;">
+            {% csrf_token %}
+            <button type="submit" style="font-size: 12px; color: var(--primary2); background: none; border: 1px solid var(--border2); padding: 6px 14px; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                <i class="fas fa-check-double me-1"></i> Mark all as Read
+            </button>
+        </form>
+    {% endif %}
 </div>
-<div class="row mt-3">
+
+<div class="row">
     <div class="col-md-8">
         {% for notification in notifications %}
-        <div class="card p-3 mb-3">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    {% if notification.notif_type == 'shortlisted' %}
-                        <span class="badge bg-warning me-2">Shortlisted</span>
-                    {% elif notification.notif_type == 'selected' %}
-                        <span class="badge bg-success me-2">Selected</span>
-                    {% elif notification.notif_type == 'rejected' %}
-                        <span class="badge bg-danger me-2">Rejected</span>
-                    {% elif notification.notif_type == 'deadline' %}
-                        <span class="badge bg-warning me-2">Deadline</span>
-                    {% else %}
-                        <span class="badge bg-secondary me-2">General</span>
-                    {% endif %}
-                    <strong>{{ notification.title }}</strong>
+        <div class="card p-4 mb-3" style="border-radius: var(--radius-lg); transition: all 0.2s; {% if not notification.is_read %}border-left: 3px solid var(--primary); background: var(--surface);{% else %}opacity: 0.7; background: var(--bg2);{% endif %}">
+            <div class="d-flex justify-content-between align-items-start">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <!-- Icon based on type -->
+                    <div style="width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; background: var(--p-soft); color: var(--primary2);">
+                        {% if notification.notif_type == 'shortlisted' %}
+                            <i class="fas fa-star"></i>
+                        {% elif notification.notif_type == 'selected' %}
+                            <i class="fas fa-trophy"></i>
+                        {% elif notification.notif_type == 'rejected' %}
+                            <i class="fas fa-circle-xmark"></i>
+                        {% else %}
+                            <i class="fas fa-bell"></i>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                            <!-- Unread Dot -->
+                            {% if not notification.is_read %}
+                                <span style="width: 8px; height: 8px; border-radius: 50%; background: var(--primary2); flex-shrink: 0;"></span>
+                            {% endif %}
+                            <!-- Styled Badges -->
+                            {% if notification.notif_type == 'shortlisted' %}
+                                <span class="badge" style="background: var(--yellow-soft); color: var(--yellow); font-size: 10px; font-weight: 700;">Shortlisted</span>
+                            {% elif notification.notif_type == 'selected' %}
+                                <span class="badge" style="background: var(--green-soft); color: var(--green); font-size: 10px; font-weight: 700;">Selected</span>
+                            {% elif notification.notif_type == 'rejected' %}
+                                <span class="badge" style="background: var(--red-soft); color: var(--red); font-size: 10px; font-weight: 700;">Rejected</span>
+                            {% else %}
+                                <span class="badge" style="background: rgba(255,255,255,0.05); color: var(--ink3); font-size: 10px; font-weight: 700;">General</span>
+                            {% endif %}
+                            <strong style="font-size: 14px; color: var(--ink);">{{ notification.title }}</strong>
+                        </div>
+                        <p style="font-size: 13px; color: var(--ink2); margin: 0; line-height: 1.6;">{{ notification.message }}</p>
+                        <small style="font-size: 11px; color: var(--ink3); font-family: var(--font-mono); margin-top: 4px; display: block;">
+                            {% localtime on %}{{ notification.created_at|timesince }} ago{% endlocaltime %}
+                        </small>
+                    </div>
                 </div>
-                <small class="text-muted">{{ notification.created_at|date:"d M Y, H:i" }}</small>
+                
+                <!-- Mark as Read Button -->
+                {% if not notification.is_read %}
+                    <a href="{% url 'mark_read' notification.pk %}" style="font-size: 11px; color: var(--primary2); text-decoration: none; font-weight: 700; white-space: nowrap; padding: 6px 10px; border-radius: 6px; background: var(--p-soft);">
+                        <i class="fas fa-check me-1"></i> Read
+                    </a>
+                {% endif %}
             </div>
-            <p class="mt-2 mb-0">{{ notification.message }}</p>
         </div>
         {% empty %}
-        <div class="card p-4 text-center">
-            <i class="fas fa-bell-slash fa-3x text-muted mb-3"></i>
-            <h5 class="text-muted">No notifications yet!</h5>
+        <div class="card p-5 text-center" style="border-radius: var(--radius-lg);">
+            <i class="fas fa-bell-slash fa-3x mb-3" style="color: var(--ink3);"></i>
+            <h5 style="color: var(--ink2);">No notifications yet!</h5>
+            <p style="color: var(--ink3); font-size: 13px;">When you apply for drives or get updates, they'll show up here.</p>
         </div>
         {% endfor %}
     </div>

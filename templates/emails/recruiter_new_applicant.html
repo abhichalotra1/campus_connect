@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>New Applicant</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #f0f2ff; font-family: 'Segoe UI', Arial, sans-serif; }
+  .wrapper { max-width: 600px; margin: 40px auto; background: #fff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 24px rgba(79,70,229,0.10); }
+  .header { background: linear-gradient(135deg, #1a1d2a 0%, #2d3160 100%); padding: 36px 32px; text-align: center; }
+  .logo-text { color: #fff; font-size: 18px; font-weight: 800; }
+  .header h1 { color: #fff; font-size: 24px; font-weight: 800; margin-top: 16px; }
+  .header p { color: rgba(255,255,255,0.7); margin-top: 6px; font-size: 14px; }
+  .body { padding: 36px 32px; }
+  .greeting { font-size: 17px; font-weight: 700; color: #1a1d2a; margin-bottom: 12px; }
+  .text { color: #4a5080; font-size: 15px; line-height: 1.7; margin-bottom: 16px; }
+  .student-card { border: 1px solid #e8ecf5; border-radius: 12px; overflow: hidden; margin: 24px 0; }
+  .student-header { background: #f8f9ff; padding: 16px 20px; border-bottom: 1px solid #e8ecf5; }
+  .student-name { font-size: 18px; font-weight: 800; color: #1a1d2a; }
+  .student-username { font-size: 13px; color: #9298b8; margin-top: 2px; }
+  .student-body { padding: 16px 20px; }
+  .info-row { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; font-size: 14px; color: #4a5080; }
+  .info-row strong { color: #1a1d2a; min-width: 80px; }
+  .drive-info { background: #eef0ff; border-radius: 10px; padding: 14px 18px; margin: 20px 0; }
+  .drive-info p { font-size: 14px; color: #4a5080; margin-bottom: 4px; }
+  .drive-info strong { color: #4f46e5; font-size: 15px; }
+  .cta-btn { display: block; width: fit-content; margin: 24px auto 0; background: linear-gradient(135deg, #4f46e5, #6c63ff); color: #fff !important; text-decoration: none; padding: 13px 32px; border-radius: 10px; font-size: 14px; font-weight: 700; }
+  .footer { background: #f8f9ff; padding: 20px 32px; text-align: center; border-top: 1px solid #e8ecf5; }
+  .footer p { color: #9298b8; font-size: 13px; line-height: 1.6; }
+</style>
+</head>
+<body>
+<div class="wrapper">
+  <div class="header">
+    <div class="logo-text">🎓 Campus Connect</div>
+    <h1>New Applicant 📥</h1>
+    <p>Someone just applied to your placement drive</p>
+  </div>
+
+  <div class="body">
+    <p class="greeting">Hi {{ recruiter.first_name|default:recruiter.username }},</p>
+    <p class="text">
+      A new student has applied to your placement drive. Here are their details:
+    </p>
+
+    <div class="student-card">
+      <div class="student-header">
+        <div class="student-name">{{ student.get_full_name|default:student.username }}</div>
+        <div class="student-username">@{{ student.username }}</div>
+      </div>
+      <div class="student-body">
+        <div class="info-row"><strong>Email</strong> {{ student.email }}</div>
+        {% if student.phone %}<div class="info-row"><strong>Phone</strong> {{ student.phone }}</div>{% endif %}
+        {% if student.studentprofile.branch %}<div class="info-row"><strong>Branch</strong> {{ student.studentprofile.branch }}</div>{% endif %}
+        {% if student.studentprofile.cgpa %}<div class="info-row"><strong>CGPA</strong> {{ student.studentprofile.cgpa }}</div>{% endif %}
+        {% if student.studentprofile.roll_number %}<div class="info-row"><strong>Roll No.</strong> {{ student.studentprofile.roll_number }}</div>{% endif %}
+      </div>
+    </div>
+
+    <div class="drive-info">
+      <p>Applied for</p>
+      <strong>{{ drive.role }} at {{ drive.company }}</strong>
+    </div>
+
+    <a href="http://127.0.0.1:8000/recruiter/applicants/" class="cta-btn">Review Applicants →</a>
+  </div>
+
+  <div class="footer">
+    <p>© Campus Connect &bull; You're receiving this as a recruiter on our platform.<br>Please do not reply directly to this email.</p>
+  </div>
+</div>
+</body>
+</html>

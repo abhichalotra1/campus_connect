@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Interview Scheduled</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #f0f2ff; font-family: 'Segoe UI', Arial, sans-serif; }
+  .wrapper { max-width: 600px; margin: 40px auto; background: #fff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 24px rgba(79,70,229,0.10); }
+  .header { background: linear-gradient(135deg, #0f766e 0%, #22d3a0 100%); padding: 36px 32px; text-align: center; }
+  .logo-text { color: #fff; font-size: 18px; font-weight: 800; }
+  .header h1 { color: #fff; font-size: 26px; font-weight: 800; margin-top: 16px; }
+  .header p { color: rgba(255,255,255,0.85); margin-top: 6px; font-size: 14px; }
+  .body { padding: 36px 32px; }
+  .greeting { font-size: 17px; font-weight: 700; color: #1a1d2a; margin-bottom: 12px; }
+  .text { color: #4a5080; font-size: 15px; line-height: 1.7; margin-bottom: 16px; }
+  .interview-card { border: 2px solid #22d3a0; border-radius: 12px; overflow: hidden; margin: 20px 0; }
+  .interview-header { background: #e6faf4; padding: 14px 20px; }
+  .interview-company { font-size: 18px; font-weight: 800; color: #1a1d2a; }
+  .interview-role { font-size: 13px; color: #0f766e; font-weight: 600; margin-top: 3px; }
+  .interview-body { padding: 18px 20px; }
+  .detail-row { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 14px; font-size: 14px; }
+  .detail-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+  .detail-content strong { color: #1a1d2a; display: block; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
+  .detail-content span { color: #4a5080; }
+  .detail-content a { color: #4f46e5; text-decoration: none; font-weight: 600; }
+  .tip-box { background: #eef0ff; border-left: 4px solid #4f46e5; border-radius: 0 10px 10px 0; padding: 16px 20px; margin: 20px 0; }
+  .tip-box p { font-size: 14px; color: #2d2b6b; line-height: 1.7; }
+  .cta-btn { display: block; width: fit-content; margin: 24px auto 0; background: linear-gradient(135deg, #0f766e, #22d3a0); color: #fff !important; text-decoration: none; padding: 13px 32px; border-radius: 10px; font-size: 14px; font-weight: 700; }
+  .footer { background: #f8f9ff; padding: 20px 32px; text-align: center; border-top: 1px solid #e8ecf5; }
+  .footer p { color: #9298b8; font-size: 13px; line-height: 1.6; }
+</style>
+</head>
+<body>
+<div class="wrapper">
+  <div class="header">
+    <div class="logo-text">🎓 Campus Connect</div>
+    <h1>Interview Scheduled 📅</h1>
+    <p>Time to show them what you've got!</p>
+  </div>
+
+  <div class="body">
+    <p class="greeting">Hi {{ student.first_name|default:student.username }},</p>
+    <p class="text">
+      Exciting news — your interview has been scheduled! Please review the details below and make sure you're prepared.
+    </p>
+
+    <div class="interview-card">
+      <div class="interview-header">
+        <div class="interview-company">{{ drive.company }}</div>
+        <div class="interview-role">{{ drive.role }}</div>
+      </div>
+      <div class="interview-body">
+        <div class="detail-row">
+          <div class="detail-icon">📅</div>
+          <div class="detail-content">
+            <strong>Date &amp; Time</strong>
+            <span>{{ scheduled_at }}</span>
+          </div>
+        </div>
+        {% if location %}
+        <div class="detail-row">
+          <div class="detail-icon">📍</div>
+          <div class="detail-content">
+            <strong>Location</strong>
+            <span>{{ location }}</span>
+          </div>
+        </div>
+        {% endif %}
+        {% if meeting_link %}
+        <div class="detail-row">
+          <div class="detail-icon">🔗</div>
+          <div class="detail-content">
+            <strong>Meeting Link</strong>
+            <a href="{{ meeting_link }}">{{ meeting_link }}</a>
+          </div>
+        </div>
+        {% endif %}
+        {% if notes %}
+        <div class="detail-row">
+          <div class="detail-icon">📝</div>
+          <div class="detail-content">
+            <strong>Notes from Recruiter</strong>
+            <span>{{ notes }}</span>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="tip-box">
+      <p>💡 <strong>Interview Tips:</strong> Research the company thoroughly, review your resume, prepare examples of your work, and make sure your internet connection is stable if it's a virtual interview. Good luck! 🚀</p>
+    </div>
+
+    <a href="http://127.0.0.1:8000/interviews/" class="cta-btn">View My Interviews →</a>
+  </div>
+
+  <div class="footer">
+    <p>© Campus Connect &bull; You're receiving this because an interview was scheduled for you.<br>Please do not reply directly to this email.</p>
+  </div>
+</div>
+</body>
+</html>

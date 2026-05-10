@@ -1,43 +1,93 @@
 {% extends 'base.html' %}
 {% block content %}
-<div class="row justify-content-center mt-3">
+<div class="row mt-4 justify-content-center">
     <div class="col-md-8">
-        <div class="card p-4">
-            <h3 class="mb-4"><i class="fas fa-plus-circle text-primary me-2"></i>Post a Placement Drive</h3>
-            <form method="POST">{% csrf_token %}
+        <h3 style="font-family: var(--font-display); font-weight: 800; margin-bottom: 20px;">
+            <i class="fas fa-plus me-2" style="color: var(--primary2);"></i>Post a New Drive
+        </h3>
+        <div class="card p-4" style="border-radius: var(--radius-lg);">
+            
+            <!-- IMPORTANT: enctype="multipart/form-data" is required for image uploads! -->
+            <form method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+
                 <div class="row">
-                    <div class="col-md-6 mb-3"><label class="form-label">Company Name</label><input type="text" name="company" class="form-control" required></div>
-                    <div class="col-md-6 mb-3"><label class="form-label">Role</label><input type="text" name="role" class="form-control" required></div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Company Name</label>
+                        <input type="text" name="company" class="form-control" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Company Logo (Compulsary)</label>
+                        <input type="file" name="company_logo" class="form-control" accept="image/*" required>
+                    </div>
                 </div>
-                <div class="row">
-                    <div class="col-md-6 mb-3"><label class="form-label">Location</label><input type="text" name="location" class="form-control" required></div>
-                    <div class="col-md-6 mb-3"><label class="form-label">Package</label><input type="text" name="package" class="form-control" placeholder="e.g. 6 LPA" required></div>
+
+                <div class="mb-3">
+                    <label class="form-label">Role / Job Title</label>
+                    <input type="text" name="role" class="form-control" required>
                 </div>
-                <div class="mb-3"><label class="form-label">Job Description</label><textarea name="description" class="form-control" rows="4" required></textarea></div>
+                <div class="mb-3">
+                    <label class="form-label">Description</label>
+                    <textarea name="description" class="form-control" rows="4" required></textarea>
+                </div>
+                
                 <div class="row">
-                    <div class="col-md-4 mb-3"><label class="form-label">Job Type</label>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Location</label>
+                        <input type="text" name="location" class="form-control" required>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Salary Amount</label>
+                        <input type="number" step="0.1" name="salary_amount" class="form-control" placeholder="e.g., 12.5" required>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Salary Type</label>
+                        <select name="salary_type" class="form-select" required>
+                            <option value="lpa">LPA</option>
+                            <option value="ctc">CTC</option>
+                            <option value="stipend">Stipend</option>
+                            <option value="not_disclosed">Not Disclosed</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Job Type</label>
                         <select name="job_type" class="form-select">
                             <option value="full_time">Full Time</option>
                             <option value="internship">Internship</option>
                             <option value="part_time">Part Time</option>
                         </select>
                     </div>
-                    <div class="col-md-4 mb-3"><label class="form-label">Eligible Branch</label>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Eligible Branch</label>
                         <select name="eligible_branch" class="form-select">
                             <option value="ALL">All Branches</option>
-                            <option value="CSE">CSE</option><option value="ECE">ECE</option>
-                            <option value="ME">ME</option><option value="CE">CE</option>
-                            <option value="EE">EE</option><option value="IT">IT</option>
+                            <option value="CSE">CSE</option>
+                            <option value="ECE">ECE</option>
+                            <option value="IT">IT</option>
+                            <option value="ME">ME</option>
+                            <option value="CE">CE</option>
+                            <option value="EE">EE</option>
                         </select>
                     </div>
-                    <div class="col-md-4 mb-3"><label class="form-label">Minimum CGPA</label><input type="number" name="min_cgpa" class="form-control" step="0.01" min="0" max="10" value="0"></div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Min CGPA</label>
+                        <input type="number" step="0.1" name="min_cgpa" class="form-control" value="0.0" required>
+                    </div>
                 </div>
-                <div class="row">
-                    <div class="col-md-6 mb-3"><label class="form-label">Skills Required</label><input type="text" name="skills_required" class="form-control" placeholder="Python, Django, SQL..."></div>
-                    <div class="col-md-6 mb-3"><label class="form-label">Application Deadline</label><input type="date" name="deadline" class="form-control" required></div>
+
+                <div class="mb-3">
+                    <label class="form-label">Skills Required</label>
+                    <input type="text" name="skills_required" class="form-control" placeholder="e.g., Python, SQL, React">
                 </div>
-                <button type="submit" class="btn btn-primary w-100"><i class="fas fa-paper-plane me-2"></i>Post Drive</button>
-            </form>
+                <div class="mb-3">
+                    <label class="form-label">Deadline</label>
+                    <input type="date" name="deadline" class="form-control" required>
+                </div>
+
+<button type="submit" class="btn btn-primary w-100" style="font-weight: 700; padding: 12px;" onclick="submitWithLoading(this, 'Posting Drive...')">Post Drive</button>            </form>
         </div>
     </div>
 </div>

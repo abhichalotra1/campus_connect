@@ -1,70 +1,97 @@
 ﻿{% extends 'base.html' %}
+{% load placement_tags %}
+
 {% block content %}
-<div class="row mt-3">
-    <div class="col-md-4">
-        <div class="card p-3 text-center">
-            {% if profile.profile_pic %}
-                <img src="{{ profile.profile_pic.url }}" class="rounded-circle mb-3 mx-auto" style="width:120px;height:120px;object-fit:cover;">
-            {% else %}
-                <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center mb-3 mx-auto" style="width:120px;height:120px;">
-                    <i class="fas fa-user fa-3x text-white"></i>
-                </div>
-            {% endif %}
-            <h4>{{ user.first_name }} {{ user.last_name }}</h4>
-            <p class="text-muted">{{ user.email }}</p>
-            <span class="badge bg-primary">{{ user.role }}</span>
-            {% if profile %}
-            <div class="mt-3">
-                <p class="text-muted mb-1">Profile Completion</p>
-                <div class="progress">
-                    <div class="progress-bar" style="width: {{ profile.profile_completion }}%">{{ profile.profile_completion }}%</div>
-                </div>
+<div class="row mt-4">
+    <!-- Left Sidebar: Profile Card -->
+    <div class="col-md-4 mb-4">
+        <div class="card p-4 text-center" style="border-radius: var(--radius-lg);">
+            <!-- Avatar -->
+            <div style="width: 100px; height: 100px; border-radius: 50%; background: var(--p-soft); color: var(--primary2); display: flex; align-items: center; justify-content: center; font-size: 36px; font-weight: 800; margin: 0 auto 16px; overflow: hidden; border: 3px solid var(--border2);">
+                {% if profile.profile_pic %}
+                    <img src="{{ profile.profile_pic.url }}" style="width: 100%; height: 100%; object-fit: cover;" alt="Profile">
+                {% else %}
+                    {{ user.first_name|first|upper }}{{ user.last_name|first|upper }}
+                {% endif %}
             </div>
-            {% endif %}
-            <a href="/students/edit-profile/" class="btn btn-primary mt-3 w-100"><i class="fas fa-edit me-2"></i>Edit Profile</a>
+            <h4 style="font-family: var(--font-display); font-weight: 800;">{{ user.get_full_name|default:user.username }}</h4>
+            <p style="color: var(--primary2); font-size: 14px; font-weight: 600; margin-top: 4px;">{{ profile.branch|default:"Branch not set" }}</p>
+            
+            <div style="margin-top: 20px; display: flex; flex-direction: column; gap: 10px; text-align: left;">
+                {% if user.email %}<div style="font-size: 13px; color: var(--ink2);"><i class="fas fa-envelope me-2" style="color: var(--ink3); width: 16px;"></i> {{ user.email }}</div>{% endif %}
+                {% if user.phone %}<div style="font-size: 13px; color: var(--ink2);"><i class="fas fa-phone me-2" style="color: var(--ink3); width: 16px;"></i> {{ user.phone }}</div>{% endif %}
+                {% if profile.linkedin %}<a href="{{ profile.linkedin }}" target="_blank" style="font-size: 13px; color: var(--primary2); text-decoration: none;"><i class="fab fa-linkedin me-2" style="width: 16px;"></i> LinkedIn</a>{% endif %}
+                {% if profile.github %}<a href="{{ profile.github }}" target="_blank" style="font-size: 13px; color: var(--primary2); text-decoration: none;"><i class="fab fa-github me-2" style="width: 16px;"></i> GitHub</a>{% endif %}
+            </div>
+
+            <a href="{% url 'edit_profile' %}" class="btn btn-primary w-100 mt-4" style="font-weight: 700; border-radius: 10px;">
+                <i class="fas fa-pen me-2"></i>Edit Profile
+            </a>
+            <a href="{% url 'password_change' %}" class="btn w-100 mt-2" style="font-weight: 700; border-radius: 10px; background: var(--surface2); color: var(--ink2); border: 1px solid var(--border2);">
+    <i class="fa-solid fa-key me-2"></i>Change Password
+</a>
         </div>
     </div>
-    <div class="col-md-8">
-        {% if profile %}
-        <div class="card p-3 mb-3">
-            <h5><i class="fas fa-user-graduate text-primary me-2"></i>Academic Details</h5><hr>
+
+    <!-- Right Main: Details -->
+    <div class="col-md-8 mb-4">
+        <!-- Academics -->
+        <div class="card p-4 mb-4" style="border-radius: var(--radius-lg);">
+            <h5 style="font-family: var(--font-display); font-weight: 700; margin-bottom: 20px;">
+                <i class="fas fa-graduation-cap me-2" style="color: var(--primary2);"></i>Academic Details
+            </h5>
             <div class="row">
-                <div class="col-md-6">
-                    <p><strong>Branch:</strong> {{ profile.branch }}</p>
-                    <p><strong>CGPA:</strong> {{ profile.cgpa }}</p>
+                <div class="col-md-4 mb-3">
+                    <div style="font-size: 11px; color: var(--ink3); text-transform: uppercase; font-weight: 700; font-family: var(--font-mono);">CGPA</div>
+                    <div style="font-size: 24px; font-family: var(--font-display); font-weight: 800; color: var(--ink); margin-top: 2px;">{{ profile.cgpa|default:"N/A" }}</div>
                 </div>
-                <div class="col-md-6">
-                    <p><strong>Roll Number:</strong> {{ profile.roll_number }}</p>
-                    <p><strong>Passing Year:</strong> {{ profile.passing_year }}</p>
+                <div class="col-md-4 mb-3">
+                    <div style="font-size: 11px; color: var(--ink3); text-transform: uppercase; font-weight: 700; font-family: var(--font-mono);">Roll Number</div>
+                    <div style="font-size: 16px; font-family: var(--font-mono); color: var(--ink); margin-top: 2px;">{{ profile.roll_number|default:"N/A" }}</div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div style="font-size: 11px; color: var(--ink3); text-transform: uppercase; font-weight: 700; font-family: var(--font-mono);">Passing Year</div>
+                    <div style="font-size: 16px; font-family: var(--font-mono); color: var(--ink); margin-top: 2px;">{{ profile.passing_year|default:"N/A" }}</div>
                 </div>
             </div>
         </div>
-        <div class="card p-3 mb-3">
-            <h5><i class="fas fa-tools text-primary me-2"></i>Skills & Certifications</h5><hr>
-            <p><strong>Skills:</strong></p>
-            <div class="mb-2">
-                {% for skill in profile.skills.split %}
-                    <span class="badge bg-secondary me-1">{{ skill }}</span>
+
+        <!-- Skills -->
+        {% if profile.skills %}
+        <div class="card p-4 mb-4" style="border-radius: var(--radius-lg);">
+            <h5 style="font-family: var(--font-display); font-weight: 700; margin-bottom: 16px;">
+                <i class="fas fa-code me-2" style="color: var(--yellow);"></i>Skills
+            </h5>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                {% for skill in profile.skills|split:"," %}
+                    <span style="padding: 6px 14px; border-radius: 20px; background: var(--bg2); border: 1px solid var(--border); color: var(--ink2); font-size: 13px; font-weight: 500;">{{ skill|trim }}</span>
                 {% endfor %}
             </div>
-            <p><strong>Certifications:</strong> {{ profile.certifications }}</p>
         </div>
-        <div class="card p-3 mb-3">
-            <h5><i class="fas fa-link text-primary me-2"></i>Links & Resume</h5><hr>
-            {% if profile.linkedin %}<p><i class="fab fa-linkedin text-primary me-2"></i><a href="{{ profile.linkedin }}">LinkedIn</a></p>{% endif %}
-            {% if profile.github %}<p><i class="fab fa-github me-2"></i><a href="{{ profile.github }}">GitHub</a></p>{% endif %}
-            {% if profile.resume %}
-                <a href="{{ profile.resume.url }}" class="btn btn-outline-primary btn-sm" target="_blank">
-                    <i class="fas fa-file-pdf me-2"></i>View Resume
-                </a>
-            {% endif %}
+        {% endif %}
+
+        <!-- About / Objective -->
+        {% if profile.about %}
+        <div class="card p-4 mb-4" style="border-radius: var(--radius-lg);">
+            <h5 style="font-family: var(--font-display); font-weight: 700; margin-bottom: 12px;">
+                <i class="fas fa-user me-2" style="color: var(--green);"></i>About
+            </h5>
+            <p style="color: var(--ink2); line-height: 1.7;">{{ profile.about }}</p>
         </div>
-        {% else %}
-        <div class="card p-4 text-center">
-            <i class="fas fa-user-edit fa-3x text-muted mb-3"></i>
-            <h5>Profile not complete yet!</h5>
-            <p class="text-muted">Fill in your details to get started</p>
-            <a href="/students/edit-profile/" class="btn btn-primary">Complete Profile</a>
+        {% endif %}
+
+        <!-- Resume -->
+        {% if profile.resume %}
+        <div class="card p-4" style="border-radius: var(--radius-lg);">
+            <a href="{{ profile.resume.url }}" target="_blank" style="text-decoration: none; display: flex; align-items: center; gap: 12px;">
+                <div style="width: 42px; height: 42px; border-radius: 10px; background: var(--red-soft); color: var(--red); display: flex; align-items: center; justify-content: center; font-size: 18px;">
+                    <i class="fas fa-file-pdf"></i>
+                </div>
+                <div>
+                    <div style="font-size: 14px; font-weight: 700; color: var(--ink);">View Resume</div>
+                    <div style="font-size: 12px; color: var(--ink3);">Click to open PDF</div>
+                </div>
+            </a>
         </div>
         {% endif %}
     </div>

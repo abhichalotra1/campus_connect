@@ -1,303 +1,105 @@
 {% extends 'base.html' %}
-{% block title %}Recruiter Profile{% endblock %}
 
 {% block content %}
-<style>
-  .profile-hero {
-    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-    border-radius: 16px;
-    padding: 2.5rem;
-    color: #fff;
-    position: relative;
-    overflow: hidden;
-    margin-bottom: 1.5rem;
-  }
-  .profile-hero::before {
-    content: '';
-    position: absolute;
-    top: -60px; right: -60px;
-    width: 200px; height: 200px;
-    border-radius: 50%;
-    background: rgba(255,255,255,0.04);
-  }
-  .profile-hero::after {
-    content: '';
-    position: absolute;
-    bottom: -40px; left: -40px;
-    width: 150px; height: 150px;
-    border-radius: 50%;
-    background: rgba(255,255,255,0.03);
-  }
-  .profile-avatar {
-    width: 90px; height: 90px;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 3px solid rgba(255,255,255,0.3);
-  }
-  .avatar-placeholder {
-    width: 90px; height: 90px;
-    border-radius: 50%;
-    background: rgba(255,255,255,0.15);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 2rem; color: #fff;
-    border: 3px solid rgba(255,255,255,0.3);
-    font-weight: 700;
-  }
-  .info-card {
-    background: #fff;
-    border-radius: 12px;
-    border: 1px solid #e9ecef;
-    padding: 1.5rem;
-    margin-bottom: 1.25rem;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-  }
-  .info-card h6 {
-    font-size: 0.7rem;
-    font-weight: 700;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: #6c757d;
-    margin-bottom: 1rem;
-    padding-bottom: 0.5rem;
-    border-bottom: 2px solid #f1f3f5;
-  }
-  .info-row {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.75rem;
-    margin-bottom: 0.85rem;
-  }
-  .info-row:last-child { margin-bottom: 0; }
-  .info-icon {
-    width: 32px; height: 32px;
-    border-radius: 8px;
-    background: #f1f3f5;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 0.85rem;
-    flex-shrink: 0;
-    color: #0f3460;
-  }
-  .info-label {
-    font-size: 0.72rem;
-    color: #adb5bd;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-  .info-value {
-    font-size: 0.9rem;
-    color: #212529;
-    font-weight: 500;
-  }
-  .badge-industry {
-    background: #e8f4fd;
-    color: #0f3460;
-    border-radius: 20px;
-    padding: 0.3rem 0.85rem;
-    font-size: 0.78rem;
-    font-weight: 600;
-    display: inline-block;
-  }
-  .drives-table th {
-    font-size: 0.72rem;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: #6c757d;
-    font-weight: 700;
-    border-top: none;
-    padding: 0.6rem 0.75rem;
-  }
-  .drives-table td {
-    font-size: 0.88rem;
-    vertical-align: middle;
-    padding: 0.75rem;
-  }
-  .status-badge {
-    padding: 0.25rem 0.7rem;
-    border-radius: 20px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-transform: capitalize;
-  }
-  .status-active   { background: #d1fae5; color: #065f46; }
-  .status-closed   { background: #fee2e2; color: #991b1b; }
-  .status-upcoming { background: #fef3c7; color: #92400e; }
-  .edit-btn {
-    background: linear-gradient(135deg, #0f3460, #1a1a2e);
-    color: #fff;
-    border: none;
-    border-radius: 8px;
-    padding: 0.55rem 1.4rem;
-    font-weight: 600;
-    font-size: 0.875rem;
-    text-decoration: none;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-    transition: opacity 0.2s;
-  }
-  .edit-btn:hover { opacity: 0.88; color: #fff; }
-</style>
+<div class="row justify-content-center mt-4">
+    <div class="col-md-10">
+        
+        <!-- Profile Header Card -->
+        <div class="card p-4 mb-4" style="border-radius: var(--radius-lg);">
+            <div class="d-flex flex-column flex-md-row align-items-center gap-4">
+                <!-- Avatar -->
+                <div style="width: 90px; height: 90px; border-radius: 50%; background: var(--p-soft); color: var(--primary2); display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: 800; flex-shrink: 0; overflow: hidden; border: 3px solid var(--border2);">
+                    {% if profile.profile_pic %}
+                        <img src="{{ profile.profile_pic.url }}" style="width: 100%; height: 100%; object-fit: cover;" alt="Profile">
+                    {% else %}
+                        {{ user.first_name|first|upper }}{{ user.last_name|first|upper }}
+                    {% endif %}
+                </div>
+                
+                <!-- Info -->
+                <div class="text-center text-md-start" style="flex: 1;">
+                    <h3 style="font-family: var(--font-display); font-weight: 800; margin-bottom: 4px;">
+                        {{ user.get_full_name|default:user.username }}
+                    </h3>
+                    <p style="color: var(--primary2); font-weight: 600; font-size: 15px; margin-bottom: 6px;">
+                        {% if profile.designation %}{{ profile.designation }} at {% endif %}{{ profile.company_name|default:"Company Not Set" }}
+                    </p>
+                    <div style="display: flex; gap: 16px; justify-content: center; justify-content-md-start; color: var(--ink3); font-size: 13px; flex-wrap: wrap;">
+                        {% if user.email %}<span><i class="fas fa-envelope me-1"></i> {{ user.email }}</span>{% endif %}
+                        {% if user.phone %}<span><i class="fas fa-phone me-1"></i> {{ user.phone }}</span>{% endif %}
+                        {% if profile.company_website %}<a href="{{ profile.company_website }}" target="_blank" style="color: var(--primary2); text-decoration: none; font-size: 13px;"><i class="fas fa-globe me-1"></i> Website</a>{% endif %}
+                        {% if profile.linkedin %}<a href="{{ profile.linkedin }}" target="_blank" style="color: var(--primary2); text-decoration: none; font-size: 13px;"><i class="fab fa-linkedin me-1"></i> LinkedIn</a>{% endif %}
+                    </div>
+                </div>
 
-<div class="container py-4">
-
-  <!-- Hero -->
-  <div class="profile-hero">
-    <div class="d-flex align-items-center gap-3 mb-3">
-      {% if profile.profile_pic %}
-        <img src="{{ profile.profile_pic.url }}" alt="Profile" class="profile-avatar">
-      {% else %}
-        <div class="avatar-placeholder">
-          {{ request.user.first_name|first|upper }}{{ request.user.last_name|first|upper }}
-        </div>
-      {% endif %}
-      <div>
-        <h3 class="mb-0 fw-bold">{{ request.user.get_full_name|default:request.user.username }}</h3>
-        <div style="opacity:0.75; font-size:0.9rem;">
-          {{ profile.designation|default:"Recruiter" }}
-          {% if profile.company_name %} &nbsp;·&nbsp; {{ profile.company_name }}{% endif %}
-        </div>
-      </div>
-    </div>
-    <div class="d-flex gap-2 flex-wrap">
-      {% if profile.industry %}
-        <span class="badge-industry">🏢 {{ profile.industry }}</span>
-      {% endif %}
-      {% if profile.linkedin %}
-        <a href="{{ profile.linkedin }}" target="_blank" class="badge-industry text-decoration-none">🔗 LinkedIn</a>
-      {% endif %}
-    </div>
-    <a href="{% url 'edit_profile' %}" class="edit-btn mt-3 d-inline-flex">
-      ✏️ Edit Profile
-    </a>
-  </div>
-
-  <div class="row g-3">
-
-    <!-- Left: Contact & Company -->
-    <div class="col-lg-4">
-
-      <div class="info-card">
-        <h6>Contact Info</h6>
-        <div class="info-row">
-          <div class="info-icon">✉️</div>
-          <div>
-            <div class="info-label">Email</div>
-            <div class="info-value">{{ request.user.email|default:"—" }}</div>
-          </div>
-        </div>
-        <div class="info-row">
-          <div class="info-icon">📞</div>
-          <div>
-            <div class="info-label">Phone</div>
-            <div class="info-value">{{ request.user.phone|default:"—" }}</div>
-          </div>
-        </div>
-        {% if profile.company_website %}
-        <div class="info-row">
-          <div class="info-icon">🌐</div>
-          <div>
-            <div class="info-label">Website</div>
-            <div class="info-value">
-              <a href="{{ profile.company_website }}" target="_blank" style="color:#0f3460;">
-                {{ profile.company_website }}
-              </a>
+                <!-- Edit Button -->
+                <a href="{% url 'edit_profile' %}" style="padding: 10px 20px; border-radius: 10px; background: var(--surface2); border: 1px solid var(--border2); color: var(--ink); text-decoration: none; font-family: var(--font-display); font-weight: 700; font-size: 13px; display: flex; align-items: center; gap: 8px; transition: all 0.2s; white-space: nowrap;">
+                    <i class="fas fa-pen"></i> Edit Profile
+                </a>
             </div>
-          </div>
         </div>
-        {% endif %}
-      </div>
 
-      <div class="info-card">
-        <h6>Company Details</h6>
-        <div class="info-row">
-          <div class="info-icon">🏢</div>
-          <div>
-            <div class="info-label">Company</div>
-            <div class="info-value">{{ profile.company_name|default:"—" }}</div>
-          </div>
-        </div>
-        <div class="info-row">
-          <div class="info-icon">🏷️</div>
-          <div>
-            <div class="info-label">Industry</div>
-            <div class="info-value">{{ profile.industry|default:"—" }}</div>
-          </div>
-        </div>
-        {% if profile.company_address %}
-        <div class="info-row">
-          <div class="info-icon">📍</div>
-          <div>
-            <div class="info-label">Address</div>
-            <div class="info-value">{{ profile.company_address }}</div>
-          </div>
-        </div>
-        {% endif %}
-      </div>
+        <div class="row">
+            <!-- Left Column: Details -->
+            <div class="col-md-5 mb-4">
+                <div class="card p-4" style="border-radius: var(--radius-lg); height: 100%;">
+                    <h5 style="font-family: var(--font-display); font-weight: 700; margin-bottom: 20px;">
+                        <i class="fas fa-building me-2" style="color: var(--primary2);"></i>Company Details
+                    </h5>
+                    
+                    <div style="display: flex; flex-direction: column; gap: 16px;">
+                        <div>
+                            <div style="font-size: 11px; color: var(--ink3); text-transform: uppercase; letter-spacing: 1px; font-weight: 700; font-family: var(--font-mono);">Industry</div>
+                            <div style="font-size: 14px; color: var(--ink); margin-top: 4px;">{{ profile.industry|default:"Not specified" }}</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 11px; color: var(--ink3); text-transform: uppercase; letter-spacing: 1px; font-weight: 700; font-family: var(--font-mono);">Location</div>
+                            <div style="font-size: 14px; color: var(--ink); margin-top: 4px;">{{ profile.company_address|default:"Not specified" }}</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 11px; color: var(--ink3); text-transform: uppercase; letter-spacing: 1px; font-weight: 700; font-family: var(--font-mono);">About</div>
+                            <div style="font-size: 14px; color: var(--ink2); margin-top: 4px; line-height: 1.6;">{{ profile.about|default:"No description provided." }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-      {% if profile.about %}
-      <div class="info-card">
-        <h6>About</h6>
-        <p style="font-size:0.88rem; color:#495057; line-height:1.6; margin:0;">
-          {{ profile.about }}
-        </p>
-      </div>
-      {% endif %}
+            <!-- Right Column: Posted Drives -->
+            <div class="col-md-7 mb-4">
+                <div class="card p-4" style="border-radius: var(--radius-lg);">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 style="font-family: var(--font-display); font-weight: 700; margin: 0;">
+                            <i class="fas fa-briefcase me-2" style="color: var(--yellow);"></i>My Posted Drives
+                        </h5>
+                        <a href="{% url 'post_drive' %}" style="font-size: 12px; color: var(--primary2); text-decoration: none; font-weight: 700;">+ Post New</a>
+                    </div>
+                    
+                    {% if my_drives %}
+                        {% for drive in my_drives %}
+                        <div style="padding: 14px; border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 10px; display: flex; align-items: center; gap: 12px; transition: all 0.2s; background: var(--bg2);">
+                            <div style="flex: 1;">
+                                <div style="font-size: 14px; font-weight: 700; color: var(--ink);">{{ drive.role }}</div>
+                                <div style="font-size: 12px; color: var(--ink3); display: flex; gap: 10px; margin-top: 4px;">
+                                    <span><i class="fas fa-users" style="font-size: 10px;"></i> {{ drive.application_set.count }} Applicants</span>
+                                    <span><i class="fas fa-calendar" style="font-size: 10px;"></i> {{ drive.deadline|date:"M d, Y" }}</span>
+                                </div>
+                            </div>
+                            <div style="display: flex; gap: 6px;">
+                                <a href="{% url 'edit_drive' drive.pk %}" style="width: 32px; height: 32px; border-radius: 8px; background: var(--yellow-soft); color: var(--yellow); display: flex; align-items: center; justify-content: center; text-decoration: none; font-size: 12px; transition: all 0.15s;" title="Edit"><i class="fas fa-pen"></i></a>
+                                <a href="{% url 'delete_drive' drive.pk %}" style="width: 32px; height: 32px; border-radius: 8px; background: var(--red-soft); color: var(--red); display: flex; align-items: center; justify-content: center; text-decoration: none; font-size: 12px; transition: all 0.15s;" title="Delete"><i class="fas fa-trash"></i></a>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div style="text-align: center; padding: 30px 0;">
+                            <i class="fas fa-inbox" style="font-size: 24px; color: var(--ink3); margin-bottom: 8px;"></i>
+                            <p style="color: var(--ink3); font-size: 13px;">You haven't posted any drives yet.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
 
     </div>
-
-    <!-- Right: Posted Drives -->
-    <div class="col-lg-8">
-      <div class="info-card">
-        <h6>Posted Placement Drives</h6>
-        {% with drives=request.user.placementdrive_set.all %}
-        {% if drives %}
-          <div class="table-responsive">
-            <table class="table drives-table mb-0">
-              <thead>
-                <tr>
-                  <th>Company / Role</th>
-                  <th>Package</th>
-                  <th>Deadline</th>
-                  <th>Status</th>
-                  <th>Applicants</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for drive in drives %}
-                <tr>
-                  <td>
-                    <div class="fw-semibold">{{ drive.company }}</div>
-                    <div style="font-size:0.78rem; color:#6c757d;">{{ drive.role }}</div>
-                  </td>
-                  <td>{{ drive.package|default:"—" }}</td>
-                  <td style="font-size:0.82rem;">
-                    {{ drive.last_date|date:"d M Y"|default:"—" }}
-                  </td>
-                  <td>
-                    <span class="status-badge status-{{ drive.status }}">
-                      {{ drive.status }}
-                    </span>
-                  </td>
-                  <td>
-                    <span class="fw-semibold">{{ drive.application_set.count }}</span>
-                  </td>
-                </tr>
-                {% endfor %}
-              </tbody>
-            </table>
-          </div>
-        {% else %}
-          <div class="text-center py-4" style="color:#adb5bd;">
-            <div style="font-size:2rem;">📋</div>
-            <div class="mt-2" style="font-size:0.88rem;">No placement drives posted yet.</div>
-            <a href="{% url 'post_drive' %}" class="edit-btn mt-2">+ Post a Drive</a>
-          </div>
-        {% endif %}
-        {% endwith %}
-      </div>
-    </div>
-
-  </div>
 </div>
 {% endblock %}

@@ -10,6 +10,6 @@ class User(AbstractUser):
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='student')
     phone = models.CharField(max_length=15, blank=True)
     is_verified = models.BooleanField(default=False)
-
+    last_active_at = models.DateTimeField(null=True, blank=True)
     def __str__(self):
         return f"{self.username} ({self.role})"

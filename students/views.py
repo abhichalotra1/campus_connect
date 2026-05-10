@@ -20,8 +20,14 @@ def profile_view(request):
 
     elif user.role == 'recruiter':
         profile, _ = RecruiterProfile.objects.get_or_create(user=user)
+        
+        # Fetch the drives posted by this recruiter to show on their profile
+        from placements.models import PlacementDrive
+        my_drives = PlacementDrive.objects.filter(posted_by=user).order_by('-created_at')
+        
         return render(request, 'students/recruiter_profile.html', {
             'profile': profile,
+            'my_drives': my_drives,
         })
 
     elif user.role == 'admin':
@@ -77,8 +83,10 @@ def edit_profile_view(request):
             messages.success(request, 'Profile updated successfully!')
             return redirect('profile')
 
-        return render(request, 'students/edit_profile.html', {'profile': profile})
-
+        return render(request, 'students/edit_profile.html', {
+    'profile': profile,
+    'branch_choices': PlacementDrive.BRANCH_CHOICES,
+})
     elif user.role == 'recruiter':
         profile, _ = RecruiterProfile.objects.get_or_create(user=user)
 

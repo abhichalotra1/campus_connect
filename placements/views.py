@@ -1,14 +1,232 @@
+import json
+from django.http import JsonResponse
+from django.utils import timezone
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
+from accounts.decorators import verified_recruiter_required
+from accounts.models import User 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from .models import PlacementDrive, Application, Interview
+
+# ── MODELS IMPORT ──
+from .models import PlacementDrive, Application, Interview, Bookmark, Conversation, ChatMessage
 from students.models import StudentProfile
 from notifications.views import send_notification
 from campus_connect.email_utils import (
     send_application_email,
     send_recruiter_email,
-    send_interview_email
+    send_interview_email,
+    send_withdrawal_email,
+    send_status_update_email,
 )
+
+
+# ══════════════════════════════════════════════════════════════
+# CHAT VIEWS
+# ══════════════════════════════════════════════════════════════
+
+# ── 1. MAIN CHAT ROOM VIEW ──────────────────────────────────────────────
+@login_required
+def chat_room_view(request, conversation_id):
+    conversation = get_object_or_404(Conversation, pk=conversation_id)
+    
+    # Determine if the user is just observing (Admin viewing someone else's chat)
+    is_observer = False
+    if request.user.role == 'admin' and request.user != conversation.student and request.user != conversation.recruiter:
+        is_observer = True
+    
+    # Security: Only the student, recruiter, or admin can access this chat
+    if request.user != conversation.student and request.user != conversation.recruiter and request.user.role != 'admin':
+        messages.error(request, 'Access denied to this chat.')
+        return redirect('dashboard')
+
+    # Update heartbeat (for online status)
+    User.objects.filter(pk=request.user.pk).update(last_active_at=timezone.now())
+
+    # Check if student's chat is currently unlocked
+    is_student_unlocked = False
+    if request.user.role == 'student' and conversation.student_chat_unlocked_until:
+        if timezone.now() < conversation.student_chat_unlocked_until:
+            is_student_unlocked = True
+        else:
+            conversation.student_chat_unlocked_until = None
+            conversation.save()
+
+    # Check if the other user is online (active in the last 2 minutes)
+    other_user = conversation.recruiter if request.user == conversation.student else conversation.student
+    is_other_online = False
+    if other_user.last_active_at:
+        is_other_online = (timezone.now() - other_user.last_active_at).total_seconds() < 120
+
+    context = {
+        'conversation': conversation,
+        'is_student_unlocked': is_student_unlocked,
+        'is_other_online': is_other_online,
+        'other_user_name': other_user.get_full_name() or other_user.username,
+        'is_observer': is_observer,
+    }
+    return render(request, 'placements/chat_room.html', context)
+
+
+# ── 2. AJAX POLLING: FETCH MESSAGES ─────────────────────────────────────
+@login_required
+def fetch_messages_api(request, conversation_id):
+    conversation = get_object_or_404(Conversation, pk=conversation_id)
+    
+    if request.user != conversation.student and request.user != conversation.recruiter and request.user.role != 'admin':
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+
+    # Update heartbeat safely
+    User.objects.filter(pk=request.user.pk).update(last_active_at=timezone.now())
+
+    # Get messages newer than the last_message_id sent by the frontend
+    last_message_id = request.GET.get('last_message_id', 0)
+    messages = ChatMessage.objects.filter(
+        conversation=conversation, 
+        id__gt=last_message_id
+    ).order_by('created_at')
+
+    messages_data = []
+    for msg in messages:
+        msg_data = {
+            'id': msg.id,
+            'sender': msg.sender,
+            'message_type': msg.message_type,
+            'content': msg.content,
+            'template_action': msg.template_action,
+            'file_url': msg.file.url if msg.file else None,
+            'file_category': msg.file_category,
+            'time': msg.created_at.strftime('%I:%M %p'),
+        }
+        messages_data.append(msg_data)
+
+    # Check if student is currently unlocked (to update UI timer dynamically)
+    is_student_unlocked = False
+    unlock_time_remaining = 0
+    if conversation.student_chat_unlocked_until:
+        if timezone.now() < conversation.student_chat_unlocked_until:
+            is_student_unlocked = True
+            unlock_time_remaining = (conversation.student_chat_unlocked_until - timezone.now()).total_seconds()
+        else:
+            conversation.student_chat_unlocked_until = None
+            conversation.save()
+
+    # Check other user online status
+    other_user = conversation.recruiter if request.user == conversation.student else conversation.student
+    is_other_online = False
+    if other_user.last_active_at:
+        is_other_online = (timezone.now() - other_user.last_active_at).total_seconds() < 120
+
+    return JsonResponse({
+        'messages': messages_data,
+        'is_student_unlocked': is_student_unlocked,
+        'unlock_time_remaining': int(unlock_time_remaining),
+        'is_other_online': is_other_online,
+    })
+
+
+# ── 3. SEND MESSAGE API ─────────────────────────────────────────────────
+@require_POST
+@login_required
+def send_message_api(request, conversation_id):
+    conversation = get_object_or_404(Conversation, pk=conversation_id)
+    
+    # Security check
+    if request.user != conversation.student and request.user != conversation.recruiter and request.user.role != 'admin':
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+    
+    # Observer check (Admin viewing someone else's chat cannot send messages)
+    is_observer = request.user.role == 'admin' and request.user != conversation.student and request.user != conversation.recruiter
+    if is_observer:
+        return JsonResponse({'error': 'Observers cannot send messages.'}, status=403)
+
+    sender_role = 'recruiter' if request.user == conversation.recruiter else 'student'
+
+    # ── RULE ENFORCEMENT: Can the student send this? ──
+    if sender_role == 'student':
+        message_type = request.POST.get('message_type')
+        
+        # If they want to send free text, we must check the timer!
+        if message_type == 'text':
+            is_currently_unlocked = False
+            if conversation.student_chat_unlocked_until:
+                if timezone.now() < conversation.student_chat_unlocked_until:
+                    is_currently_unlocked = True
+            
+            if not is_currently_unlocked:
+                return JsonResponse({'error': 'Chat is locked. You can only use predefined queries.'}, status=403)
+
+    # ── CREATE THE MESSAGE ──
+    msg = ChatMessage.objects.create(
+        conversation=conversation,
+        sender=sender_role,
+        message_type=request.POST.get('message_type', 'text'),
+        content=request.POST.get('content', ''),
+        template_action=request.POST.get('template_action', ''),
+        file_category=request.POST.get('file_category', ''),
+    )
+
+    # Handle file upload if exists
+    if 'file' in request.FILES:
+        msg.file = request.FILES['file']
+        msg.save()
+
+    return JsonResponse({'status': 'success', 'message_id': msg.id})
+
+
+# ── 4. UNLOCK STUDENT CHAT ─────────────────────────────────────────────
+@require_POST
+@login_required
+def unlock_student_chat(request, conversation_id):
+    conversation = get_object_or_404(Conversation, pk=conversation_id)
+    
+    # Only the recruiter or admin (who posted the drive) can unlock the chat
+    if request.user != conversation.recruiter and request.user.role != 'admin':
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+
+    # Unlock for 5 minutes
+    conversation.student_chat_unlocked_until = timezone.now() + timezone.timedelta(minutes=5)
+    conversation.save()
+
+    # Drop a system message so the student knows
+    ChatMessage.objects.create(
+        conversation=conversation,
+        sender='system',
+        message_type='system',
+        content=f"{request.user.get_full_name()} has unlocked the chat for 5 minutes. You can type freely now."
+    )
+
+    return JsonResponse({'status': 'success', 'unlocked_until': conversation.student_chat_unlocked_until.isoformat()})
+
+
+# ── 5. GET OR CREATE CHAT VIEW ──────────────────────────────────────────
+@login_required
+def get_or_create_chat_view(request, application_id):
+    application = get_object_or_404(Application, pk=application_id)
+    
+    # Security: Only the student, recruiter, or admin can start this chat
+    if request.user != application.student and request.user != application.drive.posted_by and request.user.role != 'admin':
+        messages.error(request, 'Access denied.')
+        return redirect('dashboard')
+        
+    # Get the conversation (it should already exist if shortlisted, but get_or_create is safe)
+    conv, created = Conversation.objects.get_or_create(
+        application=application,
+        defaults={
+            'student': application.student,
+            'recruiter': application.drive.posted_by,
+            'drive': application.drive
+        }
+    )
+    
+    # Redirect to the actual chat room
+    return redirect('chat_room', conversation_id=conv.pk)
+
+
+# ══════════════════════════════════════════════════════════════
+# DRIVE & APPLICATION VIEWS
+# ══════════════════════════════════════════════════════════════
 
 @login_required
 def drive_list_view(request):
@@ -28,15 +246,16 @@ def drive_list_view(request):
         drives = drives.filter(job_type=job_type)
 
     applied_ids = []
+    bookmarked_ids = [] 
     if request.user.role == 'student':
-        applied_ids = Application.objects.filter(
-            student=request.user
-        ).values_list('drive_id', flat=True)
+        applied_ids = Application.objects.filter(student=request.user).values_list('drive_id', flat=True)
+        bookmarked_ids = Bookmark.objects.filter(student=request.user).values_list('drive_id', flat=True)
 
     return render(request, 'placements/drive_list.html', {
         'drives':      drives,
         'applied_ids': applied_ids,
         'search':      search,
+        'bookmarked_ids': bookmarked_ids,
         'branch':      branch,
         'job_type':    job_type,
     })
@@ -45,19 +264,34 @@ def drive_list_view(request):
 @login_required
 def drive_detail_view(request, pk):
     drive = get_object_or_404(PlacementDrive, pk=pk)
-    already_applied = Application.objects.filter(
-        student=request.user, drive=drive
-    ).exists()
+    already_applied = Application.objects.filter(student=request.user, drive=drive).exists()
+
+    is_saved = False
+    if request.user.role == 'student':
+        is_saved = Bookmark.objects.filter(student=request.user, drive=drive).exists()
 
     return render(request, 'placements/drive_detail.html', {
         'drive':           drive,
         'already_applied': already_applied,
+        'is_saved':        is_saved,
     })
 
 
 @login_required
 def apply_view(request, pk):
     drive = get_object_or_404(PlacementDrive, pk=pk)
+
+    if request.method != 'POST':
+        messages.error(request, "Invalid application method!")
+        return redirect('drive_detail', pk=pk)
+
+    if drive.deadline < timezone.now().date():
+        messages.error(request, 'The deadline for this drive has passed!')
+        return redirect('drive_detail', pk=pk)
+
+    if drive.status == 'closed':
+        messages.error(request, 'This drive is no longer accepting applications!')
+        return redirect('drive_detail', pk=pk)
 
     try:
         profile = StudentProfile.objects.get(user=request.user)
@@ -77,7 +311,6 @@ def apply_view(request, pk):
 
     Application.objects.create(student=request.user, drive=drive)
 
-    # Send portal notification to student
     send_notification(
         user=request.user,
         title=f'Applied to {drive.company}',
@@ -85,10 +318,7 @@ def apply_view(request, pk):
         notif_type='general'
     )
 
-    # Send email to student
     send_application_email(request.user, drive)
-
-    # Send email to recruiter
     send_recruiter_email(drive.posted_by, request.user, drive)
 
     messages.success(request, f'Successfully applied to {drive.company}!')
@@ -97,9 +327,7 @@ def apply_view(request, pk):
 
 @login_required
 def my_applications_view(request):
-    applications = Application.objects.filter(
-        student=request.user
-    ).order_by('-applied_at')
+    applications = Application.objects.filter(student=request.user).order_by('-applied_at')
     return render(request, 'placements/my_applications.html', {
         'applications': applications
     })
@@ -108,45 +336,72 @@ def my_applications_view(request):
 @login_required
 def withdraw_view(request, pk):
     application = get_object_or_404(Application, pk=pk, student=request.user)
-    if application.status == 'applied':
+
+    if application.status != 'applied':
+        messages.error(request, 'You cannot withdraw an application that has already been shortlisted/selected!')
+        return redirect('my_applications')
+
+    if request.method == 'POST':
+        drive   = application.drive
+        student = request.user
+
+        send_withdrawal_email(student, drive)
+
         application.delete()
-        messages.success(request, 'Application withdrawn successfully!')
-    else:
-        messages.error(request, 'You cannot withdraw this application!')
-    return redirect('my_applications')
+        messages.success(request, f'Application for {drive.company} withdrawn successfully.')
+        return redirect('my_applications')
+
+    return render(request, 'placements/withdraw_confirm.html', {'application': application})
 
 
 @login_required
 def post_drive_view(request):
-    if request.user.role not in ['recruiter', 'admin']:
+    if request.user.role == 'recruiter':
+        try:
+            if not request.user.recruiterprofile.is_verified:
+                messages.error(request, 'You must be a verified recruiter to post drives.')
+                return redirect('verification_status')
+        except Exception:
+            return redirect('verification_status')
+    elif request.user.role != 'admin':
         messages.error(request, 'Only recruiters can post jobs!')
         return redirect('drive_list')
 
     if request.method == 'POST':
+        try:
+            min_cgpa      = float(request.POST.get('min_cgpa', 0.0))
+            salary_amount = float(request.POST.get('salary_amount', 0.0))
+        except (ValueError, TypeError):
+            messages.error(request, 'Please enter valid numbers for CGPA and Salary.')
+            return render(request, 'placements/post_drive.html')
+
+        if 'company_logo' not in request.FILES:
+            messages.error(request, 'Company Logo is compulsory!')
+            return render(request, 'placements/post_drive.html')
+
         PlacementDrive.objects.create(
             posted_by       = request.user,
-            company         = request.POST['company'],
-            role            = request.POST['role'],
-            description     = request.POST['description'],
-            location        = request.POST['location'],
-            package         = request.POST['package'],
-            job_type        = request.POST['job_type'],
-            eligible_branch = request.POST['eligible_branch'],
-            min_cgpa        = request.POST['min_cgpa'],
-            skills_required = request.POST['skills_required'],
-            deadline        = request.POST['deadline'],
+            company         = request.POST.get('company'),
+            company_logo    = request.FILES['company_logo'],
+            role            = request.POST.get('role'),
+            description     = request.POST.get('description'),
+            location        = request.POST.get('location'),
+            salary_amount   = salary_amount,
+            salary_type     = request.POST.get('salary_type'),
+            job_type        = request.POST.get('job_type'),
+            eligible_branch = request.POST.get('eligible_branch'),
+            min_cgpa        = min_cgpa,
+            skills_required = request.POST.get('skills_required', ''),
+            deadline        = request.POST.get('deadline'),
         )
         messages.success(request, 'Placement drive posted successfully!')
-        return redirect('drive_list')
+        return redirect('recruiter_dashboard')
 
     return render(request, 'placements/post_drive.html')
 
-
 @login_required
 def my_interviews_view(request):
-    interviews = Interview.objects.filter(
-        application__student=request.user
-    ).order_by('scheduled_at')
+    interviews = Interview.objects.filter(application__student=request.user).order_by('scheduled_at')
     return render(request, 'placements/my_interviews.html', {
         'interviews': interviews
     })
@@ -162,22 +417,21 @@ def schedule_interview_view(request, app_id):
 
     if request.method == 'POST':
         scheduled_at = request.POST['scheduled_at']
-        location     = request.POST['location']
-        meeting_link = request.POST['meeting_link']
-        notes        = request.POST['notes']
+        location     = request.POST.get('location', '')
+        meeting_link = request.POST.get('meeting_link', '')
+        notes        = request.POST.get('notes', '')
 
-        interview, created = Interview.objects.update_or_create(
+        Interview.objects.update_or_create(
             application=application,
             defaults={
                 'scheduled_at': scheduled_at,
                 'location':     location,
                 'meeting_link': meeting_link,
                 'notes':        notes,
-                'status':       'scheduled'
+                'status':       'scheduled',
             }
         )
 
-        # Send portal notification
         send_notification(
             user=application.student,
             title=f'Interview Scheduled - {application.drive.company}',
@@ -185,14 +439,13 @@ def schedule_interview_view(request, app_id):
             notif_type='general'
         )
 
-        # Send email to student
         send_interview_email(
             student=application.student,
             drive=application.drive,
             scheduled_at=scheduled_at,
             location=location,
             meeting_link=meeting_link,
-            notes=notes
+            notes=notes,
         )
 
         messages.success(request, 'Interview scheduled successfully!')
@@ -203,20 +456,154 @@ def schedule_interview_view(request, app_id):
     })
 
 
-
 @login_required
 def recruiter_applicants_view(request):
     if request.user.role not in ['recruiter', 'admin']:
         return redirect('drive_list')
-    drives = PlacementDrive.objects.filter(posted_by=request.user)
+
+    my_drives         = PlacementDrive.objects.filter(posted_by=request.user)
     selected_drive_id = request.GET.get('drive')
-    applications = []
-    selected_drive = None
+    applications      = []
+    selected_drive    = None
+
     if selected_drive_id:
         selected_drive = get_object_or_404(PlacementDrive, pk=selected_drive_id, posted_by=request.user)
-        applications = Application.objects.filter(drive=selected_drive).select_related('student', 'student__studentprofile')
+        applications   = Application.objects.filter(drive=selected_drive).select_related('student', 'student__studentprofile')
+
     return render(request, 'placements/recruiter_applicants.html', {
-        'drives': drives,
-        'applications': applications,
+        'drives':         my_drives,
+        'applications':   applications,
         'selected_drive': selected_drive,
+        'status_choices': Application.STATUS_CHOICES,
     })
+
+
+@login_required
+def recruiter_dashboard_view(request):
+    if request.user.role != 'recruiter':
+        messages.error(request, "Access denied!")
+        return redirect('dashboard')
+
+    my_drives = PlacementDrive.objects.filter(posted_by=request.user).order_by('-created_at')
+
+    return render(request, 'placements/recruiter_dashboard.html', {
+        'my_drives': my_drives
+    })
+
+
+@login_required
+def edit_drive_view(request, pk):
+    drive = get_object_or_404(PlacementDrive, pk=pk)
+
+    if request.user.role != 'admin' and drive.posted_by != request.user:
+        messages.error(request, "You don't have permission to edit this drive!")
+        return redirect('drive_list')
+
+    if request.method == 'POST':
+        drive.company         = request.POST.get('company', drive.company)
+        drive.role            = request.POST.get('role', drive.role)
+        drive.description     = request.POST.get('description', drive.description)
+        drive.location        = request.POST.get('location', drive.location)
+
+        try:
+            drive.salary_amount = float(request.POST.get('salary_amount', drive.salary_amount))
+        except (ValueError, TypeError):
+            pass
+
+        drive.salary_type     = request.POST.get('salary_type', drive.salary_type)
+        drive.job_type        = request.POST.get('job_type', drive.job_type)
+        drive.eligible_branch = request.POST.get('eligible_branch', drive.eligible_branch)
+        drive.skills_required = request.POST.get('skills_required', drive.skills_required)
+        drive.deadline        = request.POST.get('deadline', drive.deadline)
+
+        try:
+            drive.min_cgpa = float(request.POST.get('min_cgpa', drive.min_cgpa))
+        except (ValueError, TypeError):
+            pass
+
+        if 'company_logo' in request.FILES:
+            drive.company_logo = request.FILES['company_logo']
+
+        drive.save()
+        messages.success(request, f'Drive "{drive.role}" updated successfully!')
+        return redirect('recruiter_dashboard')
+
+    return render(request, 'placements/edit_drive.html', {'drive': drive})
+
+
+@login_required
+def delete_drive_view(request, pk):
+    drive = get_object_or_404(PlacementDrive, pk=pk)
+
+    if request.user.role != 'admin' and drive.posted_by != request.user:
+        messages.error(request, "You don't have permission to delete this drive!")
+        return redirect('drive_list')
+
+    if request.method == 'POST':
+        drive.delete()
+        messages.success(request, f'Drive "{drive.role}" has been deleted.')
+        return redirect('recruiter_dashboard')
+
+    return render(request, 'placements/delete_drive_confirm.html', {'drive': drive})
+
+
+def company_profile_view(request, user_id):
+    recruiter = get_object_or_404(User, pk=user_id, role='recruiter')
+
+    from students.models import RecruiterProfile
+    profile, created = RecruiterProfile.objects.get_or_create(user=recruiter)
+
+    drives = PlacementDrive.objects.filter(posted_by=recruiter, status='active').order_by('-created_at')
+
+    return render(request, 'placements/company_profile.html', {
+        'recruiter': recruiter,
+        'profile':   profile,
+        'drives':    drives,
+    })
+
+@login_required
+def saved_jobs_view(request):
+    if request.user.role != 'student':
+        messages.error(request, 'Access denied!')
+        return redirect('dashboard')
+    
+    bookmarks = Bookmark.objects.filter(student=request.user).select_related('drive').order_by('-saved_at')
+    applied_ids = Application.objects.filter(student=request.user).values_list('drive_id', flat=True)
+    
+    return render(request, 'placements/saved_jobs.html', {
+        'bookmarks': bookmarks,
+        'applied_ids': applied_ids
+    })
+
+@login_required
+def save_drive_view(request, pk):
+    drive = get_object_or_404(PlacementDrive, pk=pk)
+    
+    if request.user.role != 'student':
+        messages.error(request, 'Only students can save jobs.')
+        return redirect('drive_detail', pk=pk)
+        
+    bookmark, created = Bookmark.objects.get_or_create(student=request.user, drive=drive)
+    
+    if created:
+        messages.success(request, f'Job at {drive.company} saved to your list!')
+    else:
+        messages.info(request, 'You have already saved this job.')
+        
+    return redirect('drive_detail', pk=pk)
+
+@login_required
+def unsave_drive_view(request, pk):
+    drive = get_object_or_404(PlacementDrive, pk=pk)
+    
+    if request.user.role != 'student':
+        return redirect('drive_detail', pk=pk)
+        
+    bookmark = Bookmark.objects.filter(student=request.user, drive=drive)
+    if bookmark.exists():
+        bookmark.delete()
+        messages.success(request, f'Job at {drive.company} removed from your saved list.')
+    else:
+        messages.info(request, 'This job was not in your saved list.')
+        
+    return redirect(request.META.get('HTTP_REFERER', 'saved_jobs'))

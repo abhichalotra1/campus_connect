@@ -1,0 +1,441 @@
+{% extends 'base.html' %}
+{% block title %}Chat – {{ conversation.drive.role }} – Campus Connect{% endblock %}
+
+{% block content %}
+<div style="display:flex; height:calc(100vh - 84px); margin:-24px -32px; overflow:hidden; background:var(--bg2);">
+  
+  <!-- ── LEFT PANEL (Context & Controls) ── -->
+  <div style="width:280px; background:var(--surface); border-right:1px solid var(--border2); display:flex; flex-direction:column; flex-shrink:0;">
+    
+    <!-- Chat Header -->
+    <div style="padding:20px; border-bottom:1px solid var(--border2);">
+      <a href="{% url 'dashboard' %}" style="font-size:12px; color:var(--ink3); text-decoration:none; display:flex; align-items:center; gap:5px; margin-bottom:12px;">
+        <i class="fas fa-arrow-left"></i> Back to Dashboard
+      </a>
+      
+      <!-- Observer Mode Banner (Only Admins see this) -->
+      {% if is_observer %}
+      <div style="background:var(--p-soft); border:1px solid rgba(79,70,229,0.3); border-radius:8px; padding:10px; margin-bottom:12px; text-align:center;">
+        <i class="fas fa-eye me-1" style="color:var(--primary2);"></i>
+        <span style="font-size:12px; font-weight:600; color:var(--primary2);">Observer Mode (Read-Only)</span>
+      </div>
+      {% endif %}
+
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+        <div style="width:10px; height:10px; border-radius:50%; background:{% if is_other_online %}var(--green){% else %}var(--ink3){% endif %};"></div>
+        <span style="font-size:14px; font-weight:600; color:var(--ink);">{{ other_user_name }}</span>
+      </div>
+      <span style="font-size:11px; color:{% if is_other_online %}var(--green){% else %}var(--ink3){% endif %};">
+        {% if is_other_online %}Online{% else %}Offline{% endif %}
+      </span>
+    </div>
+
+    <!-- Drive Context -->
+    <div style="padding:20px; border-bottom:1px solid var(--border2);">
+      <div style="font-size:11px; color:var(--ink3); text-transform:uppercase; letter-spacing:.5px; margin-bottom:6px;">Regarding Drive</div>
+      <div style="font-size:14px; font-weight:700; color:var(--ink);">{{ conversation.drive.role }}</div>
+      <div style="font-size:13px; color:var(--ink2);">{{ conversation.drive.company }}</div>
+    </div>
+
+    <!-- Recruiter Action: Unlock Chat (Hidden for Observers) -->
+    {% if request.user.role == 'recruiter' or request.user.role == 'admin' and not is_observer %}
+    <div style="padding:20px; border-bottom:1px solid var(--border2);">
+      <div style="font-size:11px; color:var(--ink3); text-transform:uppercase; letter-spacing:.5px; margin-bottom:10px;">Student Chat Lock</div>
+      <button id="unlockBtn" onclick="unlockStudentChat()" style="width:100%; padding:10px; border-radius:8px; border:1px solid rgba(79,70,229,0.3); background:var(--p-soft); color:var(--primary2); font-weight:700; font-size:13px; cursor:pointer; transition:all 0.2s;">
+        <i class="fas fa-unlock me-1"></i> Unlock for 5 mins
+      </button>
+      <div style="font-size:11px; color:var(--ink3); margin-top:6px; text-align:center;">Allows student to type freely</div>
+    </div>
+    {% endif %}
+
+    <!-- Student: Lock Status -->
+    {% if request.user.role == 'student' %}
+    <div style="padding:20px;">
+      <div style="font-size:11px; color:var(--ink3); text-transform:uppercase; letter-spacing:.5px; margin-bottom:6px;">Your Chat Status</div>
+      <div id="lockStatusBadge" style="font-size:13px; font-weight:600; color:{% if is_student_unlocked %}var(--green){% else %}var(--red){% endif %};">
+        <i class="fas {% if is_student_unlocked %}fa-unlock{% else %}fa-lock{% endif %} me-1"></i> 
+        {% if is_student_unlocked %}Unlocked{% else %}Locked (Use queries below){% endif %}
+      </div>
+      <div id="studentTimer" style="display:{% if is_student_unlocked %}block{% else %}none{% endif %}; margin-top:8px; font-family:var(--font-mono); font-size:18px; font-weight:800; color:var(--primary2);"></div>
+    </div>
+    {% endif %}
+
+  </div>
+
+  <!-- ── RIGHT PANEL (Chat & Input) ── -->
+  <div style="flex:1; display:flex; flex-direction:column; background:var(--bg);">
+    
+    <!-- Chat Stream -->
+    <div id="chatStream" style="flex:1; overflow-y:auto; padding:24px; display:flex; flex-direction:column; gap:12px;">
+      <div style="text-align:center; color:var(--ink3); font-size:13px; margin-top:auto;">
+        Chat initiated for {{ conversation.drive.role }}. Messages are logged.
+      </div>
+    </div>
+
+    <!-- Input Area -->
+    <div style="border-top:1px solid var(--border2); background:var(--surface); padding:16px 24px;">
+      
+      {% if is_observer %}
+        <!-- OBSERVER MODE (READ ONLY) -->
+        <div style="text-align:center; color:var(--ink3); font-size:13px; font-style:italic; padding:8px 0;">
+          <i class="fas fa-eye me-1"></i> You are viewing this chat in Read-Only mode (Moderation).
+        </div>
+
+      {% elif request.user.role == 'recruiter' or request.user.role == 'admin' %}
+        <!-- RECRUITER INPUT (Always Open) -->
+        <form id="recruiterForm" onsubmit="sendMessage('text')" style="display:flex; gap:10px; align-items:flex-end;">
+          <div style="flex:1;">
+            <textarea id="textInput" rows="1" class="form-control" placeholder="Type your message..." style="resize:none; font-size:14px;"></textarea>
+          </div>
+          <label style="cursor:pointer; color:var(--ink2); font-size:18px; padding-bottom:6px;">
+            <i class="fas fa-paperclip"></i>
+            <input type="file" id="fileInput" hidden onchange="sendMessage('file')">
+          </label>
+          <button type="submit" style="padding:8px 16px; border-radius:8px; border:none; background:var(--primary); color:#fff; font-weight:700; cursor:pointer;">
+            <i class="fas fa-paper-plane"></i>
+          </button>
+        </form>
+
+      {% elif request.user.role == 'student' %}
+        <!-- STUDENT INPUT (Conditional) -->
+        
+        <!-- Free Text Input (Only visible if Unlocked) -->
+        <div id="studentFreeInput" style="display:{% if is_student_unlocked %}flex{% else %}none{% endif %}; gap:10px; align-items:flex-end; margin-bottom:12px;">
+          <div style="flex:1;">
+            <textarea id="studentTextInput" rows="1" class="form-control" placeholder="Type your message... (Time is ticking!)" style="resize:none; font-size:14px; border-color:var(--primary) !important;"></textarea>
+          </div>
+          <!-- ALWAYS AVAILABLE FILE UPLOAD IN UNLOCKED MODE -->
+          <label style="cursor:pointer; color:var(--primary2); font-size:18px; padding-bottom:6px;">
+            <i class="fas fa-paperclip"></i>
+            <input type="file" id="studentFileInputUnlocked" hidden onchange="sendStudentFile(this)">
+          </label>
+          <button onclick="sendStudentText()" style="padding:8px 16px; border-radius:8px; border:none; background:var(--primary); color:#fff; font-weight:700; cursor:pointer;">
+            <i class="fas fa-paper-plane"></i>
+          </button>
+        </div>
+
+        <!-- CATEGORIZED QUERY NAVIGATOR (Only visible if Locked) -->
+        <div id="studentQueryNav" style="display:{% if is_student_unlocked %}none{% else %}block{% endif %};">
+          
+          <!-- Category Buttons -->
+          <div id="queryCategories" style="display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:12px;">
+            <button onclick="showQueries('schedule')" class="btn btn-sm" style="background:var(--bg2); color:var(--ink2); border:1px solid var(--border2); font-size:12px; font-weight:600;">📅 Schedule</button>
+            <button onclick="showQueries('link')" class="btn btn-sm" style="background:var(--bg2); color:var(--ink2); border:1px solid var(--border2); font-size:12px; font-weight:600;">🔗 Link Issues</button>
+            <button onclick="showQueries('docs')" class="btn btn-sm" style="background:var(--bg2); color:var(--ink2); border:1px solid var(--border2); font-size:12px; font-weight:600;">📄 Documents</button>
+            <button onclick="showQueries('status')" class="btn btn-sm" style="background:var(--bg2); color:var(--ink2); border:1px solid var(--border2); font-size:12px; font-weight:600;">✅ My Status</button>
+          </div>
+
+          <!-- Sub-Queries (Hidden by default) -->
+          <div id="querySubMenu" style="display:none; background:var(--bg2); border:1px solid var(--border); border-radius:8px; padding:10px; display:none; flex-wrap:wrap; gap:6px;">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<script>
+// ── CONFIG ──
+const conversationId = {{ conversation.pk }};
+const userRole = "{{ request.user.role }}";
+let lastMessageId = 0;
+let pollingInterval;
+
+// ── TEMPLATE QUERIES DATA ──
+const queryData = {
+  schedule: [
+    { action: 'schedule_query', label: 'Where is the interview taking place?' },
+    { action: 'schedule_query', label: 'What time is my interview?' },
+    { action: 'schedule_query', label: 'I will be late by a few minutes.' }
+  ],
+  link: [
+    { action: 'link_trouble', label: 'The meeting link is not working.' },
+    { action: 'link_trouble', label: 'I am in the waiting room but not admitted.' },
+    { action: 'link_trouble', label: 'I was disconnected during the interview.' }
+  ],
+  docs: [
+    { action: 'doc_resume', label: '📎 Here is my Updated Resume', hasFile: true, fileCat: 'resume' },
+    { action: 'doc_marksheet', label: '📊 Here are my Marksheets', hasFile: true, fileCat: 'marksheet' },
+    { action: 'doc_id', label: '🪪 Here is my ID Proof', hasFile: true, fileCat: 'id_proof' }
+  ],
+  status: [
+    { action: 'status_attend', label: '✅ I confirm I will attend the interview.' },
+    { action: 'status_withdraw', label: '❌ I cannot attend this interview.' },
+    { action: 'status_query', label: '❓ I have a query not listed here.' }
+  ]
+};
+
+// ── 1. FETCH MESSAGES (AJAX POLLING) ──
+function fetchMessages() {
+  fetch(`/placements/chat/${conversationId}/fetch/?last_message_id=${lastMessageId}`)
+    .then(res => res.json())
+    .then(data => {
+      if (data.messages.length > 0) {
+        data.messages.forEach(msg => renderMessage(msg));
+        lastMessageId = data.messages[data.messages.length - 1].id;
+        scrollToBottom();
+      }
+
+      // Handle Student Unlock Timer State
+      if (userRole === 'student') {
+        handleLockStatus(data.is_student_unlocked, data.unlock_time_remaining);
+      }
+    });
+}
+
+// ── 2. RENDER MESSAGE TO UI ──
+function renderMessage(msg) {
+  const stream = document.getElementById('chatStream');
+  const div = document.createElement('div');
+  
+  // Base styles
+  div.style.maxWidth = '70%';
+  div.style.padding = '10px 14px';
+  div.style.borderRadius = '12px';
+  div.style.fontSize = '14px';
+  div.style.lineHeight = '1.5';
+
+  // System Message
+  if (msg.sender === 'system') {
+    div.style.alignSelf = 'center';
+    div.style.background = 'var(--bg2)';
+    div.style.color = 'var(--ink3)';
+    div.style.fontSize = '12px';
+    div.style.borderRadius = '20px';
+    div.style.padding = '6px 16px';
+    div.innerText = msg.content;
+  } 
+  // My Message
+  else if (msg.sender === userRole) {
+    div.style.alignSelf = 'flex-end';
+    div.style.background = 'var(--primary)';
+    div.style.color = '#fff';
+    div.innerHTML = `<div>${msg.content}</div><div style="font-size:10px; opacity:0.7; text-align:right; margin-top:4px;">${msg.time}</div>`;
+  } 
+  // Other's Message
+  else {
+    div.style.alignSelf = 'flex-start';
+    div.style.background = 'var(--surface2)';
+    div.style.color = 'var(--ink)';
+    div.style.border = '1px solid var(--border)';
+    div.innerHTML = `<div>${msg.content}</div><div style="font-size:10px; color:var(--ink3); margin-top:4px;">${msg.time}</div>`;
+  }
+
+  // Override for Template Actions (Make them stand out)
+  if (msg.message_type === 'template') {
+    if(msg.template_action.includes('trouble')) {
+      div.style.borderLeft = '3px solid var(--red)';
+    }
+  }
+
+  // Override for Files
+  if (msg.message_type === 'file') {
+    const fileIcon = msg.file_category === 'resume' ? 'fa-file-pdf' : 'fa-file-alt';
+    div.innerHTML = `<div><i class="fas ${fileIcon} me-2"></i><a href="${msg.file_url}" target="_blank" style="color:inherit; text-decoration:underline;">${msg.content}</a></div><div style="font-size:10px; opacity:0.7; text-align:right; margin-top:4px;">${msg.time}</div>`;
+  }
+
+  stream.appendChild(div);
+}
+
+// ── 3. SEND RECRUITER MESSAGE ──
+function sendMessage(type) {
+  event.preventDefault();
+  const formData = new FormData();
+  formData.append('message_type', type);
+
+  if (type === 'text') {
+    const input = document.getElementById('textInput');
+    if (!input.value.trim()) return;
+    formData.append('content', input.value);
+    input.value = '';
+  } else if (type === 'file') {
+    const fileInput = document.getElementById('fileInput');
+    if (!fileInput.files[0]) return;
+    formData.append('file', fileInput.files[0]);
+    formData.append('content', `Shared a file: ${fileInput.files[0].name}`);
+    formData.append('file_category', 'general');
+    fileInput.value = '';
+  }
+
+  fetch(`/placements/chat/${conversationId}/send/`, {
+    method: 'POST',
+    body: formData,
+    headers: { 'X-CSRFToken': getCookie('csrftoken') }
+  }).then(() => fetchMessages());
+}
+
+// ── 4. SEND STUDENT TEMPLATE / FILE ──
+function sendStudentTemplate(action, label, hasFile, fileCat) {
+  const formData = new FormData();
+  formData.append('message_type', 'template');
+  formData.append('template_action', action);
+  formData.append('content', label);
+
+  if (hasFile) {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.onchange = (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      formData.append('file', file);
+      formData.append('file_category', fileCat);
+      formData.append('message_type', 'file'); 
+      postStudentMessage(formData);
+    };
+    input.click();
+  } else {
+    postStudentMessage(formData);
+  }
+}
+
+function sendStudentText() {
+  const input = document.getElementById('studentTextInput');
+  if (!input.value.trim()) return;
+  
+  const formData = new FormData();
+  formData.append('message_type', 'text');
+  formData.append('content', input.value);
+  input.value = '';
+  postStudentMessage(formData);
+}
+
+function postStudentMessage(formData) {
+  fetch(`/placements/chat/${conversationId}/send/`, {
+    method: 'POST',
+    body: formData,
+    headers: { 'X-CSRFToken': getCookie('csrftoken') }
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.error) alert(data.error); 
+    fetchMessages();
+  });
+}
+
+// ── 5. UNLOCK CHAT (RECRUITER ONLY) ──
+function unlockStudentChat() {
+  const btn = document.getElementById('unlockBtn');
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Unlocking...';
+  
+  fetch(`/placements/chat/${conversationId}/unlock/`, {
+    method: 'POST',
+    headers: { 'X-CSRFToken': getCookie('csrftoken') }
+  })
+  .then(res => res.json())
+  .then(data => {
+    if(data.status === 'success') {
+      btn.innerHTML = '<i class="fas fa-check me-1"></i> Unlocked!';
+      btn.style.background = 'var(--green-soft)';
+      btn.style.color = 'var(--green)';
+      btn.style.borderColor = 'rgba(34,211,160,0.3)';
+      fetchMessages(); 
+    }
+  });
+}
+
+// ── 6. STUDENT UI: LOCK STATUS & TIMER ──
+function handleLockStatus(isUnlocked, timeRemaining) {
+  const freeInput = document.getElementById('studentFreeInput');
+  const queryNav = document.getElementById('studentQueryNav');
+  const timerDiv = document.getElementById('studentTimer');
+  const badgeDiv = document.getElementById('lockStatusBadge');
+
+  if (isUnlocked) {
+    freeInput.style.display = 'flex';    
+    queryNav.style.display = 'none';     
+    badgeDiv.innerHTML = '<i class="fas fa-unlock me-1"></i> Unlocked';
+    badgeDiv.style.color = 'var(--green)';
+    timerDiv.style.display = 'block';
+    
+    let seconds = timeRemaining;
+    clearInterval(window.countdownInterval);
+    window.countdownInterval = setInterval(() => {
+      if (seconds <= 0) {
+        clearInterval(window.countdownInterval);
+        freeInput.style.display = 'none';  
+        queryNav.style.display = 'block';  
+        badgeDiv.innerHTML = '<i class="fas fa-lock me-1"></i> Locked';
+        badgeDiv.style.color = 'var(--red)';
+        timerDiv.style.display = 'none';
+      } else {
+        const m = Math.floor(seconds / 60);
+        const s = seconds % 60;
+        timerDiv.innerText = `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+        seconds--;
+      }
+    }, 1000);
+
+  } else {
+    freeInput.style.display = 'none';
+    queryNav.style.display = 'block';
+    badgeDiv.innerHTML = '<i class="fas fa-lock me-1"></i> Locked';
+    badgeDiv.style.color = 'var(--red)';
+    timerDiv.style.display = 'none';
+  }
+}
+
+// ── 7. QUERY NAVIGATOR LOGIC ──
+function showQueries(category) {
+  const subMenu = document.getElementById('querySubMenu');
+  subMenu.innerHTML = '';
+  subMenu.style.display = 'flex';
+
+  const queries = queryData[category];
+  queries.forEach(q => {
+    const btn = document.createElement('button');
+    btn.className = 'btn btn-sm';
+    btn.style.cssText = 'background:var(--surface); color:var(--ink); border:1px solid var(--border2); font-size:13px; font-weight:500; padding:6px 12px;';
+    btn.innerText = q.label;
+    btn.onclick = () => {
+      sendStudentTemplate(q.action, q.label, q.hasFile || false, q.fileCat || '');
+      subMenu.style.display = 'none'; 
+    };
+    subMenu.appendChild(btn);
+  });
+}
+
+// ── UTILITY FUNCTIONS ──
+function scrollToBottom() {
+  const stream = document.getElementById('chatStream');
+  stream.scrollTop = stream.scrollHeight;
+}
+
+function getCookie(name) {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== '') {
+    const cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+      if (cookie.substring(0, name.length + 1) === (name + '=')) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
+    }
+  }
+  return cookieValue;
+}
+
+// ── SEND STUDENT FILE (FROM UNLOCKED INPUT) ──
+function sendStudentFile(inputElement) {
+  const file = inputElement.files[0];
+  if (!file) return;
+  
+  const formData = new FormData();
+  formData.append('message_type', 'file');
+  formData.append('file', file);
+  formData.append('content', `Shared a file: ${file.name}`);
+  formData.append('file_category', 'general'); 
+  
+  postStudentMessage(formData);
+  inputElement.value = ''; 
+}
+
+// ── INIT ──
+fetchMessages(); 
+pollingInterval = setInterval(fetchMessages, 4000); 
+
+</script>
+
+{% endblock %}

@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="row mt-4 justify-content-center">
+    <div class="col-md-8">
+        <h3 style="font-family: var(--font-display); font-weight: 800; margin-bottom: 20px;">
+            <i class="fas fa-pen me-2" style="color: var(--yellow);"></i>Edit Drive: {{ drive.role }}
+        </h3>
+        <div class="card p-4" style="border-radius: var(--radius-lg);">
+            <form method="POST" enctype="multipart/form-data"> <!-- Added enctype for logo upload -->
+                {% csrf_token %}
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Company Name</label>
+                        <input type="text" name="company" class="form-control" value="{{ drive.company }}" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Company Logo</label>
+                        {% if drive.company_logo %}
+                            <small class="d-block mb-1" style="color: var(--ink3);">Current: <a href="{{ drive.company_logo.url }}" target="_blank" style="color: var(--primary2);">View Logo</a> (Upload new to replace)</small>
+                        {% endif %}
+                        <input type="file" name="company_logo" class="form-control" accept="image/*">
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Role</label>
+                    <input type="text" name="role" class="form-control" value="{{ drive.role }}" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Description</label>
+                    <textarea name="description" class="form-control" rows="4" required>{{ drive.description }}</textarea>
+                </div>
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Location</label>
+                        <input type="text" name="location" class="form-control" value="{{ drive.location }}" required>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Salary Amount</label>
+                        <input type="number" step="0.1" name="salary_amount" class="form-control" value="{{ drive.salary_amount }}" required>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Salary Type</label>
+                        <select name="salary_type" class="form-select" required>
+                            <option value="lpa" {% if drive.salary_type == 'lpa' %}selected{% endif %}>LPA</option>
+                            <option value="ctc" {% if drive.salary_type == 'ctc' %}selected{% endif %}>CTC</option>
+                            <option value="stipend" {% if drive.salary_type == 'stipend' %}selected{% endif %}>Stipend</option>
+                            <option value="not_disclosed" {% if drive.salary_type == 'not_disclosed' %}selected{% endif %}>Not Disclosed</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Job Type</label>
+                        <select name="job_type" class="form-select">
+                            <option value="full_time" {% if drive.job_type == 'full_time' %}selected{% endif %}>Full Time</option>
+                            <option value="internship" {% if drive.job_type == 'internship' %}selected{% endif %}>Internship</option>
+                            <option value="part_time" {% if drive.job_type == 'part_time' %}selected{% endif %}>Part Time</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Eligible Branch</label>
+                        <select name="eligible_branch" class="form-select">
+                            <option value="ALL" {% if drive.eligible_branch == 'ALL' %}selected{% endif %}>All Branches</option>
+                            <option value="CSE" {% if drive.eligible_branch == 'CSE' %}selected{% endif %}>CSE</option>
+                            <option value="ECE" {% if drive.eligible_branch == 'ECE' %}selected{% endif %}>ECE</option>
+                            <option value="IT" {% if drive.eligible_branch == 'IT' %}selected{% endif %}>IT</option>
+                            <option value="ME" {% if drive.eligible_branch == 'ME' %}selected{% endif %}>ME</option>
+                            <option value="CE" {% if drive.eligible_branch == 'CE' %}selected{% endif %}>CE</option>
+                            <option value="EE" {% if drive.eligible_branch == 'EE' %}selected{% endif %}>EE</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Min CGPA</label>
+                        <input type="number" step="0.1" name="min_cgpa" class="form-control" value="{{ drive.min_cgpa }}" required>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Skills Required</label>
+                    <input type="text" name="skills_required" class="form-control" value="{{ drive.skills_required }}" placeholder="e.g., Python, SQL, React">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Deadline</label>
+                    <input type="date" name="deadline" class="form-control" value="{{ drive.deadline|date:'Y-m-d' }}" required>
+                </div>
+
+<button type="submit" class="btn btn-primary w-100" style="font-weight: 700; padding: 12px;" onclick="submitWithLoading(this, 'Saving...')">Save Changes</button>                <a href="{% url 'recruiter_dashboard' %}" class="btn btn-ghost w-100 mt-2" style="text-decoration: none; padding: 12px;">Cancel</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

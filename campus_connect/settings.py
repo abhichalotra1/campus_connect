@@ -30,7 +30,7 @@ INSTALLED_APPS = [
     'allauth.socialaccount.providers.linkedin_oauth2',
 
     # Our apps
-    'accounts',
+    'accounts.apps.AccountsConfig',  # ← loads signals for welcome email
     'students',
     'placements',
     'notifications',
@@ -83,7 +83,7 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 LANGUAGE_CODE = 'en-us'
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Kolkata'
 USE_I18N = True
 USE_TZ = True
 
@@ -94,7 +94,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'accounts.User'
 
 MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_ROOT = BASE_DIR / 'media'
 
 LOGIN_URL = '/accounts/login/'
 SITE_ID = 2
@@ -106,21 +106,48 @@ AUTHENTICATION_BACKENDS = [
 
 ACCOUNT_EMAIL_VERIFICATION = 'none'
 ACCOUNT_LOGIN_METHODS = ['username', 'email']
-ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_SIGNUP_FIELDS = ['email*', 'username*', 'password1*', 'password2*']
 ACCOUNT_LOGIN_URL = '/accounts/login/'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/accounts/login/'
 SOCIALACCOUNT_AUTO_SIGNUP = True
 
-# Email settings
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
+# ── EMAIL (Gmail SMTP) ─────────────────────────────────────────────────────
+EMAIL_BACKEND       = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST          = 'smtp.gmail.com'
+EMAIL_PORT          = 587
+EMAIL_USE_TLS       = True
+EMAIL_HOST_USER     = os.getenv('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
-DEFAULT_FROM_EMAIL = 'Campus Connect <your_email@gmail.com>'
+DEFAULT_FROM_EMAIL  = f'Campus Connect <{os.getenv("EMAIL_HOST_USER")}>'
 
-# Add this anywhere in settings.py
+# ── SOCIAL ACCOUNT ADAPTER ────────────────────────────────────────────────
 SOCIALACCOUNT_ADAPTER = 'accounts.adapters.CustomSocialAccountAdapter'
 
+# ── CUSTOM ERROR PAGES ────────────────────────────────────────────────────
+HANDLER404 = 'campus_connect.views.custom_404'
+HANDLER500 = 'campus_connect.views.custom_500'
+HANDLER403 = 'campus_connect.views.custom_403'
+
+# ── LOGGING ───────────────────────────────────────────────────────────────
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'simple': {
+            'format': '[{levelname}] {name}: {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple',
+        },
+    },
+    'loggers': {
+        'accounts':      {'handlers': ['console'], 'level': 'INFO', 'propagate': False},
+        'placements':    {'handlers': ['console'], 'level': 'INFO', 'propagate': False},
+        'campus_connect':{'handlers': ['console'], 'level': 'INFO', 'propagate': False},
+    },
+}

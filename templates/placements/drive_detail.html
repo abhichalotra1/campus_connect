@@ -1,47 +1,126 @@
 {% extends 'base.html' %}
+{% load placement_tags %}
+{% block title %}{{ drive.role }} at {{ drive.company }} – Campus Connect{% endblock %}
+
 {% block content %}
-<div class="row mt-3">
-    <div class="col-md-8">
-        <div class="card p-4">
-            <div class="d-flex justify-content-between align-items-start">
-                <div><h3>{{ drive.company }}</h3><h5 class="text-muted">{{ drive.role }}</h5></div>
-                <span class="badge bg-success fs-6">{{ drive.package }}</span>
-            </div>
-            <hr>
-            <div class="row mb-3">
-                <div class="col-md-6">
-                    <p><i class="fas fa-map-marker-alt text-primary me-2"></i><strong>Location:</strong> {{ drive.location }}</p>
-                    <p><i class="fas fa-briefcase text-primary me-2"></i><strong>Job Type:</strong> {{ drive.get_job_type_display }}</p>
-                    <p><i class="fas fa-calendar text-primary me-2"></i><strong>Deadline:</strong> {{ drive.deadline }}</p>
-                </div>
-                <div class="col-md-6">
-                    <p><i class="fas fa-graduation-cap text-primary me-2"></i><strong>Min CGPA:</strong> {{ drive.min_cgpa }}</p>
-                    <p><i class="fas fa-code-branch text-primary me-2"></i><strong>Eligible Branch:</strong> {{ drive.eligible_branch }}</p>
-                    <p><i class="fas fa-tools text-primary me-2"></i><strong>Skills:</strong> {{ drive.skills_required }}</p>
-                </div>
-            </div>
-            <h5>Job Description</h5>
-            <p>{{ drive.description }}</p>
-            <div class="mt-3">
-                {% if user.role == 'student' %}
-                    {% if already_applied %}
-                        <span class="badge bg-success p-3 fs-6">Already Applied</span>
-                    {% else %}
-                        <a href="/placements/apply/{{ drive.pk }}/" class="btn btn-success me-2">Apply Now</a>
-                    {% endif %}
-                {% endif %}
-                <a href="/placements/" class="btn btn-outline-secondary">Back to Drives</a>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card p-3">
-            <h5><i class="fas fa-building text-primary me-2"></i>Company Info</h5><hr>
-            <p><strong>Company:</strong> {{ drive.company }}</p>
-            <p><strong>Posted by:</strong> {{ drive.posted_by.username }}</p>
-            <p><strong>Posted on:</strong> {{ drive.created_at|date:"d M Y" }}</p>
-            <p><strong>Status:</strong> <span class="badge bg-success">{{ drive.status }}</span></p>
-        </div>
-    </div>
+<div style="max-width:900px;margin:0 auto;">
+
+<!-- Top Action Bar -->
+<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:1.5rem;">
+  <a href="{% url 'drive_list' %}" style="font-size:13px;font-weight:600;color:var(--ink2);text-decoration:none;display:flex;align-items:center;gap:6px;">
+    <i class="fas fa-arrow-left"></i> Back to Drives
+  </a>
+  
+  {% if user.role == 'student' %}
+  <div style="display:flex;gap:10px;">
+    <!-- Bookmark Toggle -->
+    {% if is_saved %}
+    <form method="POST" action="{% url 'unsave_drive' drive.pk %}">
+      {% csrf_token %}
+      <button type="submit" style="font-size:13px;font-weight:600;color:var(--primary2);background:var(--p-soft);border:1px solid rgba(79,70,229,0.3);padding:7px 16px;border-radius:8px;cursor:pointer;">
+        <i class="fas fa-bookmark me-1"></i>Saved
+      </button>
+    </form>
+    {% else %}
+    <form method="POST" action="{% url 'save_drive' drive.pk %}">
+      {% csrf_token %}
+      <button type="submit" style="font-size:13px;font-weight:600;color:var(--ink2);background:var(--surface);border:1px solid var(--border2);padding:7px 16px;border-radius:8px;cursor:pointer;">
+        <i class="far fa-bookmark me-1"></i>Save Job
+      </button>
+    </form>
+    {% endif %}
+
+    <!-- Apply Button (FIXED) -->
+    {% if already_applied %}
+    <span style="font-size:13px;font-weight:600;color:var(--green);background:var(--green-soft);padding:8px 16px;border-radius:8px;display:inline-flex;align-items:center;">
+      <i class="fas fa-check me-1"></i>Applied
+    </span>
+    {% else %}
+    <form method="POST" action="{% url 'apply' drive.pk %}">
+      {% csrf_token %}
+      <button type="submit" style="font-size:13px;font-weight:700;color:#fff;padding:8px 18px;border-radius:8px;background:var(--primary);border:none;cursor:pointer;display:inline-flex;align-items:center;">
+        Apply Now
+      </button>
+    </form>
+    {% endif %}
+  </div>
+  {% endif %}
 </div>
+  <!-- Header Card -->
+  <div style="background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:2rem;margin-bottom:1.5rem;display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
+    {% if drive.company_logo %}
+    <img src="{{ drive.company_logo.url }}" alt="{{ drive.company }}" style="width:80px;height:80px;border-radius:14px;object-fit:cover;border:1px solid var(--border);">
+    {% else %}
+    <div style="width:80px;height:80px;border-radius:14px;background:var(--bg2);display:flex;align-items:center;justify-content:center;color:var(--ink3);font-size:32px;border:1px solid var(--border);">
+      <i class="fas fa-building"></i>
+    </div>
+    {% endif %}
+    <div style="flex:1;">
+      <h1 style="font-family:var(--font-display);font-size:28px;font-weight:800;color:var(--ink);margin:0;">{{ drive.role }}</h1>
+      <div style="font-size:16px;color:var(--ink2);margin-top:4px;">{{ drive.company }}</div>
+      <div style="display:flex;gap:12px;margin-top:10px;flex-wrap:wrap;">
+        <span style="font-size:13px;color:var(--ink3);display:flex;align-items:center;gap:5px;"><i class="fas fa-map-marker-alt"></i>{{ drive.location }}</span>
+        <span style="font-size:13px;color:var(--ink3);display:flex;align-items:center;gap:5px;"><i class="fas fa-clock"></i>Deadline: {{ drive.deadline|date:"d M Y" }}</span>
+      </div>
+    </div>
+    <div style="text-align:right;">
+      <div style="font-family:var(--font-display);font-size:24px;font-weight:800;color:var(--green);">{{ drive.formatted_salary }}</div>
+      <span style="font-size:12px;background:var(--p-soft);color:var(--primary2);padding:4px 12px;border-radius:20px;font-weight:600;">{{ drive.get_job_type_display }}</span>
+    </div>
+  </div>
+
+  <!-- Details Grid -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.5rem;">
+
+    <!-- Left: Description & Skills -->
+    <div style="display:grid;gap:1.5rem;">
+      <div style="background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:1.5rem;">
+        <h3 style="font-family:var(--font-display);font-weight:700;color:var(--ink);margin:0 0 1rem;font-size:16px;">Job Description</h3>
+        <div style="color:var(--ink2);font-size:14px;line-height:1.6;white-space:pre-wrap;">{{ drive.description }}</div>
+      </div>
+
+      <div style="background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:1.5rem;">
+        <h3 style="font-family:var(--font-display);font-weight:700;color:var(--ink);margin:0 0 1rem;font-size:16px;">Skills Required</h3>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;">
+          {% for skill in drive.skills_required|split:"," %}
+            <span style="font-size:12px;background:var(--bg2);color:var(--primary2);padding:4px 12px;border-radius:6px;font-weight:500;border:1px solid var(--border);">{{ skill|trim }}</span>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Eligibility & Company -->
+    <div style="display:grid;gap:1.5rem;">
+      <div style="background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:1.5rem;">
+        <h3 style="font-family:var(--font-display);font-weight:700;color:var(--ink);margin:0 0 1rem;font-size:16px;">Eligibility Criteria</h3>
+        <div style="display:grid;gap:12px;">
+          <div style="display:flex;justify-content:space-between;padding-bottom:8px;border-bottom:1px solid var(--border);">
+            <span style="color:var(--ink2);font-size:14px;">Min. CGPA</span>
+            <span style="color:var(--ink);font-weight:600;font-size:14px;">{{ drive.min_cgpa }}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding-bottom:8px;border-bottom:1px solid var(--border);">
+            <span style="color:var(--ink2);font-size:14px;">Eligible Branches</span>
+            <span style="color:var(--ink);font-weight:600;font-size:14px;">{{ drive.get_eligible_branch_display }}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;">
+            <span style="color:var(--ink2);font-size:14px;">Status</span>
+            <span style="font-size:13px;font-weight:600;color:{% if drive.status == 'active' %}var(--green){% else %}var(--red){% endif %};">
+              {{ drive.get_status_display }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div style="background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:1.5rem;">
+        <h3 style="font-family:var(--font-display);font-weight:700;color:var(--ink);margin:0 0 1rem;font-size:16px;">Posted By</h3>
+        <a href="{% url 'company_profile' drive.posted_by.pk %}" style="color:var(--primary2);text-decoration:none;font-weight:600;font-size:14px;">
+          <i class="fas fa-external-link-alt me-1"></i>View Company Profile
+        </a>
+        <div style="color:var(--ink3);font-size:13px;margin-top:6px;">Posted on {{ drive.created_at|date:"d M Y" }}</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
 {% endblock %}
