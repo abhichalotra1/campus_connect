@@ -1,52 +1,258 @@
-{% extends 'base.html' %}
+{% extends "dashboard_base.html" %}
 {% block title %}Saved Jobs – Campus Connect{% endblock %}
+{% block breadcrumb_page_name %}Saved Jobs{% endblock %}
 
-{% block content %}
-<div style="display:flex;align-items:center;gap:10px;margin-bottom:1.75rem;">
-  <i class="fas fa-bookmark" style="color:var(--primary2);font-size:22px;"></i>
-  <h1 style="font-family:var(--font-display);font-size:26px;font-weight:800;color:var(--ink);margin:0;">Saved Jobs</h1>
+{% block dashboard_content %}
+<style>
+  /* ── SAVED JOBS PAGE STYLES ── */
+  .sj-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 1.75rem;
+  }
+  .sj-title {
+    font-family: var(--font-display);
+    font-size: 26px;
+    font-weight: 800;
+    color: var(--ink);
+    margin: 0;
+  }
+  .sj-icon { color: var(--primary2); font-size: 22px; }
+
+  .saved-grid {
+    display: grid;
+    gap: 16px;
+  }
+
+  /* Card Base */
+  .saved-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 20px;
+    transition: all 0.25s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  .saved-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 4px; height: 100%;
+    background: var(--primary);
+    opacity: 0;
+    transition: opacity 0.25s;
+  }
+  .saved-card:hover {
+    border-color: var(--border2);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+  }
+  .saved-card:hover::before { opacity: 1; }
+
+  /* Left Side */
+  .saved-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex: 1;
+    min-width: 280px;
+  }
+  .saved-logo {
+    width: 50px; height: 50px;
+    border-radius: 14px;
+    object-fit: cover;
+    border: 1px solid var(--border);
+    flex-shrink: 0;
+    background: var(--bg2);
+  }
+  .saved-logo-placeholder {
+    width: 50px; height: 50px;
+    border-radius: 14px;
+    background: var(--bg2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--ink3);
+    font-size: 20px;
+    border: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .saved-role {
+    font-family: var(--font-display);
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--ink);
+    text-decoration: none;
+    transition: color 0.15s;
+  }
+  .saved-role:hover { color: var(--primary2); }
+  .saved-company {
+    font-size: 14px;
+    color: var(--ink2);
+    margin-top: 2px;
+  }
+  .tag-stack {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+  }
+  .tag {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11.5px;
+    font-weight: 700;
+    font-family: var(--font-mono);
+  }
+  .tag-salary { background: var(--green-soft); color: var(--green); }
+  .tag-type { background: var(--bg3); color: var(--ink2); }
+
+  /* Right Side */
+  .saved-right {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-end;
+    min-width: 130px;
+  }
+
+  /* Buttons */
+  .btn-apply {
+    font-family: var(--font-display);
+    font-size: 12.5px;
+    font-weight: 700;
+    color: #fff;
+    text-decoration: none;
+    padding: 7px 16px;
+    border-radius: 9px;
+    background: var(--primary);
+    transition: all 0.18s;
+    text-align: center;
+    width: 100%;
+    border: none;
+  }
+  .btn-apply:hover { background: var(--primary2); box-shadow: 0 4px 12px var(--p-glow); }
+
+  .btn-applied {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--green);
+    background: var(--green-soft);
+    padding: 7px 16px;
+    border-radius: 9px;
+    border: 1px solid rgba(34,211,160,0.2);
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .btn-remove {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--red);
+    background: var(--red-soft);
+    border: 1px solid rgba(244,63,94,0.2);
+    padding: 5px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    width: 100%;
+    transition: all 0.15s;
+    font-family: var(--font-body);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+  }
+  .btn-remove:hover { background: rgba(244,63,94,0.2); border-color: var(--red); }
+
+  /* Empty State */
+  .empty-state {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 4rem 2rem;
+    text-align: center;
+  }
+  .empty-icon { font-size: 40px; color: var(--ink3); margin-bottom: 16px; display: block; }
+  .empty-title { font-family: var(--font-display); font-weight: 700; color: var(--ink); margin-bottom: 8px; font-size: 18px;}
+  .empty-text { color: var(--ink2); font-size: 14px; margin-bottom: 20px; }
+  .empty-link {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 13.5px;
+    padding: 0.6rem 1.25rem;
+    border-radius: 10px;
+    border: none;
+    background: var(--primary);
+    color: #fff;
+    text-decoration: none;
+    transition: all 0.18s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .empty-link:hover { background: var(--primary2); }
+
+  @media(max-width: 768px) {
+    .saved-card { flex-direction: column; align-items: flex-start; }
+    .saved-right { width: 100%; flex-direction: row; justify-content: flex-end; }
+    .btn-apply, .btn-applied { width: auto; flex: 1; }
+    .btn-remove { width: auto; flex: 1; justify-content: center; }
+  }
+</style>
+
+<div class="sj-header">
+  <i class="fas fa-bookmark sj-icon"></i>
+  <h1 class="sj-title">Saved Jobs</h1>
 </div>
 
 {% if bookmarks %}
-<div style="display:grid;gap:16px;">
+<div class="saved-grid">
   {% for bookmark in bookmarks %}
-  <div style="background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:1.5rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;">
+  <div class="saved-card">
     
     <!-- Job Info -->
-    <div style="display:flex;align-items:center;gap:16px;">
+    <div class="saved-left">
       {% if bookmark.drive.company_logo %}
-      <img src="{{ bookmark.drive.company_logo.url }}" alt="{{ bookmark.drive.company }}" style="width:50px;height:50px;border-radius:10px;object-fit:cover;">
+        <img src="{{ bookmark.drive.company_logo.url }}" alt="{{ bookmark.drive.company }}" class="saved-logo">
       {% else %}
-      <div style="width:50px;height:50px;border-radius:10px;background:var(--bg2);display:flex;align-items:center;justify-content:center;color:var(--ink3);font-size:20px;">
-        <i class="fas fa-building"></i>
-      </div>
+        <div class="saved-logo-placeholder">
+          <i class="fas fa-building"></i>
+        </div>
       {% endif %}
       <div>
-        <a href="{% url 'drive_detail' bookmark.drive.pk %}" style="font-family:var(--font-display);font-size:17px;font-weight:700;color:var(--ink);text-decoration:none;">{{ bookmark.drive.role }}</a>
-        <div style="font-size:14px;color:var(--ink2);margin-top:2px;">{{ bookmark.drive.company }} &bull; {{ bookmark.drive.location }}</div>
-        <div style="display:flex;gap:8px;margin-top:6px;">
-          <span style="font-size:12px;background:var(--green-soft);color:var(--green);padding:3px 10px;border-radius:20px;font-weight:600;">{{ bookmark.drive.formatted_salary }}</span>
-          <span style="font-size:12px;background:var(--surface2);color:var(--ink2);padding:3px 10px;border-radius:20px;">{{ bookmark.drive.get_job_type_display }}</span>
+        <a href="{% url 'drive_detail' bookmark.drive.pk %}" class="saved-role">{{ bookmark.drive.role }}</a>
+        <div class="saved-company">{{ bookmark.drive.company }} &bull; {{ bookmark.drive.location }}</div>
+        <div class="tag-stack">
+          <span class="tag tag-salary">{{ bookmark.drive.formatted_salary }}</span>
+          <span class="tag tag-type">{{ bookmark.drive.get_job_type_display }}</span>
         </div>
       </div>
     </div>
 
     <!-- Actions -->
-    <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end;">
+    <div class="saved-right">
       {% if bookmark.drive.id in applied_ids %}
-        <span style="font-size:13px;font-weight:600;color:var(--green);background:var(--green-soft);padding:6px 14px;border-radius:8px;">
-          <i class="fas fa-check me-1"></i>Applied
+        <span class="btn-applied">
+          <i class="fas fa-check"></i> Applied
         </span>
       {% else %}
-        <a href="{% url 'apply' bookmark.drive.pk %}" style="font-size:13px;font-weight:700;color:#fff;text-decoration:none;padding:7px 16px;border-radius:8px;background:var(--primary);">
-          Apply Now
-        </a>
+        <a href="{% url 'apply' bookmark.drive.pk %}" class="btn-apply">Apply Now</a>
       {% endif %}
       
       <form method="POST" action="{% url 'unsave_drive' bookmark.drive.pk %}">
         {% csrf_token %}
-        <button type="submit" onclick="submitWithLoading(this,'Removing...')" style="font-size:12px;font-weight:600;color:var(--red);background:var(--red-soft);border:1px solid rgba(244,63,94,0.3);padding:5px 12px;border-radius:7px;cursor:pointer;width:100%;">
-          <i class="fas fa-trash me-1"></i>Remove
+        <button type="submit" onclick="submitWithLoading(this,'Removing...')" class="btn-remove">
+          <i class="fas fa-trash"></i> Remove
         </button>
       </form>
     </div>
@@ -55,11 +261,11 @@
   {% endfor %}
 </div>
 {% else %}
-<div style="background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:3rem;text-align:center;">
-  <i class="far fa-bookmark" style="font-size:40px;color:var(--ink3);margin-bottom:16px;display:block;"></i>
-  <h3 style="font-family:var(--font-display);font-weight:700;color:var(--ink);margin-bottom:8px;">No Saved Jobs Yet</h3>
-  <p style="color:var(--ink2);font-size:14px;margin-bottom:20px;">When you find a drive you like, click the bookmark icon to save it here for later.</p>
-  <a href="{% url 'drive_list' %}" style="font-size:13px;font-weight:700;color:#fff;text-decoration:none;padding:9px 18px;border-radius:9px;background:var(--primary);">Browse Drives</a>
+<div class="empty-state">
+  <i class="far fa-bookmark empty-icon"></i>
+  <h3 class="empty-title">No Saved Jobs Yet</h3>
+  <p class="empty-text">When you find a drive you like, click the bookmark icon to save it here for later.</p>
+  <a href="{% url 'drive_list' %}" class="empty-link"><i class="fas fa-briefcase"></i> Browse Drives</a>
 </div>
 {% endif %}
 

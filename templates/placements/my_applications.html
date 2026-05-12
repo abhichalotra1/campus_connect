@@ -1,96 +1,300 @@
-{% extends 'base.html' %}
-{% block content %}
-<div class="mt-4 mb-4">
-    <h3 style="font-family: var(--font-display); font-weight: 800; letter-spacing: -0.5px;">
-        <i class="fas fa-file-lines me-2" style="color: var(--primary);"></i>My Applications
-    </h3>
-    <p style="color: var(--ink3); font-size: 14px; margin-top: 4px;">Track the status of all your job applications.</p>
+{% extends "dashboard_base.html" %}
+{% block breadcrumb_page_name %}My Applications{% endblock %}
+
+{% block dashboard_content %}
+<style>
+  /* ── MY APPLICATIONS STYLES ── */
+  .ma-header {
+    margin-bottom: 1.75rem;
+  }
+  .ma-title {
+    font-family: var(--font-display);
+    font-size: 26px;
+    font-weight: 800;
+    color: var(--ink);
+    margin: 0 0 4px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .ma-title i { color: var(--primary2); }
+  .ma-subtitle { color: var(--ink2); font-size: 14px; }
+
+  .app-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  /* App Card Base */
+  .app-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    transition: all 0.25s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  .app-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 4px; height: 100%;
+    background: var(--primary);
+    opacity: 0;
+    transition: opacity 0.25s;
+  }
+  .app-card:hover {
+    border-color: var(--border2);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+  }
+  .app-card:hover::before { opacity: 1; }
+
+  /* Placed Card Special Style */
+  .app-card.is-placed {
+    border-color: rgba(245,158,11,0.3);
+    background: linear-gradient(135deg, rgba(245,158,11,0.05) 0%, var(--surface) 100%);
+  }
+  .app-card.is-placed::before {
+    background: #f59e0b;
+    opacity: 1;
+    box-shadow: 0 0 10px rgba(245,158,11,0.4);
+  }
+
+  .app-inner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  /* Left Side */
+  .app-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex: 1;
+    min-width: 250px;
+  }
+  .app-logo {
+    width: 48px; height: 48px;
+    border-radius: 12px;
+    object-fit: contain;
+    background: var(--bg2);
+    padding: 4px;
+    border: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .app-logo-placeholder {
+    width: 48px; height: 48px;
+    border-radius: 12px;
+    background: var(--p-soft);
+    color: var(--primary2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+  .app-role {
+    font-family: var(--font-display);
+    font-weight: 700;
+    color: var(--ink);
+    text-decoration: none;
+    font-size: 16px;
+    transition: color 0.15s;
+  }
+  .app-role:hover { color: var(--primary2); }
+  .app-company {
+    color: var(--primary2);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    transition: color 0.15s;
+  }
+  .app-company:hover { color: var(--ink); }
+  .app-meta {
+    font-size: 12px;
+    color: var(--ink3);
+    margin-top: 5px;
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .app-meta span { display: inline-flex; align-items: center; gap: 4px; }
+
+  /* Right Side */
+  .app-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  /* Badges */
+  .status-badge {
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    font-family: var(--font-mono);
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+  }
+  .badge-applied { background: rgba(255,255,255,0.05); color: var(--ink2); border: 1px solid var(--border); }
+  .badge-shortlisted { background: var(--yellow-soft); color: var(--yellow); }
+  .badge-selected { background: var(--green-soft); color: var(--green); }
+  .badge-placed { background: rgba(245,158,11,0.15); color: #f59e0b; box-shadow: 0 0 12px rgba(245,158,11,0.15); }
+  .badge-rejected { background: var(--red-soft); color: var(--red); }
+
+  /* Action Buttons */
+  .btn-chat {
+    padding: 6px 14px;
+    border-radius: 9px;
+    background: var(--primary);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    text-decoration: none;
+    transition: all 0.18s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    box-shadow: 0 2px 8px var(--p-glow);
+  }
+  .btn-chat:hover { background: var(--primary2); transform: translateY(-1px); }
+
+  .btn-withdraw {
+    padding: 6px 12px;
+    border-radius: 9px;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    color: var(--ink3);
+    font-size: 12px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .btn-withdraw:hover { background: var(--red-soft); color: var(--red); border-color: var(--red); }
+
+  /* Empty State */
+  .empty-state {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 4rem 2rem;
+    text-align: center;
+  }
+  .empty-icon { font-size: 40px; color: var(--ink3); margin-bottom: 16px; display: block; }
+  .empty-title { font-family: var(--font-display); font-weight: 700; color: var(--ink); margin-bottom: 8px; font-size: 18px;}
+  .empty-text { color: var(--ink2); font-size: 14px; margin-bottom: 20px; }
+  .empty-link {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 13.5px;
+    padding: 0.6rem 1.25rem;
+    border-radius: 10px;
+    border: none;
+    background: var(--primary);
+    color: #fff;
+    text-decoration: none;
+    transition: all 0.18s;
+  }
+  .empty-link:hover { background: var(--primary2); }
+
+  @media(max-width: 768px) {
+    .app-inner { flex-direction: column; align-items: flex-start; }
+    .app-right { width: 100%; justify-content: flex-end; }
+  }
+</style>
+
+<div class="ma-header">
+  <h1 class="ma-title"><i class="fas fa-file-lines"></i> My Applications</h1>
+  <p class="ma-subtitle">Track the status of all your job applications.</p>
 </div>
 
 {% if applications %}
-    <div style="display: flex; flex-direction: column; gap: 14px;">
-        {% for app in applications %}
-<div class="card p-4" style="border-radius: var(--radius-lg); transition: all 0.2s; {% if app.status == 'placed' %}border: 2px solid #f59e0b; background: linear-gradient(135deg, rgba(245,158,11,0.05) 0%, var(--surface) 100%);{% endif %}">            <div class="d-flex flex-column flex-md-row justify-content-between align-items-start gap-3">
-                
-                <!-- Left: Company Logo & Info -->
-                <div style="display: flex; align-items: center; gap: 16px;">
-                    <!-- Company Logo -->
-                    {% if app.drive.company_logo %}
-                        <img src="{{ app.drive.company_logo.url }}" alt="{{ app.drive.company }}" style="width: 48px; height: 48px; border-radius: 12px; object-fit: contain; background: #fff; padding: 4px; border: 1px solid var(--border);">
-                    {% else %}
-                        <div style="width: 48px; height: 48px; border-radius: 12px; background: var(--p-soft); color: var(--primary2); display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-weight: 800; font-size: 20px;">
-                            {{ app.drive.company|first|upper }}
-                        </div>
-                    {% endif %}
-                    
-                    <div>
-                        <a href="{% url 'drive_detail' app.drive.pk %}" style="text-decoration: none; color: inherit;">
-                            <h5 style="font-family: var(--font-display); font-weight: 700; margin-bottom: 2px;">{{ app.drive.role }}</h5>
-                        </a>
-                        <a href="{% url 'company_profile' app.drive.posted_by.pk %}" style="text-decoration: none; color: var(--primary2); font-size: 14px; font-weight: 500;">
-                            {{ app.drive.company }}
-                        </a>
-                        <div style="font-size: 12px; color: var(--ink3); margin-top: 4px; display: flex; gap: 12px;">
-                            <span><i class="fas fa-map-marker-alt me-1"></i> {{ app.drive.location }}</span>
-                            <span><i class="fas fa-indian-rupee-sign me-1"></i> {{ app.drive.formatted_salary }}</span>
-                            <span><i class="fas fa-calendar me-1"></i> Applied {{ app.applied_at|timesince }} ago</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Right: Status & Action -->
-                <div class="d-flex align-items-center gap-3 flex-shrink-0">
-                    
-                    <!-- Status Badge -->
-                    {% if app.status == 'applied' %}
-                        <span style="padding: 6px 14px; border-radius: 20px; background: rgba(255,255,255,0.05); color: var(--ink2); font-size: 12px; font-weight: 700; border: 1px solid var(--border);">
-                            <i class="fas fa-clock me-1"></i> Applied
-                        </span>
-                    {% elif app.status == 'shortlisted' %}
-                        <span style="padding: 6px 14px; border-radius: 20px; background: rgba(245,158,11,0.12); color: #f59e0b; font-size: 12px; font-weight: 700;">
-                            <i class="fas fa-star me-1"></i> Shortlisted
-                        </span>
-                    {% elif app.status == 'selected' %}
-                        <span style="padding: 6px 14px; border-radius: 20px; background: var(--green-soft); color: var(--green); font-size: 12px; font-weight: 700;">
-                            <i class="fas fa-check-circle me-1"></i> Selected
-                        </span>
-                        {% elif app.status == 'placed' %}
-                        <!-- THE PLACED BADGE -->
-                        <span style="padding: 6px 14px; border-radius: 20px; background: rgba(245,158,11,0.15); color: #f59e0b; font-size: 12px; font-weight: 700; box-shadow: 0 0 10px rgba(245,158,11,0.2);">
-                            🏆 Placed
-                        </span>
-                    {% elif app.status == 'rejected' %}
-                        <span style="padding: 6px 14px; border-radius: 20px; background: var(--red-soft); color: var(--red); font-size: 12px; font-weight: 700;">
-                            <i class="fas fa-times-circle me-1"></i> Rejected
-                        </span>
-                    {% endif %}
-
-                    <!-- ── CHAT BUTTON ── -->
-                    <!-- ✨ ADDED 'placed' TO THIS CONDITION ✨ -->
-                    {% if app.status == 'shortlisted' or app.status == 'selected' or app.status == 'placed' %}
-                    <a href="{% url 'start_chat' app.pk %}" style="padding: 6px 14px; border-radius: 8px; background: var(--primary); color: #fff; font-size: 12px; font-weight: 700; text-decoration: none; transition: all 0.15s; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 2px 6px var(--p-glow);">
-                        <i class="fas fa-comment-dots"></i> Chat
-                    </a>
-                    {% endif %}
-
-                    <!-- Withdraw Button (Only show if status is 'applied') -->
-                    {% if app.status == 'applied' %}
-                        <a href="{% url 'withdraw' app.pk %}" style="padding: 6px 12px; border-radius: 8px; background: var(--surface2); border: 1px solid var(--border2); color: var(--ink3); font-size: 12px; font-weight: 600; text-decoration: none; transition: all 0.15s;">
-                            <i class="fas fa-trash-alt me-1"></i> Withdraw
-                        </a>
-                    {% endif %}
-                </div>
-
-            </div>
+<div class="app-list">
+  {% for app in applications %}
+  <div class="app-card {% if app.status == 'placed' %}is-placed{% endif %}">
+    <div class="app-inner">
+      
+      <!-- Left Side: Logo & Info -->
+      <div class="app-left">
+        {% if app.drive.company_logo %}
+          <img src="{{ app.drive.company_logo.url }}" alt="{{ app.drive.company }}" class="app-logo">
+        {% else %}
+          <div class="app-logo-placeholder">
+            {{ app.drive.company|first|upper }}
+          </div>
+        {% endif %}
+        
+        <div>
+          <a href="{% url 'drive_detail' app.drive.pk %}" class="app-role">{{ app.drive.role }}</a>
+          <a href="{% url 'company_profile' app.drive.posted_by.pk %}" class="app-company">{{ app.drive.company }}</a>
+          <div class="app-meta">
+            <span><i class="fas fa-map-marker-alt"></i> {{ app.drive.location }}</span>
+            <span><i class="fas fa-indian-rupee-sign"></i> {{ app.drive.formatted_salary }}</span>
+            <span><i class="fas fa-calendar"></i> Applied {{ app.applied_at|timesince }} ago</span>
+          </div>
         </div>
-        {% endfor %}
+      </div>
+
+      <!-- Right Side: Status & Actions -->
+      <div class="app-right">
+        
+        <!-- Status Badges -->
+        {% if app.status == 'applied' %}
+          <span class="status-badge badge-applied"><i class="fas fa-clock"></i> Applied</span>
+        {% elif app.status == 'shortlisted' %}
+          <span class="status-badge badge-shortlisted"><i class="fas fa-star"></i> Shortlisted</span>
+        {% elif app.status == 'selected' %}
+          <span class="status-badge badge-selected"><i class="fas fa-check-circle"></i> Selected</span>
+        {% elif app.status == 'placed' %}
+          <span class="status-badge badge-placed">🏆 Placed</span>
+        {% elif app.status == 'rejected' %}
+          <span class="status-badge badge-rejected"><i class="fas fa-times-circle"></i> Rejected</span>
+        {% endif %}
+
+        <!-- Chat Button (Visible if shortlisted, selected, or placed) -->
+        {% if app.status == 'shortlisted' or app.status == 'selected' or app.status == 'placed' %}
+        <a href="{% url 'start_chat' app.pk %}" class="btn-chat">
+          <i class="fas fa-comment-dots"></i> Chat
+        </a>
+        {% endif %}
+
+        <!-- Withdraw Button (Visible if applied) -->
+        {% if app.status == 'applied' %}
+          <a href="{% url 'withdraw' app.pk %}" class="btn-withdraw">
+            <i class="fas fa-trash-alt"></i> Withdraw
+          </a>
+        {% endif %}
+      </div>
+
     </div>
+  </div>
+  {% endfor %}
+</div>
 {% else %}
-    <div class="card p-5 text-center" style="border-radius: var(--radius-lg);">
-        <i class="fas fa-inbox fa-3x mb-3" style="color: var(--ink3);"></i>
-        <h5 style="color: var(--ink2);">No applications yet!</h5>
-        <p style="color: var(--ink3); font-size: 13px;">Start applying to placement drives to see them here.</p>
-        <a href="{% url 'drive_list' %}" class="btn btn-primary mt-2" style="font-weight: 700;">Browse Drives</a>
-    </div>
+<div class="empty-state">
+  <i class="fas fa-inbox empty-icon"></i>
+  <h3 class="empty-title">No applications yet!</h3>
+  <p class="empty-text">Start applying to placement drives to see them here.</p>
+  <a href="{% url 'drive_list' %}" class="empty-link">Browse Drives</a>
+</div>
 {% endif %}
+
 {% endblock %}

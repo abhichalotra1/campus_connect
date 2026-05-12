@@ -1,99 +1,349 @@
-﻿{% extends 'base.html' %}
+﻿{% extends "dashboard_base.html" %}
 {% load placement_tags %}
+{% block breadcrumb_page_name %}My Profile{% endblock %}
 
-{% block content %}
-<div class="row mt-4">
-    <!-- Left Sidebar: Profile Card -->
-    <div class="col-md-4 mb-4">
-        <div class="card p-4 text-center" style="border-radius: var(--radius-lg);">
-            <!-- Avatar -->
-            <div style="width: 100px; height: 100px; border-radius: 50%; background: var(--p-soft); color: var(--primary2); display: flex; align-items: center; justify-content: center; font-size: 36px; font-weight: 800; margin: 0 auto 16px; overflow: hidden; border: 3px solid var(--border2);">
-                {% if profile.profile_pic %}
-                    <img src="{{ profile.profile_pic.url }}" style="width: 100%; height: 100%; object-fit: cover;" alt="Profile">
-                {% else %}
-                    {{ user.first_name|first|upper }}{{ user.last_name|first|upper }}
-                {% endif %}
-            </div>
-            <h4 style="font-family: var(--font-display); font-weight: 800;">{{ user.get_full_name|default:user.username }}</h4>
-            <p style="color: var(--primary2); font-size: 14px; font-weight: 600; margin-top: 4px;">{{ profile.branch|default:"Branch not set" }}</p>
-            
-            <div style="margin-top: 20px; display: flex; flex-direction: column; gap: 10px; text-align: left;">
-                {% if user.email %}<div style="font-size: 13px; color: var(--ink2);"><i class="fas fa-envelope me-2" style="color: var(--ink3); width: 16px;"></i> {{ user.email }}</div>{% endif %}
-                {% if user.phone %}<div style="font-size: 13px; color: var(--ink2);"><i class="fas fa-phone me-2" style="color: var(--ink3); width: 16px;"></i> {{ user.phone }}</div>{% endif %}
-                {% if profile.linkedin %}<a href="{{ profile.linkedin }}" target="_blank" style="font-size: 13px; color: var(--primary2); text-decoration: none;"><i class="fab fa-linkedin me-2" style="width: 16px;"></i> LinkedIn</a>{% endif %}
-                {% if profile.github %}<a href="{{ profile.github }}" target="_blank" style="font-size: 13px; color: var(--primary2); text-decoration: none;"><i class="fab fa-github me-2" style="width: 16px;"></i> GitHub</a>{% endif %}
-            </div>
+{% block dashboard_content %}
+<style>
+  /* ── PROFILE PAGE STYLES ── */
+  .profile-grid {
+    display: grid;
+    grid-template-columns: 340px 1fr;
+    gap: 24px;
+    align-items: flex-start;
+  }
 
-            <a href="{% url 'edit_profile' %}" class="btn btn-primary w-100 mt-4" style="font-weight: 700; border-radius: 10px;">
-                <i class="fas fa-pen me-2"></i>Edit Profile
-            </a>
-            <a href="{% url 'password_change' %}" class="btn w-100 mt-2" style="font-weight: 700; border-radius: 10px; background: var(--surface2); color: var(--ink2); border: 1px solid var(--border2);">
-    <i class="fa-solid fa-key me-2"></i>Change Password
-</a>
-        </div>
+  /* Left Card */
+  .profile-sidebar {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 2rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    position: sticky;
+    top: 90px;
+  }
+  .profile-avatar {
+    width: 100px; height: 100px;
+    border-radius: 50%;
+    background: var(--p-soft);
+    color: var(--primary2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 36px;
+    font-weight: 800;
+    margin-bottom: 16px;
+    overflow: hidden;
+    border: 3px solid var(--border2);
+    flex-shrink: 0;
+  }
+  .profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .profile-name {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 20px;
+    color: var(--ink);
+    margin: 0;
+  }
+  .profile-branch {
+    color: var(--primary2);
+    font-size: 14px;
+    font-weight: 600;
+    margin-top: 4px;
+  }
+
+  .profile-info-list {
+    margin-top: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+    text-align: left;
+  }
+  .profile-info-item {
+    font-size: 13px;
+    color: var(--ink2);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .profile-info-item i { color: var(--ink3); width: 16px; text-align: center; flex-shrink: 0; }
+  .profile-info-link {
+    color: var(--primary2);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    transition: color 0.15s;
+  }
+  .profile-info-link:hover { color: var(--ink); }
+  .profile-info-link i { color: var(--ink3); width: 16px; text-align: center; flex-shrink: 0; }
+
+  .profile-actions {
+    margin-top: 28px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .btn-edit {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 10px;
+    border-radius: 10px;
+    background: var(--primary);
+    color: #fff;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 13.5px;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: all 0.18s;
+  }
+  .btn-edit:hover { background: var(--primary2); box-shadow: 0 4px 12px var(--p-glow); }
+  
+  .btn-password {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 10px;
+    border-radius: 10px;
+    background: var(--surface2);
+    color: var(--ink2);
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 13.5px;
+    text-decoration: none;
+    border: 1px solid var(--border2);
+    cursor: pointer;
+    transition: all 0.18s;
+  }
+  .btn-password:hover { background: var(--bg3); color: var(--ink); border-color: var(--ink3); }
+
+  /* Right Main Content */
+  .profile-main {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .profile-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    transition: border-color 0.2s;
+  }
+  .profile-section:hover { border-color: var(--border2); }
+
+  .section-header {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 16px;
+    color: var(--ink);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .section-header i { font-size: 18px; }
+  .icon-graduation { color: var(--primary2); }
+  .icon-skills { color: var(--yellow); }
+  .icon-about { color: var(--green); }
+
+  /* Academic Stats */
+  .academics-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+  .academic-item {
+    background: var(--bg2);
+    padding: 16px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+  }
+  .academic-label {
+    font-size: 11px;
+    color: var(--ink3);
+    text-transform: uppercase;
+    font-weight: 700;
+    font-family: var(--font-mono);
+    margin-bottom: 6px;
+  }
+  .academic-value {
+    font-size: 22px;
+    font-family: var(--font-display);
+    font-weight: 800;
+    color: var(--ink);
+  }
+  .academic-value.mono {
+    font-size: 16px;
+    font-family: var(--font-mono);
+    font-weight: 500;
+    padding-top: 4px;
+  }
+
+  /* Skills */
+  .skill-stack {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .skill-tag {
+    padding: 6px 14px;
+    border-radius: 20px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    color: var(--ink2);
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.2s;
+  }
+  .skill-tag:hover { border-color: var(--primary2); color: var(--primary2); background: var(--p-soft); }
+
+  /* About */
+  .about-text {
+    color: var(--ink2);
+    line-height: 1.75;
+    font-size: 14px;
+    margin: 0;
+  }
+
+  /* Resume */
+  .resume-link {
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 4px;
+    transition: transform 0.2s;
+  }
+  .resume-link:hover { transform: translateX(4px); }
+  .resume-icon {
+    width: 44px; height: 44px;
+    border-radius: 12px;
+    background: var(--red-soft);
+    color: var(--red);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+  .resume-title { font-size: 14px; font-weight: 700; color: var(--ink); }
+  .resume-sub { font-size: 12px; color: var(--ink3); margin-top: 2px; }
+
+  /* Responsive */
+  @media(max-width: 900px) {
+    .profile-grid { grid-template-columns: 1fr; }
+    .profile-sidebar { position: static; }
+    .academics-grid { grid-template-columns: 1fr; }
+  }
+</style>
+
+<div class="profile-grid">
+  
+  <!-- Left Sidebar: Profile Card -->
+  <aside class="profile-sidebar">
+    <div class="profile-avatar">
+      {% if profile.profile_pic %}
+        <img src="{{ profile.profile_pic.url }}" alt="Profile">
+      {% else %}
+        {{ user.first_name|first|upper }}{{ user.last_name|first|upper }}
+      {% endif %}
+    </div>
+    
+    <h4 class="profile-name">{{ user.get_full_name|default:user.username }}</h4>
+    <p class="profile-branch">{{ profile.branch|default:"Branch not set" }}</p>
+    
+    <div class="profile-info-list">
+      {% if user.email %}
+        <div class="profile-info-item"><i class="fas fa-envelope"></i> {{ user.email }}</div>
+      {% endif %}
+      {% if user.phone %}
+        <div class="profile-info-item"><i class="fas fa-phone"></i> {{ user.phone }}</div>
+      {% endif %}
+      {% if profile.linkedin %}
+        <a href="{{ profile.linkedin }}" target="_blank" class="profile-info-link"><i class="fab fa-linkedin"></i> LinkedIn Profile</a>
+      {% endif %}
+      {% if profile.github %}
+        <a href="{{ profile.github }}" target="_blank" class="profile-info-link"><i class="fab fa-github"></i> GitHub Profile</a>
+      {% endif %}
     </div>
 
-    <!-- Right Main: Details -->
-    <div class="col-md-8 mb-4">
-        <!-- Academics -->
-        <div class="card p-4 mb-4" style="border-radius: var(--radius-lg);">
-            <h5 style="font-family: var(--font-display); font-weight: 700; margin-bottom: 20px;">
-                <i class="fas fa-graduation-cap me-2" style="color: var(--primary2);"></i>Academic Details
-            </h5>
-            <div class="row">
-                <div class="col-md-4 mb-3">
-                    <div style="font-size: 11px; color: var(--ink3); text-transform: uppercase; font-weight: 700; font-family: var(--font-mono);">CGPA</div>
-                    <div style="font-size: 24px; font-family: var(--font-display); font-weight: 800; color: var(--ink); margin-top: 2px;">{{ profile.cgpa|default:"N/A" }}</div>
-                </div>
-                <div class="col-md-4 mb-3">
-                    <div style="font-size: 11px; color: var(--ink3); text-transform: uppercase; font-weight: 700; font-family: var(--font-mono);">Roll Number</div>
-                    <div style="font-size: 16px; font-family: var(--font-mono); color: var(--ink); margin-top: 2px;">{{ profile.roll_number|default:"N/A" }}</div>
-                </div>
-                <div class="col-md-4 mb-3">
-                    <div style="font-size: 11px; color: var(--ink3); text-transform: uppercase; font-weight: 700; font-family: var(--font-mono);">Passing Year</div>
-                    <div style="font-size: 16px; font-family: var(--font-mono); color: var(--ink); margin-top: 2px;">{{ profile.passing_year|default:"N/A" }}</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Skills -->
-        {% if profile.skills %}
-        <div class="card p-4 mb-4" style="border-radius: var(--radius-lg);">
-            <h5 style="font-family: var(--font-display); font-weight: 700; margin-bottom: 16px;">
-                <i class="fas fa-code me-2" style="color: var(--yellow);"></i>Skills
-            </h5>
-            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                {% for skill in profile.skills|split:"," %}
-                    <span style="padding: 6px 14px; border-radius: 20px; background: var(--bg2); border: 1px solid var(--border); color: var(--ink2); font-size: 13px; font-weight: 500;">{{ skill|trim }}</span>
-                {% endfor %}
-            </div>
-        </div>
-        {% endif %}
-
-        <!-- About / Objective -->
-        {% if profile.about %}
-        <div class="card p-4 mb-4" style="border-radius: var(--radius-lg);">
-            <h5 style="font-family: var(--font-display); font-weight: 700; margin-bottom: 12px;">
-                <i class="fas fa-user me-2" style="color: var(--green);"></i>About
-            </h5>
-            <p style="color: var(--ink2); line-height: 1.7;">{{ profile.about }}</p>
-        </div>
-        {% endif %}
-
-        <!-- Resume -->
-        {% if profile.resume %}
-        <div class="card p-4" style="border-radius: var(--radius-lg);">
-            <a href="{{ profile.resume.url }}" target="_blank" style="text-decoration: none; display: flex; align-items: center; gap: 12px;">
-                <div style="width: 42px; height: 42px; border-radius: 10px; background: var(--red-soft); color: var(--red); display: flex; align-items: center; justify-content: center; font-size: 18px;">
-                    <i class="fas fa-file-pdf"></i>
-                </div>
-                <div>
-                    <div style="font-size: 14px; font-weight: 700; color: var(--ink);">View Resume</div>
-                    <div style="font-size: 12px; color: var(--ink3);">Click to open PDF</div>
-                </div>
-            </a>
-        </div>
-        {% endif %}
+    <div class="profile-actions">
+      <a href="{% url 'edit_profile' %}" class="btn-edit"><i class="fas fa-pen"></i> Edit Profile</a>
+      <a href="{% url 'password_change' %}" class="btn-password"><i class="fa-solid fa-key"></i> Change Password</a>
     </div>
+  </aside>
+
+  <!-- Right Main: Details -->
+  <div class="profile-main">
+    
+    <!-- Academics -->
+    <div class="profile-section">
+      <h5 class="section-header"><i class="fas fa-graduation-cap icon-graduation"></i> Academic Details</h5>
+      <div class="academics-grid">
+        <div class="academic-item">
+          <div class="academic-label">CGPA</div>
+          <div class="academic-value">{{ profile.cgpa|default:"N/A" }}</div>
+        </div>
+        <div class="academic-item">
+          <div class="academic-label">Roll Number</div>
+          <div class="academic-value mono">{{ profile.roll_number|default:"N/A" }}</div>
+        </div>
+        <div class="academic-item">
+          <div class="academic-label">Passing Year</div>
+          <div class="academic-value mono">{{ profile.passing_year|default:"N/A" }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Skills -->
+    {% if profile.skills %}
+    <div class="profile-section">
+      <h5 class="section-header"><i class="fas fa-code icon-skills"></i> Skills</h5>
+      <div class="skill-stack">
+        {% for skill in profile.skills|split:"," %}
+          <span class="skill-tag">{{ skill|trim }}</span>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- About / Objective -->
+    {% if profile.about %}
+    <div class="profile-section">
+      <h5 class="section-header"><i class="fas fa-user icon-about"></i> About</h5>
+      <p class="about-text">{{ profile.about }}</p>
+    </div>
+    {% endif %}
+
+    <!-- Resume -->
+    {% if profile.resume %}
+    <div class="profile-section">
+      <a href="{{ profile.resume.url }}" target="_blank" class="resume-link">
+        <div class="resume-icon"><i class="fas fa-file-pdf"></i></div>
+        <div>
+          <div class="resume-title">View Resume</div>
+          <div class="resume-sub">Click to open PDF</div>
+        </div>
+      </a>
+    </div>
+    {% endif %}
+
+  </div>
 </div>
+
 {% endblock %}

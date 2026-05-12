@@ -36,4 +36,5 @@ urlpatterns = [
     path('chat/<int:conversation_id>/fetch/', views.fetch_messages_api, name='chat_fetch'),
     path('chat/<int:conversation_id>/send/', views.send_message_api, name='chat_send'),
     path('chat/<int:conversation_id>/unlock/', views.unlock_student_chat, name='chat_unlock'),
+    path('chat/file/<int:pk>/download/', views.download_chat_file, name='chat_file_download'),
 ]

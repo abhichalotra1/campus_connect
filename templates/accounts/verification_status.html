@@ -1,99 +1,177 @@
-{% extends 'base.html' %}
-{% block title %}Verification Status – Campus Connect{% endblock %}
+{% extends "dashboard_base.html" %}
+{% block breadcrumb_page_name %}Verification Status{% endblock %}
 
-{% block content %}
-<div style="max-width:580px; margin:0 auto; padding:2rem 0;">
+{% block dashboard_content %}
+<style>
+  /* ── VERIFICATION STATUS STYLES ── */
+  .vs-wrapper {
+    display: flex;
+    justify-content: center;
+    padding-top: 1rem;
+    padding-bottom: 2rem;
+  }
+  .vs-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 2.5rem 2rem;
+    width: 100%;
+    max-width: 580px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    animation: fadeUp 0.5s ease both;
+  }
+  /* Top accent line */
+  .vs-card.state-approved { border-color: rgba(34,211,160,0.2); }
+  .vs-card.state-approved::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--green); }
+  
+  .vs-card.state-pending { border-color: rgba(79,70,229,0.2); }
+  .vs-card.state-pending::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--primary); }
+  
+  .vs-card.state-rejected { border-color: rgba(244,63,94,0.2); }
+  .vs-card.state-rejected::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--red); }
+
+  .vs-card.state-none::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, transparent, var(--primary), transparent); }
+
+  .vs-icon {
+    width: 64px; height: 64px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 1.25rem; font-size: 24px;
+  }
+  .icon-approved { background: var(--green-soft); border: 2px solid var(--green); color: var(--green); }
+  .icon-pending { background: var(--p-soft); border: 2px solid var(--primary); color: var(--primary2); }
+  .icon-rejected { background: var(--red-soft); border: 2px solid var(--red); color: var(--red); }
+
+  .vs-title {
+    font-family: var(--font-display); font-size: 22px; font-weight: 800;
+    color: var(--ink); margin-bottom: 8px;
+  }
+  .vs-msg { color: var(--ink2); font-size: 15px; line-height: 1.6; margin-bottom: 1.5rem; }
+  .vs-meta { color: var(--ink3); font-size: 13px; margin-bottom: 1.75rem; }
+
+  /* Submitted Details Box */
+  .details-box {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 14px; padding: 1.25rem 1.5rem;
+    text-align: left; margin-bottom: 1.5rem;
+  }
+  .details-label {
+    font-size: 11px; color: var(--ink3); font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.5px; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border);
+  }
+  .detail-row {
+    display: flex; justify-content: space-between; font-size: 14px; padding: 6px 0;
+  }
+  .detail-key { color: var(--ink2); }
+  .detail-val { color: var(--ink); font-weight: 600; text-align: right; }
+
+  /* Admin Remark Box */
+  .remark-box {
+    background: var(--red-soft); border: 1px solid rgba(244,63,94,0.25);
+    border-radius: 12px; padding: 1rem 1.25rem; text-align: left; margin-bottom: 1.5rem;
+  }
+  .remark-label { font-size: 13px; font-weight: 700; color: var(--red); margin-bottom: 4px; }
+  .remark-text { font-size: 14px; color: var(--ink2); margin: 0; line-height: 1.6; }
+
+  /* Benefits Grid */
+  .benefits-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 2rem;
+  }
+  .benefit-card {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 12px; padding: 1rem 0.75rem;
+  }
+  .benefit-icon { font-size: 20px; margin-bottom: 8px; display: block; }
+  .benefit-title { font-size: 13px; font-weight: 600; color: var(--ink); margin-bottom: 2px; }
+  .benefit-sub { font-size: 12px; color: var(--ink3); margin: 0; }
+
+  /* Action Buttons */
+  .btn-action {
+    font-family: var(--font-display); font-weight: 700; font-size: 14px;
+    color: #fff; background: var(--primary); border: none; padding: 10px 24px;
+    border-radius: 10px; text-decoration: none; display: inline-flex;
+    align-items: center; gap: 8px; transition: all 0.18s;
+  }
+  .btn-action:hover { background: var(--primary2); box-shadow: 0 6px 20px var(--p-glow); }
+
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+
+<div class="vs-wrapper">
 
   {% if profile.verification_status == 'approved' %}
-  <!-- APPROVED -->
-  <div style="background:var(--surface); border:1px solid var(--border2); border-radius:var(--radius-lg); padding:2.5rem 2rem; text-align:center;">
-    <div style="width:64px;height:64px;border-radius:50%;background:var(--green-soft);border:2px solid var(--green);display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem;">
-      <i class="fas fa-check" style="color:var(--green);font-size:24px;"></i>
-    </div>
-    <h2 style="font-family:var(--font-display);font-size:22px;font-weight:800;color:var(--ink);margin-bottom:8px;">You're Verified!</h2>
-    <p style="color:var(--ink2);font-size:15px;line-height:1.6;margin-bottom:1.5rem;">Your recruiter account is verified. You can now post placement drives and access all recruiter features.</p>
-    <a href="{% url 'recruiter_dashboard' %}" class="btn btn-primary px-4 py-2" style="border-radius:10px;font-weight:700;">Go to Dashboard →</a>
+  <!-- ── APPROVED ── -->
+  <div class="vs-card state-approved">
+    <div class="vs-icon icon-approved"><i class="fas fa-check"></i></div>
+    <h2 class="vs-title">You're Verified!</h2>
+    <p class="vs-msg">Your recruiter account is verified. You can now post placement drives and access all recruiter features.</p>
+    <a href="{% url 'dashboard' %}" class="btn-action">Go to Dashboard →</a>
   </div>
 
   {% elif profile.verification_status == 'pending' %}
-  <!-- PENDING -->
-  <div style="background:var(--surface); border:1px solid var(--border2); border-radius:var(--radius-lg); padding:2.5rem 2rem; text-align:center;">
-    <div style="width:64px;height:64px;border-radius:50%;background:var(--p-soft);border:2px solid var(--primary);display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem;">
-      <i class="fas fa-hourglass-half" style="color:var(--primary2);font-size:22px;"></i>
-    </div>
-    <h2 style="font-family:var(--font-display);font-size:22px;font-weight:800;color:var(--ink);margin-bottom:8px;">Request Under Review</h2>
-    <p style="color:var(--ink2);font-size:15px;line-height:1.6;margin-bottom:0.5rem;">Your verification request has been submitted. Our admin team will review it shortly.</p>
-    <p style="color:var(--ink3);font-size:13px;margin-bottom:1.75rem;">Submitted on {{ profile.verification_requested_at|date:"d M Y, h:i A" }}</p>
+  <!-- ── PENDING ── -->
+  <div class="vs-card state-pending">
+    <div class="vs-icon icon-pending"><i class="fas fa-hourglass-half"></i></div>
+    <h2 class="vs-title">Request Under Review</h2>
+    <p class="vs-msg">Your verification request has been submitted. Our admin team will review it shortly.</p>
+    <p class="vs-meta">Submitted on {{ profile.verification_requested_at|date:"d M Y, h:i A" }}</p>
 
-    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem 1.5rem;text-align:left;margin-bottom:1.5rem;">
-      <p style="font-size:13px;color:var(--ink3);font-weight:600;margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">Submitted Details</p>
-      <div style="display:grid;gap:8px;">
-        <div style="display:flex;justify-content:space-between;font-size:14px;">
-          <span style="color:var(--ink2);">Company</span>
-          <span style="color:var(--ink);font-weight:600;">{{ profile.company_name|default:"—" }}</span>
-        </div>
-        <div style="display:flex;justify-content:space-between;font-size:14px;">
-          <span style="color:var(--ink2);">Designation</span>
-          <span style="color:var(--ink);font-weight:600;">{{ profile.designation|default:"—" }}</span>
-        </div>
-        <div style="display:flex;justify-content:space-between;font-size:14px;">
-          <span style="color:var(--ink2);">Industry</span>
-          <span style="color:var(--ink);font-weight:600;">{{ profile.industry|default:"—" }}</span>
-        </div>
-      </div>
+    <div class="details-box">
+      <div class="details-label">Submitted Details</div>
+      <div class="detail-row"><span class="detail-key">Company</span><span class="detail-val">{{ profile.company_name|default:"—" }}</span></div>
+      <div class="detail-row"><span class="detail-key">Designation</span><span class="detail-val">{{ profile.designation|default:"—" }}</span></div>
+      <div class="detail-row"><span class="detail-key">Industry</span><span class="detail-val">{{ profile.industry|default:"—" }}</span></div>
     </div>
 
     <p style="color:var(--ink3);font-size:13px;">We'll notify you via email and notification once reviewed.</p>
   </div>
 
   {% elif profile.verification_status == 'rejected' %}
-  <!-- REJECTED -->
-  <div style="background:var(--surface); border:1px solid var(--border2); border-radius:var(--radius-lg); padding:2.5rem 2rem; text-align:center;">
-    <div style="width:64px;height:64px;border-radius:50%;background:var(--red-soft);border:2px solid var(--red);display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem;">
-      <i class="fas fa-times" style="color:var(--red);font-size:24px;"></i>
-    </div>
-    <h2 style="font-family:var(--font-display);font-size:22px;font-weight:800;color:var(--ink);margin-bottom:8px;">Verification Not Approved</h2>
-    <p style="color:var(--ink2);font-size:15px;line-height:1.6;margin-bottom:1rem;">Your verification request was reviewed but could not be approved at this time.</p>
+  <!-- ── REJECTED ── -->
+  <div class="vs-card state-rejected">
+    <div class="vs-icon icon-rejected"><i class="fas fa-times"></i></div>
+    <h2 class="vs-title">Verification Not Approved</h2>
+    <p class="vs-msg">Your verification request was reviewed but could not be approved at this time.</p>
 
     {% if profile.admin_remark %}
-    <div style="background:var(--red-soft);border:1px solid rgba(244,63,94,0.25);border-radius:var(--radius);padding:1rem 1.25rem;text-align:left;margin-bottom:1.5rem;">
-      <p style="font-size:13px;font-weight:700;color:var(--red);margin-bottom:4px;">Admin Remark</p>
-      <p style="font-size:14px;color:var(--ink2);margin:0;">{{ profile.admin_remark }}</p>
+    <div class="remark-box">
+      <div class="remark-label">Admin Remark</div>
+      <p class="remark-text">{{ profile.admin_remark }}</p>
     </div>
     {% endif %}
 
     <p style="color:var(--ink3);font-size:13px;margin-bottom:1.5rem;">You may update your details and re-submit a request.</p>
-    <a href="{% url 'request_verification' %}" class="btn btn-primary px-4 py-2" style="border-radius:10px;font-weight:700;">Re-apply for Verification</a>
+    <a href="{% url 'request_verification' %}" class="btn-action">Re-apply for Verification</a>
   </div>
 
   {% else %}
-  <!-- NOT REQUESTED -->
-  <div style="background:var(--surface); border:1px solid var(--border2); border-radius:var(--radius-lg); padding:2.5rem 2rem; text-align:center;">
-    <div style="width:64px;height:64px;border-radius:50%;background:var(--p-soft);border:2px solid var(--primary);display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem;">
-      <i class="fas fa-shield-alt" style="color:var(--primary2);font-size:22px;"></i>
-    </div>
-    <h2 style="font-family:var(--font-display);font-size:22px;font-weight:800;color:var(--ink);margin-bottom:8px;">Get Verified as a Recruiter</h2>
-    <p style="color:var(--ink2);font-size:15px;line-height:1.6;margin-bottom:1.75rem;">Verified recruiters can post placement drives, view student profiles, and manage applications. Submit your details to get started.</p>
+  <!-- ── NOT REQUESTED ── -->
+  <div class="vs-card state-none">
+    <div class="vs-icon icon-pending"><i class="fas fa-shield-alt"></i></div>
+    <h2 class="vs-title">Get Verified as a Recruiter</h2>
+    <p class="vs-msg">Verified recruiters can post placement drives, view student profiles, and manage applications. Submit your details to get started.</p>
 
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:2rem;">
-      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:1rem 0.75rem;">
-        <i class="fas fa-briefcase" style="color:var(--primary2);font-size:20px;margin-bottom:8px;display:block;"></i>
-        <p style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:2px;">Post Drives</p>
-        <p style="font-size:12px;color:var(--ink3);margin:0;">Reach top students</p>
+    <div class="benefits-grid">
+      <div class="benefit-card">
+        <span class="benefit-icon" style="color:var(--primary2);"><i class="fas fa-briefcase"></i></span>
+        <p class="benefit-title">Post Drives</p>
+        <p class="benefit-sub">Reach top students</p>
       </div>
-      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:1rem 0.75rem;">
-        <i class="fas fa-users" style="color:var(--green);font-size:20px;margin-bottom:8px;display:block;"></i>
-        <p style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:2px;">View Profiles</p>
-        <p style="font-size:12px;color:var(--ink3);margin:0;">Search by skill & CGPA</p>
+      <div class="benefit-card">
+        <span class="benefit-icon" style="color:var(--green);"><i class="fas fa-users"></i></span>
+        <p class="benefit-title">View Profiles</p>
+        <p class="benefit-sub">Search by skill & CGPA</p>
       </div>
-      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:1rem 0.75rem;">
-        <i class="fas fa-calendar-check" style="color:var(--primary2);font-size:20px;margin-bottom:8px;display:block;"></i>
-        <p style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:2px;">Schedule Interviews</p>
-        <p style="font-size:12px;color:var(--ink3);margin:0;">Manage hiring pipeline</p>
+      <div class="benefit-card">
+        <span class="benefit-icon" style="color:var(--primary2);"><i class="fas fa-calendar-check"></i></span>
+        <p class="benefit-title">Schedule Interviews</p>
+        <p class="benefit-sub">Manage hiring pipeline</p>
       </div>
     </div>
 
-    <a href="{% url 'request_verification' %}" class="btn btn-primary px-4 py-2" style="border-radius:10px;font-weight:700;font-size:15px;">Apply for Verification →</a>
+    <a href="{% url 'request_verification' %}" class="btn-action">Apply for Verification →</a>
   </div>
   {% endif %}
 

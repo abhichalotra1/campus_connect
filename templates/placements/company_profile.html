@@ -1,84 +1,189 @@
-{% extends 'base.html' %}
+{% extends "dashboard_base.html" %}
+{% block breadcrumb_page_name %}{{ profile.company_name|default:"Company Profile" }}{% endblock %}
 
-{% block content %}
-<div class="row justify-content-center mt-4">
-    <div class="col-md-10">
+{% block dashboard_content %}
+<style>
+  /* ── COMPANY PROFILE STYLES ── */
+  .cp-wrapper {
+    display: flex;
+    justify-content: center;
+    padding-bottom: 2rem;
+  }
+  .cp-container {
+    width: 100%;
+    max-width: 900px;
+  }
 
-        <!-- Company Header Card -->
-        <div class="card p-5 mb-4" style="border-radius: var(--radius-lg);">
-            <div class="d-flex flex-column flex-md-row align-items-center gap-4">
-                <!-- Large Company Logo -->
-                <div style="flex-shrink: 0;">
-                    {% if profile.profile_pic %}
-                        <img src="{{ profile.profile_pic.url }}" alt="{{ profile.company_name }}" style="width: 100px; height: 100px; border-radius: 18px; object-fit: cover; border: 3px solid var(--border2);">
-                    {% elif recruiter.studentprofile.profile_pic %}
-                        <!-- Fallback if they uploaded to student profile by mistake -->
-                         <img src="{{ recruiter.studentprofile.profile_pic.url }}" alt="{{ profile.company_name }}" style="width: 100px; height: 100px; border-radius: 18px; object-fit: cover; border: 3px solid var(--border2);">
-                    {% else %}
-                        <div style="width: 100px; height: 100px; border-radius: 18px; background: var(--p-soft); color: var(--primary2); display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-weight: 800; font-size: 40px;">
-                            {{ profile.company_name|first|upper }}
-                        </div>
-                    {% endif %}
-                </div>
-                
-                <!-- Company Info -->
-                <div class="text-center text-md-start" style="flex: 1;">
-                    <h2 style="font-family: var(--font-display); font-weight: 800; margin-bottom: 6px;">
-                        {{ profile.company_name|default:recruiter.username }}
-                    </h2>
-                    <p style="color: var(--primary2); font-weight: 600; font-size: 16px; margin-bottom: 10px;">
-                        {% if profile.industry %}{{ profile.industry }}{% endif %}
-                    </p>
-                    <div style="display: flex; gap: 16px; justify-content: center; justify-content-md-start; color: var(--ink2); font-size: 14px; flex-wrap: wrap;">
-                        {% if profile.company_address %}<span><i class="fas fa-map-marker-alt me-1"></i> {{ profile.company_address }}</span>{% endif %}
-                        {% if profile.company_website %}<a href="{{ profile.company_website }}" target="_blank" style="color: var(--primary2); text-decoration: none;"><i class="fas fa-globe me-1"></i> Website</a>{% endif %}
-                        {% if profile.linkedin %}<a href="{{ profile.linkedin }}" target="_blank" style="color: var(--primary2); text-decoration: none;"><i class="fab fa-linkedin me-1"></i> LinkedIn</a>{% endif %}
-                    </div>
-                </div>
-            </div>
-            
-            <!-- About Section -->
-            {% if profile.about %}
-            <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border);">
-                <h5 style="font-family: var(--font-display); font-weight: 700; margin-bottom: 10px;">About the Company</h5>
-                <p style="color: var(--ink2); line-height: 1.8;">{{ profile.about }}</p>
-            </div>
-            {% endif %}
+  /* Header Card */
+  .cp-header {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 2rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    flex-wrap: wrap;
+    transition: border-color 0.2s;
+  }
+  .cp-header:hover { border-color: var(--border2); }
+
+  .cp-logo {
+    width: 100px; height: 100px;
+    border-radius: 18px; object-fit: cover;
+    border: 3px solid var(--border2); flex-shrink: 0;
+    background: var(--bg2);
+  }
+  .cp-logo-placeholder {
+    width: 100px; height: 100px;
+    border-radius: 18px; background: var(--p-soft); color: var(--primary2);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-display); font-weight: 800; font-size: 40px;
+    flex-shrink: 0;
+  }
+
+  .cp-info { flex: 1; min-width: 200px; }
+  .cp-name {
+    font-family: var(--font-display); font-weight: 800; font-size: 24px;
+    color: var(--ink); margin: 0 0 6px;
+  }
+  .cp-industry { color: var(--primary2); font-weight: 600; font-size: 16px; margin-bottom: 10px; }
+  .cp-meta {
+    display: flex; gap: 16px; color: var(--ink2); font-size: 14px; flex-wrap: wrap;
+  }
+  .cp-meta span, .cp-meta a {
+    display: inline-flex; align-items: center; gap: 5px;
+  }
+  .cp-meta a { color: var(--primary2); text-decoration: none; transition: color 0.15s; }
+  .cp-meta a:hover { color: var(--ink); }
+
+  .cp-about-section {
+    margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border);
+  }
+  .cp-about-title {
+    font-family: var(--font-display); font-weight: 700; color: var(--ink);
+    margin-bottom: 10px; font-size: 16px;
+  }
+  .cp-about-text { color: var(--ink2); line-height: 1.8; font-size: 14px; margin: 0; }
+
+  /* Panel Component */
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    transition: border-color 0.2s;
+  }
+  .panel:hover { border-color: var(--border2); }
+  .panel-title {
+    font-family: var(--font-display); font-weight: 800; color: var(--ink);
+    margin: 0 0 1.25rem; font-size: 18px; display: flex; align-items: center; gap: 10px;
+  }
+
+  /* Drive Cards */
+  .drive-list { display: flex; flex-direction: column; gap: 12px; }
+  .drive-card {
+    padding: 18px; border: 1px solid var(--border); border-radius: 14px;
+    background: var(--bg2); display: flex; justify-content: space-between;
+    align-items: flex-start; gap: 16px; transition: all 0.25s; position: relative; overflow: hidden;
+  }
+  .drive-card::before {
+    content: ''; position: absolute; top: 0; left: 0; width: 3px; height: 100%;
+    background: var(--primary); opacity: 0; transition: opacity 0.25s;
+  }
+  .drive-card:hover { border-color: var(--border2); transform: translateY(-1px); }
+  .drive-card:hover::before { opacity: 1; }
+
+  .drive-info { flex: 1; min-width: 0; }
+  .drive-title { font-size: 15px; font-weight: 700; color: var(--ink); margin-bottom: 6px; font-family: var(--font-display); }
+  .drive-meta { font-size: 13px; color: var(--ink3); display: flex; gap: 14px; flex-wrap: wrap; }
+  .drive-meta span { display: inline-flex; align-items: center; gap: 4px; }
+
+  .btn-view {
+    font-family: var(--font-display); font-weight: 700; font-size: 13px;
+    color: #fff; background: var(--primary); border: none; padding: 8px 16px;
+    border-radius: 8px; text-decoration: none; transition: all 0.18s; white-space: nowrap;
+    display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0;
+  }
+  .btn-view:hover { background: var(--primary2); box-shadow: 0 4px 12px var(--p-glow); }
+
+  /* Empty State */
+  .empty-state { text-align: center; padding: 40px 0; }
+  .empty-icon { font-size: 32px; color: var(--ink3); margin-bottom: 12px; display: block; }
+  .empty-text { color: var(--ink3); font-size: 14px; }
+
+  @media (max-width: 768px) {
+    .cp-header { flex-direction: column; text-align: center; }
+    .cp-info { text-align: center; }
+    .cp-meta { justify-content: center; }
+    .drive-card { flex-direction: column; }
+    .btn-view { align-self: flex-end; }
+  }
+</style>
+
+<div class="cp-wrapper">
+  <div class="cp-container">
+
+    <!-- Company Header Card -->
+    <div class="cp-header">
+      {% if profile.profile_pic %}
+        <img src="{{ profile.profile_pic.url }}" alt="{{ profile.company_name }}" class="cp-logo">
+      {% elif recruiter.studentprofile.profile_pic %}
+        <img src="{{ recruiter.studentprofile.profile_pic.url }}" alt="{{ profile.company_name }}" class="cp-logo">
+      {% else %}
+        <div class="cp-logo-placeholder">
+          {{ profile.company_name|first|upper }}
         </div>
-
-        <!-- Open Positions -->
-        <div class="card p-4" style="border-radius: var(--radius-lg);">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h4 style="font-family: var(--font-display); font-weight: 800; margin: 0;">
-                    <i class="fas fa-briefcase me-2" style="color: var(--yellow);"></i>Open Positions ({{ drives.count }})
-                </h4>
-            </div>
-
-            {% if drives %}
-                {% for drive in drives %}
-                <div style="padding: 18px; border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 12px; transition: all 0.2s; background: var(--bg2);">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div>
-                            <h5 style="font-family: var(--font-display); font-weight: 700; margin-bottom: 6px;">{{ drive.role }}</h5>
-                            <div style="font-size: 13px; color: var(--ink3); display: flex; gap: 14px; flex-wrap: wrap;">
-                                <span><i class="fas fa-map-marker-alt me-1"></i> {{ drive.location }}</span>
-                                <span><i class="fas fa-indian-rupee-sign me-1"></i> {{ drive.formatted_salary }}</span>
-                                <span><i class="fas fa-graduation-cap me-1"></i> Min CGPA: {{ drive.min_cgpa }}</span>
-                                <span><i class="fas fa-calendar me-1"></i> Deadline: {{ drive.deadline|date:"M d, Y" }}</span>
-                            </div>
-                        </div>
-                        <a href="{% url 'drive_detail' drive.pk %}" class="btn btn-primary btn-sm" style="font-weight: 700; border-radius: 8px; white-space: nowrap;">View Details</a>
-                    </div>
-                </div>
-                {% endfor %}
-            {% else %}
-                <div style="text-align: center; padding: 40px 0;">
-                    <i class="fas fa-inbox" style="font-size: 32px; color: var(--ink3); margin-bottom: 12px;"></i>
-                    <p style="color: var(--ink3);">No active positions right now.</p>
-                </div>
-            {% endif %}
+      {% endif %}
+      
+      <div class="cp-info">
+        <h1 class="cp-name">{{ profile.company_name|default:recruiter.username }}</h1>
+        <p class="cp-industry">{% if profile.industry %}{{ profile.industry }}{% endif %}</p>
+        <div class="cp-meta">
+          {% if profile.company_address %}<span><i class="fas fa-map-marker-alt"></i> {{ profile.company_address }}</span>{% endif %}
+          {% if profile.company_website %}<a href="{{ profile.company_website }}" target="_blank"><i class="fas fa-globe"></i> Website</a>{% endif %}
+          {% if profile.linkedin %}<a href="{{ profile.linkedin }}" target="_blank"><i class="fab fa-linkedin"></i> LinkedIn</a>{% endif %}
         </div>
+      </div>
 
+      {% if profile.about %}
+      <div class="cp-about-section">
+        <h3 class="cp-about-title">About the Company</h3>
+        <p class="cp-about-text">{{ profile.about }}</p>
+      </div>
+      {% endif %}
     </div>
+
+    <!-- Open Positions -->
+    <div class="panel">
+      <h3 class="panel-title"><i class="fas fa-briefcase" style="color: var(--yellow);"></i> Open Positions ({{ drives.count }})</h3>
+
+      {% if drives %}
+      <div class="drive-list">
+        {% for drive in drives %}
+        <div class="drive-card">
+          <div class="drive-info">
+            <div class="drive-title">{{ drive.role }}</div>
+            <div class="drive-meta">
+              <span><i class="fas fa-map-marker-alt"></i> {{ drive.location }}</span>
+              <span><i class="fas fa-indian-rupee-sign"></i> {{ drive.formatted_salary }}</span>
+              <span><i class="fas fa-graduation-cap"></i> Min CGPA: {{ drive.min_cgpa }}</span>
+              <span><i class="fas fa-calendar"></i> Deadline: {{ drive.deadline|date:"M d, Y" }}</span>
+            </div>
+          </div>
+          <a href="{% url 'drive_detail' drive.pk %}" class="btn-view">View Details</a>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="empty-state">
+        <i class="fas fa-inbox empty-icon"></i>
+        <p class="empty-text">No active positions right now.</p>
+      </div>
+      {% endif %}
+    </div>
+
+  </div>
 </div>
 {% endblock %}

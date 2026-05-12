@@ -1,69 +1,146 @@
-{% extends 'base.html' %}
+{% extends "dashboard_base.html" %}
+{% block breadcrumb_page_name %}Edit Recruiter Profile{% endblock %}
 
-{% block content %}
-<div class="row justify-content-center mt-4">
-    <div class="col-md-8">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h3 style="font-family: var(--font-display); font-weight: 800; margin: 0;">
-                <i class="fas fa-pen me-2" style="color: var(--primary2);"></i>Edit Recruiter Profile
-            </h3>
-            <a href="{% url 'profile' %}" style="font-size: 13px; color: var(--ink3); text-decoration: none; font-weight: 600;"><i class="fas fa-arrow-left me-1"></i> Back to Profile</a>
-        </div>
+{% block dashboard_content %}
+<style>
+  /* ── EDIT PROFILE STYLES ── */
+  .ep-wrapper {
+    display: flex;
+    justify-content: center;
+    padding-top: 1rem;
+    padding-bottom: 2rem;
+  }
+  .ep-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 2rem;
+    width: 100%;
+    max-width: 800px;
+    transition: border-color 0.2s;
+  }
+  .ep-card:hover { border-color: var(--border2); }
 
-        <div class="card p-4" style="border-radius: var(--radius-lg);">
-            <form method="POST" enctype="multipart/form-data">
-                {% csrf_token %}
-                
-                <div class="row">
-                    <!-- Left Column -->
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label class="form-label">Company Name</label>
-                            <input type="text" name="company_name" class="form-control" value="{{ profile.company_name }}" required>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Industry</label>
-                            <input type="text" name="industry" class="form-control" value="{{ profile.industry }}" placeholder="e.g., IT Services, Finance">
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Designation (Your Role)</label>
-                            <input type="text" name="designation" class="form-control" value="{{ profile.designation }}" placeholder="e.g., HR Manager">
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Profile Picture</label>
-                            <input type="file" name="profile_pic" class="form-control" accept="image/*">
-                            {% if profile.profile_pic %}
-                                <small class="text-muted mt-1 d-block">Current: <a href="{{ profile.profile_pic.url }}" target="_blank" style="color: var(--primary2);">View Image</a></small>
-                            {% endif %}
-                        </div>
-                    </div>
+  .ep-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 1.75rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .ep-icon {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    background: var(--p-soft);
+    color: var(--primary2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; flex-shrink: 0;
+  }
+  .ep-title {
+    font-family: var(--font-display);
+    font-weight: 800; font-size: 20px;
+    color: var(--ink); margin: 0;
+  }
 
-                    <!-- Right Column -->
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label class="form-label">Company Website</label>
-                            <input type="url" name="company_website" class="form-control" value="{{ profile.company_website }}" placeholder="https://example.com">
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Company Address</label>
-                            <input type="text" name="company_address" class="form-control" value="{{ profile.company_address }}" placeholder="City, State">
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">LinkedIn Profile</label>
-                            <input type="url" name="linkedin" class="form-control" value="{{ profile.linkedin }}" placeholder="https://linkedin.com/in/...">
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">About the Company</label>
-                            <textarea name="about" class="form-control" rows="4" placeholder="Brief description of your company...">{{ profile.about }}</textarea>
-                        </div>
-                    </div>
-                </div>
+  /* Forms */
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+  .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+  .form-label { font-size: 13px; font-weight: 600; color: var(--ink2); }
+  .form-control, .form-select {
+    background: var(--bg2) !important; border: 1px solid var(--border2) !important;
+    color: var(--ink) !important; border-radius: 10px !important;
+    font-family: var(--font-body) !important; font-size: 14px !important;
+    padding: 0.65rem 0.85rem !important; transition: all 0.18s !important;
+  }
+  .form-control:focus, .form-select:focus {
+    border-color: var(--primary) !important; box-shadow: 0 0 0 3px var(--p-soft) !important;
+    background: var(--bg3) !important;
+  }
+  .form-control::placeholder { color: var(--ink3) !important; }
+  textarea.form-control { resize: vertical; min-height: 100px; }
+  
+  .file-hint {
+    font-size: 12px; color: var(--ink3); margin-top: 4px;
+  }
+  .file-hint a { color: var(--primary2); text-decoration: none; font-weight: 600; }
+  .file-hint a:hover { text-decoration: underline; }
 
-                <button type="submit" class="btn btn-primary w-100 mt-2" style="font-weight: 700; padding: 12px; border-radius: 10px;">
-                    <i class="fas fa-check me-2"></i>Save Changes
-                </button>
-            </form>
-        </div>
+  /* Submit */
+  .btn-save {
+    font-family: var(--font-display); font-weight: 800; font-size: 15px; color: #fff;
+    background: var(--primary); border: none; padding: 12px; border-radius: 10px;
+    cursor: pointer; width: 100%; transition: all 0.18s; margin-top: 8px;
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .btn-save:hover { background: var(--primary2); box-shadow: 0 6px 20px var(--p-glow); }
+
+  @media(max-width: 768px) { .form-grid { grid-template-columns: 1fr; } }
+</style>
+
+<div class="ep-wrapper">
+  <div class="ep-card">
+    <div class="ep-header">
+      <div class="ep-icon"><i class="fas fa-pen"></i></div>
+      <h3 class="ep-title">Edit Recruiter Profile</h3>
     </div>
+
+    <form method="POST" enctype="multipart/form-data">
+      {% csrf_token %}
+      
+      <div class="form-grid">
+        <!-- Left Column -->
+        <div>
+          <div class="form-group">
+            <label class="form-label">Company Name</label>
+            <input type="text" name="company_name" class="form-control" value="{{ profile.company_name }}" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Industry</label>
+            <input type="text" name="industry" class="form-control" value="{{ profile.industry }}" placeholder="e.g., IT Services, Finance">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Designation (Your Role)</label>
+            <input type="text" name="designation" class="form-control" value="{{ profile.designation }}" placeholder="e.g., HR Manager">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Profile Picture</label>
+            <input type="file" name="profile_pic" class="form-control" accept="image/*">
+            {% if profile.profile_pic %}
+              <small class="file-hint">Current: <a href="{{ profile.profile_pic.url }}" target="_blank">View Image</a></small>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Right Column -->
+        <div>
+          <div class="form-group">
+            <label class="form-label">Company Website</label>
+            <input type="url" name="company_website" class="form-control" value="{{ profile.company_website }}" placeholder="https://example.com">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Company Address</label>
+            <input type="text" name="company_address" class="form-control" value="{{ profile.company_address }}" placeholder="City, State">
+          </div>
+          <div class="form-group">
+            <label class="form-label">LinkedIn Profile</label>
+            <input type="url" name="linkedin" class="form-control" value="{{ profile.linkedin }}" placeholder="https://linkedin.com/in/...">
+          </div>
+          <div class="form-group">
+            <label class="form-label">About the Company</label>
+            <textarea name="about" class="form-control" placeholder="Brief description of your company...">{{ profile.about }}</textarea>
+          </div>
+        </div>
+      </div>
+
+      <button type="submit" class="btn-save" onclick="submitWithLoading(this, 'Saving...')">
+        <i class="fas fa-check"></i> Save Changes
+      </button>
+    </form>
+  </div>
 </div>
 {% endblock %}

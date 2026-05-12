@@ -1,121 +1,250 @@
-﻿{% extends 'base.html' %}
-{% block title %}Admin Dashboard – Campus Connect{% endblock %}
+﻿{% extends "dashboard_base.html" %}
+{% block breadcrumb_page_name %}Admin Panel{% endblock %}
 
-{% block content %}
+{% block dashboard_content %}
+<style>
+  /* ── ADMIN DASHBOARD STYLES ── */
+  .ad-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 1.75rem;
+  }
+  .ad-title {
+    font-family: var(--font-display); font-size: 26px; font-weight: 800;
+    color: var(--ink); margin: 0;
+  }
+  .ad-subtitle { color: var(--ink2); font-size: 14px; margin-top: 4px; }
+  .ad-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  
+  .btn-export {
+    font-size: 13px; font-weight: 600; text-decoration: none; padding: 7px 14px;
+    border-radius: 9px; display: inline-flex; align-items: center; gap: 6px; transition: all 0.18s;
+  }
+  .btn-export-csv { color: var(--green); border: 1px solid rgba(34,211,160,0.3); background: var(--green-soft); }
+  .btn-export-csv:hover { background: var(--green); color: #fff; }
+  .btn-export-excel { color: var(--green); border: 1px solid rgba(34,211,160,0.3); background: var(--green-soft); }
+  .btn-export-excel:hover { background: var(--green); color: #fff; }
+  .btn-search { color: #fff; background: var(--primary); border: none; }
+  .btn-search:hover { background: var(--primary2); box-shadow: 0 4px 12px var(--p-glow); }
+
+  /* Stats Grid */
+  .stats-grid {
+    display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin-bottom: 2rem;
+  }
+  .stat-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
+    padding: 1.25rem; text-align: center; transition: all 0.25s;
+  }
+  .stat-card:hover { border-color: var(--border2); transform: translateY(-2px); }
+  .stat-icon { font-size: 22px; margin-bottom: 10px; display: block; }
+  .stat-num { font-family: var(--font-display); font-size: 28px; font-weight: 800; color: var(--ink); }
+  .stat-label { font-size: 13px; color: var(--ink2); margin-top: 4px; }
+
+  /* Panel Component */
+  .panel {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
+    padding: 1.5rem; margin-bottom: 1.5rem; overflow: hidden;
+  }
+  .panel-warn { border-color: rgba(245,158,11,0.35); }
+  .panel-head {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 1.25rem;
+    padding-bottom: 1rem; border-bottom: 1px solid var(--border);
+  }
+  .panel-title {
+    font-family: var(--font-display); font-weight: 700; color: var(--ink); margin: 0; font-size: 16px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .panel-badge {
+    background: rgba(245,158,11,0.15); color: #f59e0b; font-size: 11px; font-weight: 700;
+    padding: 2px 10px; border-radius: 20px; font-family: var(--font-mono);
+  }
+  .panel-badge-indigo { background: var(--p-soft); color: var(--primary2); }
+
+  /* Verification Cards */
+  .verify-card {
+    background: var(--bg2); border: 1px solid var(--border); border-radius: 14px;
+    padding: 1.25rem; margin-bottom: 12px;
+  }
+  .verify-card:last-child { margin-bottom: 0; }
+  .verify-inner { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
+  .verify-name { font-weight: 700; color: var(--ink); font-size: 15px; }
+  .verify-email { font-size: 13px; color: var(--ink2); margin-top: 2px; }
+  .verify-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .tag { padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+  .tag-primary { background: var(--p-soft); color: var(--primary2); }
+  .tag-surface { background: var(--surface2); color: var(--ink2); }
+  .tag-time { color: var(--ink3); font-size: 12px; display: inline-flex; align-items: center; gap: 4px; }
+  .verify-note { font-size: 13px; color: var(--ink2); margin-top: 10px; font-style: italic; opacity: 0.8; }
+  
+  .verify-actions { display: flex; flex-direction: column; gap: 8px; min-width: 220px; flex-shrink: 0; }
+  .form-input {
+    background: var(--bg3) !important; border: 1px solid var(--border2) !important; color: var(--ink) !important;
+    border-radius: 8px !important; font-family: var(--font-body) !important; font-size: 13px !important;
+    padding: 6px 10px !important; width: 100%; transition: all 0.18s !important; margin-bottom: 4px;
+  }
+  .form-input:focus { border-color: var(--primary) !important; box-shadow: 0 0 0 2px var(--p-soft) !important; }
+  .form-input::placeholder { color: var(--ink3) !important; }
+  
+  .btn-approve, .btn-reject {
+    width: 100%; padding: 7px 14px; border-radius: 8px; font-size: 13px; font-weight: 700;
+    cursor: pointer; border: none; transition: all 0.18s; display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+  }
+  .btn-approve { background: var(--green); color: #fff; }
+  .btn-approve:hover { background: #1ed98a; box-shadow: 0 4px 10px rgba(30,217,138,0.3); }
+  .btn-reject { background: var(--red-soft); color: var(--red); border: 1px solid rgba(244,63,94,0.3); }
+  .btn-reject:hover { background: var(--red); color: #fff; }
+
+  /* Custom Tables */
+  .cc-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .cc-table thead tr { border-bottom: 1px solid var(--border2); }
+  .cc-table th {
+    font-size: 11px; color: var(--ink3); text-transform: uppercase; letter-spacing: 0.5px;
+    font-weight: 600; padding: 10px 12px; text-align: left;
+  }
+  .cc-table td { padding: 12px; color: var(--ink2); border-bottom: 1px solid var(--border); vertical-align: middle; }
+  .cc-table tbody tr:hover { background: var(--bg3); }
+  .cc-table tbody tr:last-child td { border-bottom: none; }
+  .cc-table .text-bold { color: var(--ink); font-weight: 600; }
+  .cc-table .text-muted { color: var(--ink3); font-size: 13px; }
+  .cc-table .row-deactivated { opacity: 0.5; }
+
+  /* Table Actions */
+  .btn-sm-action {
+    font-size: 12px; font-weight: 700; padding: 5px 12px; border-radius: 7px;
+    cursor: pointer; transition: all 0.18s; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; border: none;
+  }
+  .btn-close-drive { color: var(--red); background: var(--red-soft); border: 1px solid rgba(244,63,94,0.3); }
+  .btn-close-drive:hover { background: var(--red); color: #fff; }
+  .btn-open-drive { color: var(--green); background: var(--green-soft); border: 1px solid rgba(34,211,160,0.3); }
+  .btn-open-drive:hover { background: var(--green); color: #fff; }
+  .btn-deactivate { color: var(--red); background: var(--red-soft); border: 1px solid rgba(244,63,94,0.3); }
+  .btn-deactivate:hover { background: var(--red); color: #fff; }
+  .btn-reactivate { color: var(--green); background: var(--green-soft); border: 1px solid rgba(34,211,160,0.3); }
+  .btn-reactivate:hover { background: var(--green); color: #fff; }
+  
+  .btn-observe-chat {
+    font-size: 12px; font-weight: 600; color: var(--primary2); text-decoration: none;
+    padding: 4px 10px; border-radius: 6px; background: var(--p-soft);
+    border: 1px solid rgba(79,70,229,0.3); display: inline-flex; align-items: center; gap: 4px; transition: all 0.18s;
+  }
+  .btn-observe-chat:hover { background: var(--primary); color: #fff; }
+
+  .status-badge { padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+  .badge-active { background: var(--green-soft); color: var(--green); }
+  .badge-closed { background: var(--red-soft); color: var(--red); }
+  .badge-applied { background: var(--p-soft); color: var(--primary2); }
+  .badge-shortlisted { background: rgba(245,158,11,0.12); color: #f59e0b; }
+  .badge-selected { background: var(--green-soft); color: var(--green); }
+  .badge-placed { background: rgba(245,158,11,0.15); color: #f59e0b; }
+  .badge-rejected { background: var(--red-soft); color: var(--red); }
+  .badge-pending { background: rgba(245,158,11,0.12); color: #f59e0b; }
+  .badge-unverified { background: var(--surface2); color: var(--ink3); }
+
+  .action-group { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .form-select-sm {
+    background: var(--bg2) !important; border: 1px solid var(--border2) !important; color: var(--ink) !important;
+    border-radius: 8px !important; font-family: var(--font-body) !important; font-size: 13px !important;
+    padding: 5px 8px !important; min-width: 110px;
+  }
+  .form-select-sm:focus { border-color: var(--primary) !important; box-shadow: 0 0 0 2px var(--p-soft) !important; }
+  .btn-update {
+    background: var(--primary); color: #fff; border: none; padding: 5px 12px; border-radius: 8px;
+    font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.18s;
+  }
+  .btn-update:hover { background: var(--primary2); }
+  .link-schedule { font-size: 12px; color: var(--green); text-decoration: none; font-weight: 600; }
+  .link-schedule:hover { color: #1ed98a; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+  .empty-row { text-align: center; color: var(--ink3); padding: 2rem !important; }
+
+  @media(max-width: 1100px) { .stats-grid { grid-template-columns: repeat(3, 1fr); } .grid-2 { grid-template-columns: 1fr; } }
+  @media(max-width: 768px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } .verify-inner { flex-direction: column; } .verify-actions { width: 100%; min-width: unset; } }
+  @media(max-width: 480px) { .stats-grid { grid-template-columns: 1fr; } }
+</style>
+
 <!-- Header -->
-<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:1.75rem;">
+<div class="ad-header">
   <div>
-    <h1 style="font-family:var(--font-display);font-size:26px;font-weight:800;color:var(--ink);margin:0;">Admin Dashboard</h1>
-    <p style="color:var(--ink2);font-size:14px;margin:4px 0 0;">Full platform overview and controls.</p>
+    <h1 class="ad-title">Admin Dashboard</h1>
+    <p class="ad-subtitle">Full platform overview and controls.</p>
   </div>
-  <div style="display:flex;gap:8px;flex-wrap:wrap;">
-    <a href="{% url 'export_students' %}" style="font-size:13px;font-weight:600;color:var(--green);text-decoration:none;padding:7px 14px;border-radius:9px;border:1px solid rgba(34,211,160,0.3);background:var(--green-soft);">
-      <i class="fas fa-download me-1"></i>Export CSV
-    </a>
-    <a href="{% url 'export_students_excel' %}" style="font-size:13px;font-weight:600;color:var(--green);text-decoration:none;padding:7px 14px;border-radius:9px;border:1px solid rgba(34,211,160,0.3);background:var(--green-soft);">
-      <i class="fas fa-file-excel me-1"></i>Export Excel
-    </a>
-    <a href="{% url 'search_students' %}" style="font-size:13px;font-weight:600;color:#fff;text-decoration:none;padding:7px 14px;border-radius:9px;background:var(--primary);">
-      <i class="fas fa-search me-1"></i>Search Students
-    </a>
+  <div class="ad-actions">
+    <a href="{% url 'export_students' %}" class="btn-export btn-export-csv"><i class="fas fa-download"></i> Export CSV</a>
+    <a href="{% url 'export_students_excel' %}" class="btn-export btn-export-excel"><i class="fas fa-file-excel"></i> Export Excel</a>
+    <a href="{% url 'search_students' %}" class="btn-export btn-search"><i class="fas fa-search"></i> Search Students</a>
   </div>
 </div>
 
 <!-- Stats -->
-<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:2rem;">
-  <div style="background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);padding:1.25rem;text-align:center;">
-    <i class="fas fa-user-graduate" style="color:var(--primary2);font-size:22px;margin-bottom:8px;display:block;"></i>
-    <div style="font-family:var(--font-display);font-size:28px;font-weight:800;color:var(--ink);">{{ total_students }}</div>
-    <div style="font-size:13px;color:var(--ink2);margin-top:2px;">Students</div>
+<div class="stats-grid">
+  <div class="stat-card">
+    <span class="stat-icon" style="color:var(--primary2);"><i class="fas fa-user-graduate"></i></span>
+    <div class="stat-num">{{ total_students }}</div>
+    <div class="stat-label">Students</div>
   </div>
-  <div style="background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);padding:1.25rem;text-align:center;">
-    <i class="fas fa-building" style="color:var(--green);font-size:22px;margin-bottom:8px;display:block;"></i>
-    <div style="font-family:var(--font-display);font-size:28px;font-weight:800;color:var(--ink);">{{ total_recruiters }}</div>
-    <div style="font-size:13px;color:var(--ink2);margin-top:2px;">Recruiters</div>
+  <div class="stat-card">
+    <span class="stat-icon" style="color:var(--green);"><i class="fas fa-building"></i></span>
+    <div class="stat-num">{{ total_recruiters }}</div>
+    <div class="stat-label">Recruiters</div>
   </div>
-  <div style="background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);padding:1.25rem;text-align:center;">
-    <i class="fas fa-briefcase" style="color:#f59e0b;font-size:22px;margin-bottom:8px;display:block;"></i>
-    <div style="font-family:var(--font-display);font-size:28px;font-weight:800;color:var(--ink);">{{ total_drives }}</div>
-    <div style="font-size:13px;color:var(--ink2);margin-top:2px;">Drives</div>
+  <div class="stat-card">
+    <span class="stat-icon" style="color:#f59e0b;"><i class="fas fa-briefcase"></i></span>
+    <div class="stat-num">{{ total_drives }}</div>
+    <div class="stat-label">Drives</div>
   </div>
-  <div style="background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);padding:1.25rem;text-align:center;">
-    <i class="fas fa-trophy" style="color:var(--red);font-size:22px;margin-bottom:8px;display:block;"></i>
-    <div style="font-family:var(--font-display);font-size:28px;font-weight:800;color:var(--ink);">{{ selected_students }}</div>
-    <div style="font-size:13px;color:var(--ink2);margin-top:2px;">Selected</div>
+  <div class="stat-card">
+    <span class="stat-icon" style="color:var(--red);"><i class="fas fa-trophy"></i></span>
+    <div class="stat-num">{{ selected_students }}</div>
+    <div class="stat-label">Selected</div>
   </div>
-  <div style="background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);padding:1.25rem;text-align:center;">
-    <i class="fas fa-file-alt" style="color:var(--primary2);font-size:22px;margin-bottom:8px;display:block;"></i>
-    <div style="font-family:var(--font-display);font-size:28px;font-weight:800;color:var(--ink);">{{ total_apps }}</div>
-    <div style="font-size:13px;color:var(--ink2);margin-top:2px;">Applications</div>
+  <div class="stat-card">
+    <span class="stat-icon" style="color:var(--primary2);"><i class="fas fa-file-alt"></i></span>
+    <div class="stat-num">{{ total_apps }}</div>
+    <div class="stat-label">Applications</div>
   </div>
 </div>
 
 <!-- ── PENDING VERIFICATION ── -->
 {% if pending_recruiters %}
-<div style="background:var(--surface);border:1px solid rgba(245,158,11,0.35);border-radius:var(--radius-lg);padding:1.5rem;margin-bottom:2rem;">
-  <div style="display:flex;align-items:center;gap:10px;margin-bottom:1rem;">
-    <i class="fas fa-shield-alt" style="color:#f59e0b;font-size:18px;"></i>
-    <h5 style="font-family:var(--font-display);font-weight:700;color:var(--ink);margin:0;">
-      Pending Verifications
-      <span style="background:rgba(245,158,11,0.15);color:#f59e0b;font-size:12px;font-weight:700;padding:2px 10px;border-radius:20px;margin-left:8px;">{{ pending_recruiters|length }}</span>
-    </h5>
+<div class="panel panel-warn">
+  <div class="panel-head">
+    <i class="fas fa-shield-alt" style="color:#f59e0b; font-size:18px;"></i>
+    <h5 class="panel-title">Pending Verifications <span class="panel-badge">{{ pending_recruiters|length }}</span></h5>
   </div>
-  <div style="display:grid;gap:12px;">
+  <div>
     {% for recruiter in pending_recruiters %}
-    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:1rem 1.25rem;">
-      <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;">
-        <!-- Info -->
+    <div class="verify-card">
+      <div class="verify-inner">
         <div>
-          <div style="font-weight:700;color:var(--ink);font-size:15px;">{{ recruiter.get_full_name|default:recruiter.username }}</div>
-          <div style="font-size:13px;color:var(--ink2);margin-top:2px;">{{ recruiter.email }}</div>
-          <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;">
+          <div class="verify-name">{{ recruiter.get_full_name|default:recruiter.username }}</div>
+          <div class="verify-email">{{ recruiter.email }}</div>
+          <div class="verify-tags">
             {% with recruiter.recruiterprofile as rp %}
-            {% if rp.company_name %}
-            <span style="font-size:12px;background:var(--p-soft);color:var(--primary2);padding:3px 10px;border-radius:20px;font-weight:600;">
-              <i class="fas fa-building me-1"></i>{{ rp.company_name }}
-            </span>
-            {% endif %}
-            {% if rp.designation %}
-            <span style="font-size:12px;background:var(--surface2);color:var(--ink2);padding:3px 10px;border-radius:20px;">
-              {{ rp.designation }}
-            </span>
-            {% endif %}
-            {% if rp.verification_requested_at %}
-            <span style="font-size:12px;color:var(--ink3);">
-              <i class="fas fa-clock me-1"></i>{{ rp.verification_requested_at|date:"d M Y" }}
-            </span>
-            {% endif %}
+              {% if rp.company_name %}<span class="tag tag-primary"><i class="fas fa-building" style="margin-right:4px;"></i>{{ rp.company_name }}</span>{% endif %}
+              {% if rp.designation %}<span class="tag tag-surface">{{ rp.designation }}</span>{% endif %}
+              {% if rp.verification_requested_at %}<span class="tag-time"><i class="fas fa-clock"></i>{{ rp.verification_requested_at|date:"d M Y" }}</span>{% endif %}
             {% endwith %}
           </div>
           {% if recruiter.recruiterprofile.verification_note %}
-          <div style="font-size:13px;color:var(--ink2);margin-top:8px;font-style:italic;">
-            "{{ recruiter.recruiterprofile.verification_note }}"
-          </div>
+          <div class="verify-note">"{{ recruiter.recruiterprofile.verification_note }}"</div>
           {% endif %}
         </div>
-        <!-- Actions -->
-        <div style="display:flex;flex-direction:column;gap:8px;min-width:200px;">
-          <!-- Approve -->
+        <div class="verify-actions">
           <form method="POST" action="{% url 'admin_verify_recruiter' recruiter.pk %}">
             {% csrf_token %}
             <input type="hidden" name="action" value="approve">
-            <input type="text" name="admin_remark" class="form-control form-control-sm mb-1" placeholder="Optional remark...">
-            <button type="submit"
-                    onclick="submitWithLoading(this,'Approving...')"
-                    style="width:100%;padding:7px 14px;border-radius:8px;border:none;background:var(--green);color:#fff;font-size:13px;font-weight:700;cursor:pointer;">
-              <i class="fas fa-check me-1"></i>Approve
-            </button>
+            <input type="text" name="admin_remark" class="form-input" placeholder="Optional remark...">
+            <button type="submit" class="btn-approve" onclick="submitWithLoading(this,'Approving...')"><i class="fas fa-check"></i> Approve</button>
           </form>
-          <!-- Reject -->
           <form method="POST" action="{% url 'admin_verify_recruiter' recruiter.pk %}">
             {% csrf_token %}
             <input type="hidden" name="action" value="reject">
-            <input type="text" name="admin_remark" class="form-control form-control-sm mb-1" placeholder="Reason for rejection...">
-            <button type="submit"
-                    onclick="submitWithLoading(this,'Rejecting...')"
-                    style="width:100%;padding:7px 14px;border-radius:8px;border:none;background:var(--red-soft);color:var(--red);border:1px solid rgba(244,63,94,0.3);font-size:13px;font-weight:700;cursor:pointer;">
-              <i class="fas fa-times me-1"></i>Reject
-            </button>
+            <input type="text" name="admin_remark" class="form-input" placeholder="Reason for rejection...">
+            <button type="submit" class="btn-reject" onclick="submitWithLoading(this,'Rejecting...')"><i class="fas fa-times"></i> Reject</button>
           </form>
         </div>
       </div>
@@ -125,53 +254,39 @@
 </div>
 {% endif %}
 
-<!-- ── MANAGE DRIVES (MODERATION) ── -->
-<div style="background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:1.5rem;margin-bottom:2rem;">
-  <div style="display:flex;align-items:center;gap:10px;margin-bottom:1rem;">
-    <i class="fas fa-briefcase" style="color:#f59e0b;font-size:18px;"></i>
-    <h5 style="font-family:var(--font-display);font-weight:700;color:var(--ink);margin:0;">
-      Platform Drives
-      <span style="background:var(--p-soft);color:var(--primary2);font-size:12px;font-weight:700;padding:2px 10px;border-radius:20px;margin-left:8px;">{{ drives.count }}</span>
-    </h5>
+<!-- ── MANAGE DRIVES ── -->
+<div class="panel">
+  <div class="panel-head">
+    <i class="fas fa-briefcase" style="color:#f59e0b; font-size:18px;"></i>
+    <h5 class="panel-title">Platform Drives <span class="panel-badge panel-badge-indigo">{{ drives.count }}</span></h5>
   </div>
-  <div class="table-responsive">
-    <table class="table table-hover" style="font-size:14px;">
-      <thead>
-        <tr style="color:var(--ink3);font-size:12px;text-transform:uppercase;letter-spacing:.5px;">
-          <th>Company</th><th>Role</th><th>Posted By</th><th>Deadline</th><th>Status</th><th>Admin Action</th>
-        </tr>
-      </thead>
+  <div style="overflow-x:auto;">
+    <table class="cc-table">
+      <thead><tr><th>Company</th><th>Role</th><th>Posted By</th><th>Deadline</th><th>Status</th><th>Action</th></tr></thead>
       <tbody>
         {% for drive in drives %}
         <tr>
-          <td style="color:var(--ink);font-weight:600;">{{ drive.company }}</td>
-          <td style="color:var(--ink2);">{{ drive.role }}</td>
-          <td style="color:var(--ink3);">{{ drive.posted_by.username }}</td>
-          <td style="color:var(--ink3);">{{ drive.deadline|date:"d M Y" }}</td>
+          <td class="text-bold">{{ drive.company }}</td>
+          <td>{{ drive.role }}</td>
+          <td class="text-muted">{{ drive.posted_by.username }}</td>
+          <td class="text-muted">{{ drive.deadline|date:"d M Y" }}</td>
           <td>
-            {% if drive.status == 'active' %}
-              <span style="font-size:12px;background:var(--green-soft);color:var(--green);padding:3px 10px;border-radius:20px;font-weight:600;">Active</span>
-            {% else %}
-              <span style="font-size:12px;background:var(--red-soft);color:var(--red);padding:3px 10px;border-radius:20px;font-weight:600;">Closed</span>
-            {% endif %}
+            {% if drive.status == 'active' %}<span class="status-badge badge-active">Active</span>
+            {% else %}<span class="status-badge badge-closed">Closed</span>{% endif %}
           </td>
           <td>
             <form method="POST" action="{% url 'admin_toggle_drive' drive.pk %}" style="display:inline;">
               {% csrf_token %}
               {% if drive.status == 'active' %}
-                <button type="submit" onclick="submitWithLoading(this,'Closing...')" style="font-size:12px;font-weight:700;color:var(--red);background:var(--red-soft);border:1px solid rgba(244,63,94,0.3);padding:5px 12px;border-radius:7px;cursor:pointer;">
-                  <i class="fas fa-ban me-1"></i>Force Close
-                </button>
+                <button type="submit" class="btn-sm-action btn-close-drive" onclick="submitWithLoading(this,'Closing...')"><i class="fas fa-ban"></i> Force Close</button>
               {% else %}
-                <button type="submit" onclick="submitWithLoading(this,'Reopening...')" style="font-size:12px;font-weight:700;color:var(--green);background:var(--green-soft);border:1px solid rgba(34,211,160,0.3);padding:5px 12px;border-radius:7px;cursor:pointer;">
-                  <i class="fas fa-door-open me-1"></i>Reopen
-                </button>
+                <button type="submit" class="btn-sm-action btn-open-drive" onclick="submitWithLoading(this,'Reopening...')"><i class="fas fa-door-open"></i> Reopen</button>
               {% endif %}
             </form>
           </td>
         </tr>
         {% empty %}
-        <tr><td colspan="6" style="text-align:center;color:var(--ink3);padding:2rem;">No drives posted yet.</td></tr>
+        <tr><td colspan="6" class="empty-row">No drives posted yet.</td></tr>
         {% endfor %}
       </tbody>
     </table>
@@ -179,111 +294,92 @@
 </div>
 
 <!-- ── ALL APPLICATIONS ── -->
-<div style="background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:1.5rem;margin-bottom:2rem;">
-  <h5 style="font-family:var(--font-display);font-weight:700;color:var(--ink);margin-bottom:1rem;">
-    <i class="fas fa-file-alt" style="color:var(--primary2);margin-right:8px;"></i>All Applications
-  </h5>
-  <div class="table-responsive">
-    <table class="table table-hover" style="font-size:14px;">
-      <thead>
-        <tr style="color:var(--ink3);font-size:12px;text-transform:uppercase;letter-spacing:.5px;">
-          <th>Student</th><th>Company</th><th>Role</th><th>Applied On</th><th>Status</th><th>Action</th>
-        </tr>
-      </thead>
+<div class="panel">
+  <div class="panel-head">
+    <i class="fas fa-file-alt" style="color:var(--primary2); font-size:18px;"></i>
+    <h5 class="panel-title">All Applications</h5>
+  </div>
+  <div style="overflow-x:auto;">
+    <table class="cc-table">
+      <thead><tr><th>Student</th><th>Company</th><th>Role</th><th>Applied On</th><th>Status</th><th>Action</th></tr></thead>
       <tbody>
         {% for app in apps %}
         <tr>
-          <td style="color:var(--ink);font-weight:600;">{{ app.student.get_full_name }}</td>
-          <td style="color:var(--ink2);">{{ app.drive.company }}</td>
-          <td style="color:var(--ink2);">{{ app.drive.role }}</td>
-          <td style="color:var(--ink3);">{{ app.applied_at|date:"d M Y" }}</td>
-<td>
-    {% if app.status == 'applied' %}<span style="font-size:12px;background:var(--p-soft);color:var(--primary2);padding:3px 10px;border-radius:20px;font-weight:600;">Applied</span>
-    {% elif app.status == 'shortlisted' %}<span style="font-size:12px;background:rgba(245,158,11,0.12);color:#f59e0b;padding:3px 10px;border-radius:20px;font-weight:600;">Shortlisted</span>
-    {% elif app.status == 'selected' %}<span style="font-size:12px;background:var(--success-soft);color:var(--success);padding:3px 10px;border-radius:20px;font-weight:600;">Selected</span>
-    {% elif app.status == 'placed' %}<span style="font-size:12px;background:rgba(245,158,11,0.15);color:#f59e0b;padding:3px 10px;border-radius:20px;font-weight:600;">🏆 Placed</span> <!-- NEW -->
-    {% elif app.status == 'rejected' %}<span style="font-size:12px;background:var(--red-soft);color:var(--red);padding:3px 10px;border-radius:20px;font-weight:600;">Rejected</span>{% endif %}
-</td>          <td>
+          <td class="text-bold">{{ app.student.get_full_name }}</td>
+          <td>{{ app.drive.company }}</td>
+          <td>{{ app.drive.role }}</td>
+          <td class="text-muted">{{ app.applied_at|date:"d M Y" }}</td>
+          <td>
+            {% if app.status == 'applied' %}<span class="status-badge badge-applied">Applied</span>
+            {% elif app.status == 'shortlisted' %}<span class="status-badge badge-shortlisted">Shortlisted</span>
+            {% elif app.status == 'selected' %}<span class="status-badge badge-selected">Selected</span>
+            {% elif app.status == 'placed' %}<span class="status-badge badge-placed">🏆 Placed</span>
+            {% elif app.status == 'rejected' %}<span class="status-badge badge-rejected">Rejected</span>{% endif %}
+          </td>
+          <td>
             <form method="POST" action="{% url 'update_application' app.pk %}">
               {% csrf_token %}
-              <div style="display:flex;gap:6px;">
-<select name="status" class="form-select form-select-sm" style="font-size:13px;min-width:110px;">
-    <option value="applied" {% if app.status == 'applied' %}selected{% endif %}>Applied</option>
-    <option value="shortlisted" {% if app.status == 'shortlisted' %}selected{% endif %}>Shortlisted</option>
-    <option value="selected" {% if app.status == 'selected' %}selected{% endif %}>Selected</option>
-    <option value="placed" {% if app.status == 'placed' %}selected{% endif %}>Placed ✅</option> <!-- NEW -->
-    <option value="rejected" {% if app.status == 'rejected' %}selected{% endif %}>Rejected</option>
-</select>                <button type="submit" class="btn btn-primary btn-sm" style="font-size:13px;white-space:nowrap;">Update</button>
+              <div class="action-group">
+                <select name="status" class="form-select-sm">
+                  <option value="applied" {% if app.status == 'applied' %}selected{% endif %}>Applied</option>
+                  <option value="shortlisted" {% if app.status == 'shortlisted' %}selected{% endif %}>Shortlisted</option>
+                  <option value="selected" {% if app.status == 'selected' %}selected{% endif %}>Selected</option>
+                  <option value="placed" {% if app.status == 'placed' %}selected{% endif %}>Placed ✅</option>
+                  <option value="rejected" {% if app.status == 'rejected' %}selected{% endif %}>Rejected</option>
+                </select>
+                <button type="submit" class="btn-update">Update</button>
               </div>
             </form>
-            
-            <div style="display:flex; gap:6px; margin-top:8px; flex-wrap:wrap;">
-              <a href="/placements/schedule/{{ app.pk }}/" style="font-size:12px;color:var(--green);text-decoration:none;font-weight:600;">
-                <i class="fas fa-calendar me-1"></i>Schedule
-              </a>
-
-              <!-- ── ADMIN CHAT ACCESS (READ ONLY OBSERVER) ── -->
+            <div class="action-group" style="margin-top:8px;">
+              <a href="/placements/schedule/{{ app.pk }}/" class="link-schedule"><i class="fas fa-calendar" style="margin-right:4px;"></i>Schedule</a>
               {% if app.status == 'shortlisted' or app.status == 'selected' %}
-              <a href="{% url 'start_chat' app.pk %}" style="font-size:12px; font-weight:600; color:var(--primary2); text-decoration:none; padding:4px 10px; border-radius:6px; background:var(--p-soft); border:1px solid rgba(79,70,229,0.3); display:inline-flex; align-items:center; gap:4px;">
-                <i class="fas fa-eye"></i> View Chat
-              </a>
+              <a href="{% url 'start_chat' app.pk %}" class="btn-observe-chat"><i class="fas fa-eye"></i> View Chat</a>
               {% endif %}
             </div>
-
           </td>
         </tr>
         {% empty %}
-        <tr><td colspan="6" style="text-align:center;color:var(--ink3);padding:2rem;">No applications yet.</td></tr>
+        <tr><td colspan="6" class="empty-row">No applications yet.</td></tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
 </div>
 
-<!-- ── STUDENTS & RECRUITERS (WITH SOFT DELETE) ── -->
-<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1.5rem;">
+<!-- ── STUDENTS & RECRUITERS ── -->
+<div class="grid-2">
 
   <!-- Students -->
-  <div style="background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:1.5rem;">
-    <h5 style="font-family:var(--font-display);font-weight:700;color:var(--ink);margin-bottom:1rem;">
-      <i class="fas fa-user-graduate" style="color:var(--primary2);margin-right:8px;"></i>Students
-    </h5>
-    <div class="table-responsive">
-      <table class="table table-hover" style="font-size:14px;">
-        <thead>
-          <tr style="color:var(--ink3);font-size:12px;">
-            <th>Name</th><th>Email</th><th>Status</th><th>Action</th>
-          </tr>
-        </thead>
+  <div class="panel">
+    <div class="panel-head">
+      <i class="fas fa-user-graduate" style="color:var(--primary2); font-size:18px;"></i>
+      <h5 class="panel-title">Students</h5>
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="cc-table">
+        <thead><tr><th>Name</th><th>Email</th><th>Status</th><th>Action</th></tr></thead>
         <tbody>
           {% for student in students %}
-          <tr style="{% if not student.is_active %}opacity: 0.5;{% endif %}">
-            <td style="color:var(--ink);font-weight:600;">{{ student.get_full_name }}</td>
-            <td style="color:var(--ink2);">{{ student.email }}</td>
+          <tr class="{% if not student.is_active %}row-deactivated{% endif %}">
+            <td class="text-bold">{{ student.get_full_name }}</td>
+            <td class="text-muted">{{ student.email }}</td>
             <td>
-              {% if student.is_active %}
-                <span style="font-size:12px;background:var(--green-soft);color:var(--green);padding:3px 10px;border-radius:20px;font-weight:600;">Active</span>
-              {% else %}
-                <span style="font-size:12px;background:var(--red-soft);color:var(--red);padding:3px 10px;border-radius:20px;font-weight:600;">Deactivated</span>
-              {% endif %}
+              {% if student.is_active %}<span class="status-badge badge-active">Active</span>
+              {% else %}<span class="status-badge badge-closed">Deactivated</span>{% endif %}
             </td>
             <td>
               <form method="POST" action="{% url 'admin_toggle_user' student.pk %}">
                 {% csrf_token %}
                 {% if student.is_active %}
-                  <button type="submit" onclick="submitWithLoading(this,'Deactivating...')" style="font-size:12px;font-weight:700;color:var(--red);background:var(--red-soft);border:1px solid rgba(244,63,94,0.3);padding:4px 10px;border-radius:7px;cursor:pointer;">
-                    <i class="fas fa-ban me-1"></i>Deactivate
-                  </button>
+                  <button type="submit" class="btn-sm-action btn-deactivate" onclick="submitWithLoading(this,'Deactivating...')"><i class="fas fa-ban"></i> Deactivate</button>
                 {% else %}
-                  <button type="submit" onclick="submitWithLoading(this,'Reactivating...')" style="font-size:12px;font-weight:700;color:var(--green);background:var(--green-soft);border:1px solid rgba(34,211,160,0.3);padding:4px 10px;border-radius:7px;cursor:pointer;">
-                    <i class="fas fa-check me-1"></i>Reactivate
-                  </button>
+                  <button type="submit" class="btn-sm-action btn-reactivate" onclick="submitWithLoading(this,'Reactivating...')"><i class="fas fa-check"></i> Reactivate</button>
                 {% endif %}
               </form>
             </td>
           </tr>
           {% empty %}
-          <tr><td colspan="4" style="text-align:center;color:var(--ink3);padding:1.5rem;">No students yet.</td></tr>
+          <tr><td colspan="4" class="empty-row">No students yet.</td></tr>
           {% endfor %}
         </tbody>
       </table>
@@ -291,52 +387,40 @@
   </div>
 
   <!-- Recruiters -->
-  <div style="background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:1.5rem;">
-    <h5 style="font-family:var(--font-display);font-weight:700;color:var(--ink);margin-bottom:1rem;">
-      <i class="fas fa-building" style="color:var(--green);margin-right:8px;"></i>Recruiters
-    </h5>
-    <div class="table-responsive">
-      <table class="table table-hover" style="font-size:14px;">
-        <thead>
-          <tr style="color:var(--ink3);font-size:12px;">
-            <th>Name</th><th>Email</th><th>Verification</th><th>Action</th>
-          </tr>
-        </thead>
+  <div class="panel">
+    <div class="panel-head">
+      <i class="fas fa-building" style="color:var(--green); font-size:18px;"></i>
+      <h5 class="panel-title">Recruiters</h5>
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="cc-table">
+        <thead><tr><th>Name</th><th>Email</th><th>Verification</th><th>Action</th></tr></thead>
         <tbody>
           {% for recruiter in recruiters %}
-          <tr style="{% if not recruiter.is_active %}opacity: 0.5;{% endif %}">
-            <td style="color:var(--ink);font-weight:600;">{{ recruiter.get_full_name|default:recruiter.username }}</td>
-            <td style="color:var(--ink2);">{{ recruiter.email }}</td>
+          <tr class="{% if not recruiter.is_active %}row-deactivated{% endif %}">
+            <td class="text-bold">{{ recruiter.get_full_name|default:recruiter.username }}</td>
+            <td class="text-muted">{{ recruiter.email }}</td>
             <td>
               {% with recruiter.recruiterprofile as rp %}
-                {% if rp.is_verified %}
-                  <span style="font-size:12px;background:var(--green-soft);color:var(--green);padding:3px 10px;border-radius:20px;font-weight:600;">Verified</span>
-                {% elif rp.verification_status == 'pending' %}
-                  <span style="font-size:12px;background:rgba(245,158,11,0.12);color:#f59e0b;padding:3px 10px;border-radius:20px;font-weight:600;">Pending</span>
-                {% elif rp.verification_status == 'rejected' %}
-                  <span style="font-size:12px;background:var(--red-soft);color:var(--red);padding:3px 10px;border-radius:20px;font-weight:600;">Rejected</span>
-                {% else %}
-                  <span style="font-size:12px;background:var(--surface2);color:var(--ink3);padding:3px 10px;border-radius:20px;">Not Requested</span>
-                {% endif %}
+                {% if rp.is_verified %}<span class="status-badge badge-active">Verified</span>
+                {% elif rp.verification_status == 'pending' %}<span class="status-badge badge-pending">Pending</span>
+                {% elif rp.verification_status == 'rejected' %}<span class="status-badge badge-rejected">Rejected</span>
+                {% else %}<span class="status-badge badge-unverified">Not Requested</span>{% endif %}
               {% endwith %}
             </td>
             <td>
               <form method="POST" action="{% url 'admin_toggle_user' recruiter.pk %}">
                 {% csrf_token %}
                 {% if recruiter.is_active %}
-                  <button type="submit" onclick="submitWithLoading(this,'Deactivating...')" style="font-size:12px;font-weight:700;color:var(--red);background:var(--red-soft);border:1px solid rgba(244,63,94,0.3);padding:4px 10px;border-radius:7px;cursor:pointer;">
-                    <i class="fas fa-ban me-1"></i>Deactivate
-                  </button>
+                  <button type="submit" class="btn-sm-action btn-deactivate" onclick="submitWithLoading(this,'Deactivating...')"><i class="fas fa-ban"></i> Deactivate</button>
                 {% else %}
-                  <button type="submit" onclick="submitWithLoading(this,'Reactivating...')" style="font-size:12px;font-weight:700;color:var(--green);background:var(--green-soft);border:1px solid rgba(34,211,160,0.3);padding:4px 10px;border-radius:7px;cursor:pointer;">
-                    <i class="fas fa-check me-1"></i>Reactivate
-                  </button>
+                  <button type="submit" class="btn-sm-action btn-reactivate" onclick="submitWithLoading(this,'Reactivating...')"><i class="fas fa-check"></i> Reactivate</button>
                 {% endif %}
               </form>
             </td>
           </tr>
           {% empty %}
-          <tr><td colspan="4" style="text-align:center;color:var(--ink3);padding:1.5rem;">No recruiters yet.</td></tr>
+          <tr><td colspan="4" class="empty-row">No recruiters yet.</td></tr>
           {% endfor %}
         </tbody>
       </table>

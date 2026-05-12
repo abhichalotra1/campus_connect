@@ -1,441 +1,652 @@
 {% extends 'base.html' %}
 {% block title %}Chat – {{ conversation.drive.role }} – Campus Connect{% endblock %}
 
+{% block extra_css %}
+<style>
+/* ═══════════════════════════════════════════════════
+   CHAT ROOM — Midnight Indigo Design System
+   ═══════════════════════════════════════════════════ */
+:root {
+  --bg-base:       #0B0F19;
+  --bg-surface:    #131825;
+  --bg-muted:      #1E2433;
+  --bg-hover:      #252B3B;
+  --border:        rgba(255,255,255,0.08);
+  --border-strong: rgba(255,255,255,0.13);
+  --text-primary:  #F1F5F9;
+  --text-secondary:#94A3B8;
+  --text-muted:    #475569;
+  --accent:        #6366F1;
+  --accent-hover:  #818CF8;
+  --accent-soft:   rgba(99,102,241,0.15);
+  --accent-glow:   rgba(99,102,241,0.25);
+  --success:       #10B981;
+  --success-soft:  rgba(16,185,129,0.15);
+  --danger:        #EF4444;
+  --danger-soft:   rgba(239,68,68,0.15);
+  --warning:       #F59E0B;
+  --warning-soft:  rgba(245,158,11,0.15);
+}
+[data-theme="light"] {
+  --bg-base:       #F0F4FF;
+  --bg-surface:    #FFFFFF;
+  --bg-muted:      #EEF2FF;
+  --bg-hover:      #E0E7FF;
+  --border:        rgba(99,102,241,0.1);
+  --border-strong: rgba(99,102,241,0.18);
+  --text-primary:  #0F172A;
+  --text-secondary:#475569;
+  --text-muted:    #94A3B8;
+  --accent:        #4F46E5;
+  --accent-hover:  #6366F1;
+  --accent-soft:   rgba(79,70,229,0.1);
+  --accent-glow:   rgba(79,70,229,0.15);
+  --success:       #059669;
+  --success-soft:  rgba(5,150,105,0.1);
+  --danger:        #DC2626;
+  --danger-soft:   rgba(220,38,38,0.1);
+  --warning:       #D97706;
+  --warning-soft:  rgba(217,119,6,0.1);
+}
+
+.chat-shell {
+  display: flex; height: calc(100vh - 84px);
+  margin: -24px -32px; overflow: hidden;
+  background: var(--bg-base); font-family: var(--font-body);
+}
+
+/* LEFT PANEL */
+.chat-left {
+  width: 260px; flex-shrink: 0; background: var(--bg-surface);
+  border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow-y: auto;
+}
+.chat-left::-webkit-scrollbar { width: 3px; }
+.chat-left::-webkit-scrollbar-thumb { background: var(--bg-muted); border-radius: 2px; }
+
+.cl-block { padding: 16px; border-bottom: 1px solid var(--border); }
+.cl-block:last-child { border-bottom: none; }
+
+.cl-label {
+  font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px;
+  font-weight: 700; color: var(--text-muted); font-family: var(--font-mono); margin-bottom: 10px;
+}
+
+.chat-back {
+  display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px;
+  font-weight: 600; color: var(--text-muted); text-decoration: none; padding: 6px 9px;
+  border-radius: 8px; margin-bottom: 16px; transition: all 0.15s; border: 1px solid transparent;
+}
+.chat-back:hover { background: var(--bg-muted); color: var(--text-secondary); border-color: var(--border); }
+
+.observer-banner {
+  display: flex; align-items: center; gap: 8px; background: var(--accent-soft);
+  border: 1px solid rgba(99,102,241,0.25); border-radius: 9px; padding: 10px 12px;
+  margin-bottom: 14px; font-size: 12px; font-weight: 700; color: var(--accent-hover);
+}
+
+.online-row { display: flex; align-items: center; gap: 9px; margin-bottom: 3px; }
+.online-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; transition: all 0.3s; }
+.online-dot.on  { background: var(--success); box-shadow: 0 0 0 3px var(--success-soft); }
+.online-dot.off { background: var(--text-muted); }
+.other-name { font-size: 14px; font-weight: 700; color: var(--text-primary); }
+.online-status { font-size: 11.5px; font-family: var(--font-mono); padding-left: 18px; }
+.online-status.on  { color: var(--success); }
+.online-status.off { color: var(--text-muted); }
+
+.ctx-card { background: var(--bg-muted); border: 1px solid var(--border); border-radius: 10px; padding: 12px; }
+.ctx-role    { font-size: 13px; font-weight: 700; color: var(--text-primary); margin-bottom: 3px; }
+.ctx-company { font-size: 12px; color: var(--text-secondary); display: flex; align-items: center; gap: 5px; }
+
+.unlock-btn {
+  width: 100%; display: flex; align-items: center; justify-content: center; gap: 7px;
+  padding: 10px; border-radius: 10px; border: 1px solid rgba(99,102,241,0.3);
+  background: var(--accent-soft); color: var(--accent-hover); font-family: var(--font-display);
+  font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s;
+}
+.unlock-btn:hover { background: var(--accent); color: #fff; border-color: var(--accent); box-shadow: 0 4px 14px var(--accent-glow); }
+.unlock-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+.unlock-hint { font-size: 11px; color: var(--text-muted); text-align: center; margin-top: 6px; }
+
+.lock-badge { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; padding: 9px 12px; border-radius: 10px; }
+.lock-badge.unlocked { background: var(--success-soft); border: 1px solid rgba(16,185,129,0.2); color: var(--success); }
+.lock-badge.locked    { background: var(--danger-soft);  border: 1px solid rgba(239,68,68,0.2);  color: var(--danger); }
+
+.student-timer {
+  text-align: center; margin-top: 10px; font-family: var(--font-mono); font-size: 28px;
+  font-weight: 800; color: var(--accent-hover); letter-spacing: 4px; background: var(--accent-soft);
+  border-radius: 10px; padding: 8px;
+}
+
+/* RIGHT PANEL */
+.chat-right {
+  flex: 1; display: flex; flex-direction: column; background: var(--bg-base); min-width: 0;
+  background-image: radial-gradient(circle at 20% 80%, rgba(99,102,241,0.04) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(16,185,129,0.03) 0%, transparent 50%);
+}
+
+.chat-topbar {
+  padding: 13px 20px; border-bottom: 1px solid var(--border); background: var(--bg-surface);
+  display: flex; align-items: center; gap: 12px; flex-shrink: 0; backdrop-filter: blur(12px);
+}
+.ct-icon {
+  width: 36px; height: 36px; border-radius: 10px; background: var(--accent-soft);
+  border: 1px solid rgba(99,102,241,0.2); color: var(--accent-hover); display: flex;
+  align-items: center; justify-content: center; font-size: 17px; flex-shrink: 0;
+}
+.ct-title { font-family: var(--font-display); font-size: 15px; font-weight: 700; color: var(--text-primary); letter-spacing: -0.2px; }
+.ct-sub   { font-size: 11.5px; color: var(--text-muted); font-family: var(--font-mono); margin-top: 1px; }
+
+/* Message Stream */
+.chat-stream { flex: 1; overflow-y: auto; padding: 20px 24px; display: flex; flex-direction: column; gap: 4px; }
+.chat-stream::-webkit-scrollbar { width: 4px; }
+.chat-stream::-webkit-scrollbar-track { background: transparent; }
+.chat-stream::-webkit-scrollbar-thumb { background: var(--bg-muted); border-radius: 2px; }
+
+.msg-divider { align-self: center; display: flex; align-items: center; gap: 10px; margin: 12px 0 8px; width: 100%; }
+.msg-divider::before, .msg-divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.msg-divider span { font-size: 11px; color: var(--text-muted); font-family: var(--font-mono); white-space: nowrap; padding: 0 4px; }
+
+.bubble-row { display: flex; align-items: flex-end; gap: 8px; margin-bottom: 2px; }
+.bubble-row.mine   { flex-direction: row-reverse; }
+.bubble-row.theirs { flex-direction: row; }
+
+.bubble-avatar {
+  width: 28px; height: 28px; border-radius: 50%; background: var(--bg-muted);
+  border: 1px solid var(--border); display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; color: var(--text-secondary); flex-shrink: 0;
+  font-family: var(--font-display); overflow: hidden; margin-bottom: 2px;
+}
+.bubble-avatar.acc { background: var(--accent-soft); color: var(--accent-hover); border-color: rgba(99,102,241,0.2); }
+
+.bubble { max-width: 62%; padding: 9px 13px; font-size: 14px; line-height: 1.55; word-break: break-word; position: relative; }
+.bubble.mine {
+  background: linear-gradient(135deg, var(--accent) 0%, #4F46E5 100%);
+  color: #fff; border-radius: 18px 18px 4px 18px; box-shadow: 0 2px 12px rgba(99,102,241,0.3);
+}
+.bubble.theirs {
+  background: var(--bg-surface); color: var(--text-primary); border: 1px solid var(--border-strong);
+  border-radius: 18px 18px 18px 4px; box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+}
+.bubble.system {
+  background: var(--bg-muted); color: var(--text-muted); border-radius: 20px;
+  font-size: 12px; font-family: var(--font-mono); padding: 5px 14px;
+  align-self: center; text-align: center; border: 1px solid var(--border); box-shadow: none; max-width: 80%;
+}
+.bubble.trouble { border-left: 3px solid var(--danger) !important; }
+
+.bubble-time { font-size: 10px; margin-top: 4px; display: block; }
+.bubble.mine   .bubble-time { color: rgba(255,255,255,0.5); text-align: right; }
+.bubble.theirs .bubble-time { color: var(--text-muted); text-align: left; }
+
+.bubble-file { display: flex; align-items: center; gap: 8px; }
+.bubble-file a { color: inherit; text-decoration: none; font-weight: 600; border-bottom: 1px dashed currentColor; }
+.bubble-file i { font-size: 18px; opacity: 0.8; flex-shrink: 0; }
+
+/* ══════════════════════════════
+   INPUT AREA
+══════════════════════════════ */
+.chat-input-area { border-top: 1px solid var(--border); background: var(--bg-surface); padding: 14px 20px; flex-shrink: 0; }
+.observer-bar { display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 13px; color: var(--text-muted); font-style: italic; padding: 8px 0; }
+.unlocked-strip {
+  display: flex; align-items: center; gap: 7px; font-size: 11.5px; font-weight: 700;
+  color: var(--success); font-family: var(--font-mono); margin-bottom: 10px; padding: 6px 10px;
+  background: var(--success-soft); border-radius: 8px; border: 1px solid rgba(16,185,129,0.2);
+}
+
+.input-row {
+  display: flex; align-items: flex-end; gap: 8px; background: var(--bg-muted);
+  border: 1px solid var(--border-strong); border-radius: 14px; padding: 6px 8px 6px 14px;
+  transition: border-color 0.18s, box-shadow 0.18s;
+}
+.input-row:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+
+.chat-textarea {
+  flex: 1; background: transparent; border: none; outline: none; color: var(--text-primary);
+  font-family: var(--font-body); font-size: 14px; resize: none; line-height: 1.5;
+  max-height: 120px; overflow-y: auto; padding: 4px 0;
+}
+.chat-textarea::placeholder { color: var(--text-muted); }
+
+/* ── FIX: Buttons always visible & aligned ── */
+.input-action {
+  width: 36px; height: 36px; min-width: 36px; min-height: 36px; border-radius: 9px;
+  border: 1px solid var(--border-strong); background: var(--bg-surface); color: var(--text-secondary);
+  font-size: 17px; display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: all 0.15s; flex-shrink: 0; align-self: center; position: relative;
+}
+.input-action:hover { color: var(--accent-hover); background: var(--accent-soft); border-color: rgba(99,102,241,0.3); }
+
+.send-btn {
+  width: 36px; height: 36px; min-width: 36px; min-height: 36px; border-radius: 9px;
+  border: none; background: var(--accent); color: #fff; font-size: 16px;
+  display: flex; align-items: center; justify-content: center; cursor: pointer;
+  transition: all 0.18s; flex-shrink: 0; align-self: center;
+}
+.send-btn:hover { background: var(--accent-hover); box-shadow: 0 3px 12px var(--accent-glow); transform: translateY(-1px); }
+
+.btn-icon-svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ── DEDICATED STUDENT ATTACH BUTTON ── */
+.student-attach-btn {
+  width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 10px; border-radius: 10px; border: 1px dashed rgba(99,102,241,0.4);
+  background: var(--accent-soft); color: var(--accent-hover); font-family: var(--font-display);
+  font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s; margin-bottom: 10px;
+}
+.student-attach-btn:hover { background: var(--accent); color: #fff; border-style: solid; box-shadow: 0 4px 14px var(--accent-glow); }
+
+/* QUERY NAVIGATOR */
+.query-cats { display: grid; grid-template-columns: repeat(4,1fr); gap: 7px; margin-bottom: 9px; }
+.query-cat {
+  padding: 8px 4px; border-radius: 10px; border: 1px solid var(--border-strong); background: var(--bg-muted);
+  color: var(--text-secondary); font-size: 11.5px; font-weight: 600; font-family: var(--font-body);
+  cursor: pointer; transition: all 0.15s; text-align: center; line-height: 1.4;
+}
+.query-cat:hover, .query-cat.active { background: var(--accent-soft); color: var(--accent-hover); border-color: rgba(99,102,241,0.3); }
+.query-subs { background: var(--bg-muted); border: 1px solid var(--border); border-radius: 12px; padding: 10px; display: none; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.query-sub {
+  padding: 7px 14px; border-radius: 20px; border: 1px solid var(--border-strong); background: var(--bg-surface);
+  color: var(--text-secondary); font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.15s;
+}
+.query-sub:hover { background: var(--accent-soft); color: var(--accent-hover); border-color: rgba(99,102,241,0.25); }
+
+@keyframes msgIn { from { opacity: 0; transform: translateY(6px) scale(0.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
+.bubble { animation: msgIn 0.2s ease both; }
+@keyframes spin { from{transform:rotate(0)} to{transform:rotate(360deg)} }
+
+@media (max-width: 768px) { .chat-shell { margin: -18px -18px; } .chat-left { width: 220px; } .query-cats { grid-template-columns: repeat(2,1fr); } }
+@media (max-width: 560px) { .chat-left { display: none; } .bubble { max-width: 80%; } }
+</style>
+{% endblock %}
+
 {% block content %}
-<div style="display:flex; height:calc(100vh - 84px); margin:-24px -32px; overflow:hidden; background:var(--bg2);">
-  
-  <!-- ── LEFT PANEL (Context & Controls) ── -->
-  <div style="width:280px; background:var(--surface); border-right:1px solid var(--border2); display:flex; flex-direction:column; flex-shrink:0;">
-    
-    <!-- Chat Header -->
-    <div style="padding:20px; border-bottom:1px solid var(--border2);">
-      <a href="{% url 'dashboard' %}" style="font-size:12px; color:var(--ink3); text-decoration:none; display:flex; align-items:center; gap:5px; margin-bottom:12px;">
-        <i class="fas fa-arrow-left"></i> Back to Dashboard
-      </a>
-      
-      <!-- Observer Mode Banner (Only Admins see this) -->
+<div class="chat-shell">
+
+  <!-- ══════ LEFT PANEL ══════ -->
+  <div class="chat-left">
+    <div class="cl-block">
+      <a href="{% url 'dashboard' %}" class="chat-back"><i class="ph ph-arrow-left"></i> Back to Dashboard</a>
       {% if is_observer %}
-      <div style="background:var(--p-soft); border:1px solid rgba(79,70,229,0.3); border-radius:8px; padding:10px; margin-bottom:12px; text-align:center;">
-        <i class="fas fa-eye me-1" style="color:var(--primary2);"></i>
-        <span style="font-size:12px; font-weight:600; color:var(--primary2);">Observer Mode (Read-Only)</span>
-      </div>
+      <div class="observer-banner"><i class="ph ph-eye"></i> Observer Mode — Read Only</div>
       {% endif %}
-
-      <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
-        <div style="width:10px; height:10px; border-radius:50%; background:{% if is_other_online %}var(--green){% else %}var(--ink3){% endif %};"></div>
-        <span style="font-size:14px; font-weight:600; color:var(--ink);">{{ other_user_name }}</span>
+      <div class="online-row">
+        <div class="online-dot {% if is_other_online %}on{% else %}off{% endif %}"></div>
+        <span class="other-name">{{ other_user_name }}</span>
       </div>
-      <span style="font-size:11px; color:{% if is_other_online %}var(--green){% else %}var(--ink3){% endif %};">
-        {% if is_other_online %}Online{% else %}Offline{% endif %}
-      </span>
+      <div class="online-status {% if is_other_online %}on{% else %}off{% endif %}">
+        {% if is_other_online %}● Online now{% else %}○ Offline{% endif %}
+      </div>
     </div>
 
-    <!-- Drive Context -->
-    <div style="padding:20px; border-bottom:1px solid var(--border2);">
-      <div style="font-size:11px; color:var(--ink3); text-transform:uppercase; letter-spacing:.5px; margin-bottom:6px;">Regarding Drive</div>
-      <div style="font-size:14px; font-weight:700; color:var(--ink);">{{ conversation.drive.role }}</div>
-      <div style="font-size:13px; color:var(--ink2);">{{ conversation.drive.company }}</div>
+    <div class="cl-block">
+      <div class="cl-label">Placement Drive</div>
+      <div class="ctx-card">
+        <div class="ctx-role">{{ conversation.drive.role }}</div>
+        <div class="ctx-company"><i class="ph ph-buildings" style="font-size:12px;color:var(--text-muted);"></i> {{ conversation.drive.company }}</div>
+      </div>
     </div>
 
-    <!-- Recruiter Action: Unlock Chat (Hidden for Observers) -->
     {% if request.user.role == 'recruiter' or request.user.role == 'admin' and not is_observer %}
-    <div style="padding:20px; border-bottom:1px solid var(--border2);">
-      <div style="font-size:11px; color:var(--ink3); text-transform:uppercase; letter-spacing:.5px; margin-bottom:10px;">Student Chat Lock</div>
-      <button id="unlockBtn" onclick="unlockStudentChat()" style="width:100%; padding:10px; border-radius:8px; border:1px solid rgba(79,70,229,0.3); background:var(--p-soft); color:var(--primary2); font-weight:700; font-size:13px; cursor:pointer; transition:all 0.2s;">
-        <i class="fas fa-unlock me-1"></i> Unlock for 5 mins
-      </button>
-      <div style="font-size:11px; color:var(--ink3); margin-top:6px; text-align:center;">Allows student to type freely</div>
+    <div class="cl-block">
+      <div class="cl-label">Student Chat Lock</div>
+      <button id="unlockBtn" class="unlock-btn" onclick="unlockStudentChat()"><i class="ph ph-lock-open"></i> Unlock for 5 mins</button>
+      <div class="unlock-hint">Allows student to type freely</div>
     </div>
     {% endif %}
 
-    <!-- Student: Lock Status -->
     {% if request.user.role == 'student' %}
-    <div style="padding:20px;">
-      <div style="font-size:11px; color:var(--ink3); text-transform:uppercase; letter-spacing:.5px; margin-bottom:6px;">Your Chat Status</div>
-      <div id="lockStatusBadge" style="font-size:13px; font-weight:600; color:{% if is_student_unlocked %}var(--green){% else %}var(--red){% endif %};">
-        <i class="fas {% if is_student_unlocked %}fa-unlock{% else %}fa-lock{% endif %} me-1"></i> 
-        {% if is_student_unlocked %}Unlocked{% else %}Locked (Use queries below){% endif %}
+    <div class="cl-block">
+      <div class="cl-label">Your Chat Status</div>
+      <div id="lockStatusBadge" class="lock-badge {% if is_student_unlocked %}unlocked{% else %}locked{% endif %}">
+        <i class="{% if is_student_unlocked %}ph ph-lock-open{% else %}ph ph-lock{% endif %}" id="lockIcon"></i>
+        <span id="lockLabel">{% if is_student_unlocked %}Unlocked{% else %}Locked — use queries{% endif %}</span>
       </div>
-      <div id="studentTimer" style="display:{% if is_student_unlocked %}block{% else %}none{% endif %}; margin-top:8px; font-family:var(--font-mono); font-size:18px; font-weight:800; color:var(--primary2);"></div>
+      <div id="studentTimer" class="student-timer" style="display:{% if is_student_unlocked %}block{% else %}none{% endif %};"></div>
     </div>
     {% endif %}
-
   </div>
 
-  <!-- ── RIGHT PANEL (Chat & Input) ── -->
-  <div style="flex:1; display:flex; flex-direction:column; background:var(--bg);">
-    
-    <!-- Chat Stream -->
-    <div id="chatStream" style="flex:1; overflow-y:auto; padding:24px; display:flex; flex-direction:column; gap:12px;">
-      <div style="text-align:center; color:var(--ink3); font-size:13px; margin-top:auto;">
-        Chat initiated for {{ conversation.drive.role }}. Messages are logged.
+  <!-- ══════ RIGHT PANEL ══════ -->
+  <div class="chat-right">
+    <div class="chat-topbar">
+      <div class="ct-icon"><i class="ph ph-chat-dots"></i></div>
+      <div>
+        <div class="ct-title">{{ conversation.drive.role }} · {{ conversation.drive.company }}</div>
+        <div class="ct-sub">{% if is_observer %}Observer mode · Read-only{% else %}Secure placement chat · Messages are logged{% endif %}</div>
       </div>
     </div>
 
-    <!-- Input Area -->
-    <div style="border-top:1px solid var(--border2); background:var(--surface); padding:16px 24px;">
-      
+    <div id="chatStream" class="chat-stream">
+      <div class="msg-divider"><span>Chat started for {{ conversation.drive.role }}</span></div>
+    </div>
+
+    <!-- ══════ INPUT AREA ══════ -->
+    <div class="chat-input-area">
+
       {% if is_observer %}
-        <!-- OBSERVER MODE (READ ONLY) -->
-        <div style="text-align:center; color:var(--ink3); font-size:13px; font-style:italic; padding:8px 0;">
-          <i class="fas fa-eye me-1"></i> You are viewing this chat in Read-Only mode (Moderation).
-        </div>
+      <div class="observer-bar"><i class="ph ph-eye"></i> Read-Only — Admin moderation mode</div>
 
       {% elif request.user.role == 'recruiter' or request.user.role == 'admin' %}
-        <!-- RECRUITER INPUT (Always Open) -->
-        <form id="recruiterForm" onsubmit="sendMessage('text')" style="display:flex; gap:10px; align-items:flex-end;">
-          <div style="flex:1;">
-            <textarea id="textInput" rows="1" class="form-control" placeholder="Type your message..." style="resize:none; font-size:14px;"></textarea>
-          </div>
-          <label style="cursor:pointer; color:var(--ink2); font-size:18px; padding-bottom:6px;">
-            <i class="fas fa-paperclip"></i>
-            <input type="file" id="fileInput" hidden onchange="sendMessage('file')">
+      <form id="recruiterForm" onsubmit="sendMessage(event, 'text')" style="margin:0;">
+        <div class="input-row">
+          <textarea id="textInput" class="chat-textarea" rows="1" placeholder="Message {{ other_user_name }}…"></textarea>
+          <label class="input-action" title="Attach file" tabindex="0">
+            <svg class="btn-icon-svg" viewBox="0 0 24 24"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
+            <input type="file" id="fileInput" hidden>
           </label>
-          <button type="submit" style="padding:8px 16px; border-radius:8px; border:none; background:var(--primary); color:#fff; font-weight:700; cursor:pointer;">
-            <i class="fas fa-paper-plane"></i>
+          <button type="submit" class="send-btn" title="Send">
+            <svg class="btn-icon-svg" viewBox="0 0 24 24"><path d="M22 2L11 13"/><path d="M22 2L15 22L11 13L2 9L22 2Z"/></svg>
           </button>
-        </form>
+        </div>
+      </form>
 
       {% elif request.user.role == 'student' %}
-        <!-- STUDENT INPUT (Conditional) -->
-        
-        <!-- Free Text Input (Only visible if Unlocked) -->
-        <div id="studentFreeInput" style="display:{% if is_student_unlocked %}flex{% else %}none{% endif %}; gap:10px; align-items:flex-end; margin-bottom:12px;">
-          <div style="flex:1;">
-            <textarea id="studentTextInput" rows="1" class="form-control" placeholder="Type your message... (Time is ticking!)" style="resize:none; font-size:14px; border-color:var(--primary) !important;"></textarea>
-          </div>
-          <!-- ALWAYS AVAILABLE FILE UPLOAD IN UNLOCKED MODE -->
-          <label style="cursor:pointer; color:var(--primary2); font-size:18px; padding-bottom:6px;">
-            <i class="fas fa-paperclip"></i>
-            <input type="file" id="studentFileInputUnlocked" hidden onchange="sendStudentFile(this)">
-          </label>
-          <button onclick="sendStudentText()" style="padding:8px 16px; border-radius:8px; border:none; background:var(--primary); color:#fff; font-weight:700; cursor:pointer;">
-            <i class="fas fa-paper-plane"></i>
+      
+      <!-- SHARED ATTACHMENT BUTTON: Visible in both locked and unlocked states -->
+      <button type="button" class="student-attach-btn" onclick="document.getElementById('studentUniversalFileInput').click()">
+        <i class="ph ph-paperclip"></i> 📎 Attach File (Resume, ID, etc.)
+      </button>
+      <input type="file" id="studentUniversalFileInput" hidden>
+
+      <!-- Unlocked free input -->
+      <div id="studentFreeInput" style="display:{% if is_student_unlocked %}block{% else %}none{% endif %};">
+        <div class="unlocked-strip"><i class="ph ph-lock-open"></i> Chat unlocked — timer is running</div>
+        <div class="input-row" style="border-color: rgba(16,185,129,0.4);">
+          <textarea id="studentTextInput" class="chat-textarea" rows="1" placeholder="Type your message…"></textarea>
+          <button type="button" class="send-btn" onclick="sendStudentText()" style="background:var(--success);">
+            <svg class="btn-icon-svg" viewBox="0 0 24 24"><path d="M22 2L11 13"/><path d="M22 2L15 22L11 13L2 9L22 2Z"/></svg>
           </button>
         </div>
+      </div>
 
-        <!-- CATEGORIZED QUERY NAVIGATOR (Only visible if Locked) -->
-        <div id="studentQueryNav" style="display:{% if is_student_unlocked %}none{% else %}block{% endif %};">
-          
-          <!-- Category Buttons -->
-          <div id="queryCategories" style="display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:12px;">
-            <button onclick="showQueries('schedule')" class="btn btn-sm" style="background:var(--bg2); color:var(--ink2); border:1px solid var(--border2); font-size:12px; font-weight:600;">📅 Schedule</button>
-            <button onclick="showQueries('link')" class="btn btn-sm" style="background:var(--bg2); color:var(--ink2); border:1px solid var(--border2); font-size:12px; font-weight:600;">🔗 Link Issues</button>
-            <button onclick="showQueries('docs')" class="btn btn-sm" style="background:var(--bg2); color:var(--ink2); border:1px solid var(--border2); font-size:12px; font-weight:600;">📄 Documents</button>
-            <button onclick="showQueries('status')" class="btn btn-sm" style="background:var(--bg2); color:var(--ink2); border:1px solid var(--border2); font-size:12px; font-weight:600;">✅ My Status</button>
-          </div>
-
-          <!-- Sub-Queries (Hidden by default) -->
-          <div id="querySubMenu" style="display:none; background:var(--bg2); border:1px solid var(--border); border-radius:8px; padding:10px; display:none; flex-wrap:wrap; gap:6px;">
-            <!-- Populated by JS -->
-          </div>
+      <!-- Locked: query navigator -->
+      <div id="studentQueryNav" style="display:{% if is_student_unlocked %}none{% else %}block{% endif %};">
+        <div class="query-cats">
+          <button type="button" class="query-cat" onclick="showQueries('schedule',this)">📅<br>Schedule</button>
+          <button type="button" class="query-cat" onclick="showQueries('link',this)">🔗<br>Link Issues</button>
+          <button type="button" class="query-cat" onclick="showQueries('docs',this)">📄<br>Documents</button>
+          <button type="button" class="query-cat" onclick="showQueries('status',this)">✅<br>My Status</button>
         </div>
+        <div id="querySubMenu" class="query-subs"></div>
+      </div>
 
       {% endif %}
     </div>
   </div>
 </div>
+{% endblock %}
 
+{% block extra_js %}
+<script src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
 <script>
-// ── CONFIG ──
 const conversationId = {{ conversation.pk }};
 const userRole = "{{ request.user.role }}";
+const myInitials = "{{ request.user.first_name|first|upper }}{{ request.user.last_name|first|upper }}" || "Me";
+const otherInitials = "{{ other_user_name }}".split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase() || "?";
 let lastMessageId = 0;
-let pollingInterval;
+let lastSender = null;
 
-// ── TEMPLATE QUERIES DATA ──
 const queryData = {
   schedule: [
-    { action: 'schedule_query', label: 'Where is the interview taking place?' },
-    { action: 'schedule_query', label: 'What time is my interview?' },
-    { action: 'schedule_query', label: 'I will be late by a few minutes.' }
+    { action:'schedule_query', label:'Where is the interview taking place?' },
+    { action:'schedule_query', label:'What time is my interview?' },
+    { action:'schedule_query', label:'I will be late by a few minutes.' }
   ],
   link: [
-    { action: 'link_trouble', label: 'The meeting link is not working.' },
-    { action: 'link_trouble', label: 'I am in the waiting room but not admitted.' },
-    { action: 'link_trouble', label: 'I was disconnected during the interview.' }
+    { action:'link_trouble', label:'The meeting link is not working.' },
+    { action:'link_trouble', label:'I am in the waiting room but not admitted.' },
+    { action:'link_trouble', label:'I was disconnected during the interview.' }
   ],
   docs: [
-    { action: 'doc_resume', label: '📎 Here is my Updated Resume', hasFile: true, fileCat: 'resume' },
-    { action: 'doc_marksheet', label: '📊 Here are my Marksheets', hasFile: true, fileCat: 'marksheet' },
-    { action: 'doc_id', label: '🪪 Here is my ID Proof', hasFile: true, fileCat: 'id_proof' }
+    { action:'doc_resume',    label:'📎 Here is my Updated Resume',  hasFile:true, fileCat:'resume' },
+    { action:'doc_marksheet', label:'📊 Here are my Marksheets',     hasFile:true, fileCat:'marksheet' },
+    { action:'doc_id',        label:'🪪 Here is my ID Proof',        hasFile:true, fileCat:'id_proof' }
   ],
   status: [
-    { action: 'status_attend', label: '✅ I confirm I will attend the interview.' },
-    { action: 'status_withdraw', label: '❌ I cannot attend this interview.' },
-    { action: 'status_query', label: '❓ I have a query not listed here.' }
+    { action:'status_attend',   label:'✅ I confirm I will attend the interview.' },
+    { action:'status_withdraw', label:'❌ I cannot attend this interview.' },
+    { action:'status_query',    label:'❓ I have a query not listed here.' }
   ]
 };
 
-// ── 1. FETCH MESSAGES (AJAX POLLING) ──
+/* ── FETCH ── */
 function fetchMessages() {
   fetch(`/placements/chat/${conversationId}/fetch/?last_message_id=${lastMessageId}`)
-    .then(res => res.json())
+    .then(r => r.json())
     .then(data => {
-      if (data.messages.length > 0) {
+      if (data.messages && data.messages.length > 0) {
         data.messages.forEach(msg => renderMessage(msg));
         lastMessageId = data.messages[data.messages.length - 1].id;
         scrollToBottom();
       }
-
-      // Handle Student Unlock Timer State
-      if (userRole === 'student') {
-        handleLockStatus(data.is_student_unlocked, data.unlock_time_remaining);
-      }
-    });
+      if (userRole === 'student') handleLockStatus(data.is_student_unlocked, data.unlock_time_remaining);
+    })
+    .catch(err => console.error('[Chat] fetch error:', err));
 }
 
-// ── 2. RENDER MESSAGE TO UI ──
+/* ── RENDER ── */
 function renderMessage(msg) {
   const stream = document.getElementById('chatStream');
-  const div = document.createElement('div');
-  
-  // Base styles
-  div.style.maxWidth = '70%';
-  div.style.padding = '10px 14px';
-  div.style.borderRadius = '12px';
-  div.style.fontSize = '14px';
-  div.style.lineHeight = '1.5';
+  const isMine = msg.sender === userRole;
+  const isSystem = msg.sender === 'system';
 
-  // System Message
-  if (msg.sender === 'system') {
-    div.style.alignSelf = 'center';
-    div.style.background = 'var(--bg2)';
-    div.style.color = 'var(--ink3)';
-    div.style.fontSize = '12px';
-    div.style.borderRadius = '20px';
-    div.style.padding = '6px 16px';
-    div.innerText = msg.content;
-  } 
-  // My Message
-  else if (msg.sender === userRole) {
-    div.style.alignSelf = 'flex-end';
-    div.style.background = 'var(--primary)';
-    div.style.color = '#fff';
-    div.innerHTML = `<div>${msg.content}</div><div style="font-size:10px; opacity:0.7; text-align:right; margin-top:4px;">${msg.time}</div>`;
-  } 
-  // Other's Message
-  else {
-    div.style.alignSelf = 'flex-start';
-    div.style.background = 'var(--surface2)';
-    div.style.color = 'var(--ink)';
-    div.style.border = '1px solid var(--border)';
-    div.innerHTML = `<div>${msg.content}</div><div style="font-size:10px; color:var(--ink3); margin-top:4px;">${msg.time}</div>`;
+  if (isSystem) {
+    const div = document.createElement('div');
+    div.className = 'msg-divider';
+    div.innerHTML = `<span>${msg.content}</span>`;
+    stream.appendChild(div);
+    lastSender = 'system';
+    return;
   }
 
-  // Override for Template Actions (Make them stand out)
-  if (msg.message_type === 'template') {
-    if(msg.template_action.includes('trouble')) {
-      div.style.borderLeft = '3px solid var(--red)';
-    }
+  const row = document.createElement('div');
+  row.className = `bubble-row ${isMine ? 'mine' : 'theirs'}`;
+
+  const showAvatar = lastSender !== msg.sender;
+  const avatarDiv = document.createElement('div');
+  if (showAvatar) {
+    avatarDiv.className = `bubble-avatar ${isMine ? 'acc' : ''}`;
+    avatarDiv.innerText = isMine ? myInitials : otherInitials;
+  } else {
+    avatarDiv.style.width = '28px';
+    avatarDiv.style.flexShrink = '0';
   }
 
-  // Override for Files
-  if (msg.message_type === 'file') {
-    const fileIcon = msg.file_category === 'resume' ? 'fa-file-pdf' : 'fa-file-alt';
-    div.innerHTML = `<div><i class="fas ${fileIcon} me-2"></i><a href="${msg.file_url}" target="_blank" style="color:inherit; text-decoration:underline;">${msg.content}</a></div><div style="font-size:10px; opacity:0.7; text-align:right; margin-top:4px;">${msg.time}</div>`;
+  const bubble = document.createElement('div');
+  bubble.className = `bubble ${isMine ? 'mine' : 'theirs'}`;
+
+  if (msg.message_type === 'template' && msg.template_action && msg.template_action.includes('trouble')) {
+    bubble.classList.add('trouble');
   }
 
-  stream.appendChild(div);
+  if (msg.message_type === 'file' && msg.file_url) {
+    const fileName = msg.content.replace('Shared a file: ', '');
+    bubble.innerHTML = `
+      <div class="bubble-file">
+        <i class="ph ph-file-arrow-down" style="font-size:22px;opacity:1;"></i>
+        <a href="${msg.file_url}" target="_blank">📥 Download ${fileName}</a>
+      </div>
+      <span class="bubble-time">${msg.time}</span>
+    `;
+  } else {
+    bubble.innerHTML = `<div>${msg.content}</div><span class="bubble-time">${msg.time}</span>`;
+  }
+
+  if (showAvatar && lastSender !== null) row.style.marginTop = '10px';
+
+  row.appendChild(avatarDiv);
+  row.appendChild(bubble);
+  stream.appendChild(row);
+  lastSender = msg.sender;
 }
 
-// ── 3. SEND RECRUITER MESSAGE ──
-function sendMessage(type) {
-  event.preventDefault();
-  const formData = new FormData();
-  formData.append('message_type', type);
+/* ── SEND (RECRUITER) ── */
+function sendMessage(event, type) {
+  if (event) event.preventDefault();
+  const fd = new FormData();
+  fd.append('message_type', type);
 
   if (type === 'text') {
-    const input = document.getElementById('textInput');
-    if (!input.value.trim()) return;
-    formData.append('content', input.value);
-    input.value = '';
+    const inp = document.getElementById('textInput');
+    if (!inp.value.trim()) return;
+    fd.append('content', inp.value);
+    inp.value = ''; inp.style.height = 'auto';
   } else if (type === 'file') {
-    const fileInput = document.getElementById('fileInput');
-    if (!fileInput.files[0]) return;
-    formData.append('file', fileInput.files[0]);
-    formData.append('content', `Shared a file: ${fileInput.files[0].name}`);
-    formData.append('file_category', 'general');
-    fileInput.value = '';
+    const fi = document.getElementById('fileInput');
+    if (!fi.files[0]) return;
+    fd.append('file', fi.files[0]);
+    fd.append('content', `Shared a file: ${fi.files[0].name}`);
+    fd.append('file_category', 'general');
+    fi.value = '';
   }
-
-  fetch(`/placements/chat/${conversationId}/send/`, {
-    method: 'POST',
-    body: formData,
-    headers: { 'X-CSRFToken': getCookie('csrftoken') }
-  }).then(() => fetchMessages());
+  post(fd);
 }
 
-// ── 4. SEND STUDENT TEMPLATE / FILE ──
-function sendStudentTemplate(action, label, hasFile, fileCat) {
-  const formData = new FormData();
-  formData.append('message_type', 'template');
-  formData.append('template_action', action);
-  formData.append('content', label);
-
-  if (hasFile) {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.onchange = (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-      formData.append('file', file);
-      formData.append('file_category', fileCat);
-      formData.append('message_type', 'file'); 
-      postStudentMessage(formData);
-    };
-    input.click();
-  } else {
-    postStudentMessage(formData);
-  }
-}
-
+/* ── SEND (STUDENT) ── */
 function sendStudentText() {
-  const input = document.getElementById('studentTextInput');
-  if (!input.value.trim()) return;
-  
-  const formData = new FormData();
-  formData.append('message_type', 'text');
-  formData.append('content', input.value);
-  input.value = '';
-  postStudentMessage(formData);
+  const inp = document.getElementById('studentTextInput');
+  if (!inp || !inp.value.trim()) return;
+  const fd = new FormData();
+  fd.append('message_type', 'text');
+  fd.append('content', inp.value);
+  inp.value = ''; inp.style.height = 'auto';
+  postStudent(fd);
 }
 
-function postStudentMessage(formData) {
-  fetch(`/placements/chat/${conversationId}/send/`, {
-    method: 'POST',
-    body: formData,
-    headers: { 'X-CSRFToken': getCookie('csrftoken') }
-  })
-  .then(res => res.json())
-  .then(data => {
-    if (data.error) alert(data.error); 
-    fetchMessages();
-  });
+function sendStudentUniversalFile(el) {
+  const f = el.files[0]; 
+  if (!f) return;
+  const fd = new FormData();
+  fd.append('message_type', 'file');
+  fd.append('file', f);
+  fd.append('content', `Shared a file: ${f.name}`);
+  fd.append('file_category', 'general');
+  postStudent(fd);
+  el.value = ''; // reset
 }
 
-// ── 5. UNLOCK CHAT (RECRUITER ONLY) ──
+function sendStudentTemplate(action, label, hasFile, fileCat) {
+  if (hasFile) {
+    const inp = document.createElement('input');
+    inp.type = 'file'; inp.accept = '.pdf,.doc,.docx,.jpg,.png';
+    inp.onchange = e => {
+      const f = e.target.files[0]; if (!f) return;
+      const fd = new FormData();
+      fd.append('message_type', 'file');
+      fd.append('template_action', action);
+      fd.append('file', f);
+      fd.append('content', label);
+      fd.append('file_category', fileCat);
+      postStudent(fd);
+    };
+    inp.click();
+  } else {
+    const fd = new FormData();
+    fd.append('message_type', 'template');
+    fd.append('template_action', action);
+    fd.append('content', label);
+    postStudent(fd);
+  }
+}
+
+/* ── POST HELPERS ── */
+function post(fd) {
+  fetch(`/placements/chat/${conversationId}/send/`, { method:'POST', body:fd, headers:{'X-CSRFToken':getCookie('csrftoken')} })
+  .then(() => fetchMessages()).catch(err => console.error('[Chat] post error:', err));
+}
+
+function postStudent(fd) {
+  fetch(`/placements/chat/${conversationId}/send/`, { method:'POST', body:fd, headers:{'X-CSRFToken':getCookie('csrftoken')} })
+  .then(r=>r.json()).then(d=>{ if(d.error) alert(d.error); fetchMessages(); })
+  .catch(err => console.error('[Chat] student post error:', err));
+}
+
+/* ── UNLOCK ── */
 function unlockStudentChat() {
   const btn = document.getElementById('unlockBtn');
-  btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Unlocking...';
-  
-  fetch(`/placements/chat/${conversationId}/unlock/`, {
-    method: 'POST',
-    headers: { 'X-CSRFToken': getCookie('csrftoken') }
-  })
-  .then(res => res.json())
-  .then(data => {
-    if(data.status === 'success') {
-      btn.innerHTML = '<i class="fas fa-check me-1"></i> Unlocked!';
-      btn.style.background = 'var(--green-soft)';
-      btn.style.color = 'var(--green)';
-      btn.style.borderColor = 'rgba(34,211,160,0.3)';
-      fetchMessages(); 
+  btn.disabled = true;
+  btn.innerHTML = 'Unlocking…';
+  fetch(`/placements/chat/${conversationId}/unlock/`, { method:'POST', headers:{'X-CSRFToken':getCookie('csrftoken')} })
+  .then(r=>r.json()).then(d => {
+    if (d.status === 'success') {
+      btn.innerHTML = '✓ Unlocked!';
+      btn.style.background = 'var(--success-soft)'; btn.style.color = 'var(--success)'; btn.style.borderColor = 'rgba(16,185,129,0.3)';
+      fetchMessages();
     }
   });
 }
 
-// ── 6. STUDENT UI: LOCK STATUS & TIMER ──
+/* ── LOCK STATUS ── */
 function handleLockStatus(isUnlocked, timeRemaining) {
-  const freeInput = document.getElementById('studentFreeInput');
-  const queryNav = document.getElementById('studentQueryNav');
-  const timerDiv = document.getElementById('studentTimer');
-  const badgeDiv = document.getElementById('lockStatusBadge');
+  const free  = document.getElementById('studentFreeInput');
+  const nav   = document.getElementById('studentQueryNav');
+  const timer = document.getElementById('studentTimer');
+  const badge = document.getElementById('lockStatusBadge');
+  const icon  = document.getElementById('lockIcon');
+  const lbl   = document.getElementById('lockLabel');
+
+  if (!free || !nav) return;
 
   if (isUnlocked) {
-    freeInput.style.display = 'flex';    
-    queryNav.style.display = 'none';     
-    badgeDiv.innerHTML = '<i class="fas fa-unlock me-1"></i> Unlocked';
-    badgeDiv.style.color = 'var(--green)';
-    timerDiv.style.display = 'block';
-    
-    let seconds = timeRemaining;
-    clearInterval(window.countdownInterval);
-    window.countdownInterval = setInterval(() => {
-      if (seconds <= 0) {
-        clearInterval(window.countdownInterval);
-        freeInput.style.display = 'none';  
-        queryNav.style.display = 'block';  
-        badgeDiv.innerHTML = '<i class="fas fa-lock me-1"></i> Locked';
-        badgeDiv.style.color = 'var(--red)';
-        timerDiv.style.display = 'none';
+    free.style.display = 'block'; nav.style.display = 'none';
+    badge.className = 'lock-badge unlocked'; icon.className = 'ph ph-lock-open'; lbl.innerText = 'Unlocked'; timer.style.display = 'block';
+    let s = timeRemaining;
+    clearInterval(window._cd);
+    window._cd = setInterval(() => {
+      if (s <= 0) {
+        clearInterval(window._cd);
+        free.style.display = 'none'; nav.style.display = 'block';
+        badge.className = 'lock-badge locked'; icon.className = 'ph ph-lock'; lbl.innerText = 'Locked — use queries'; timer.style.display = 'none';
       } else {
-        const m = Math.floor(seconds / 60);
-        const s = seconds % 60;
-        timerDiv.innerText = `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
-        seconds--;
+        const m = Math.floor(s/60); timer.innerText = `${String(m).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`; s--;
       }
     }, 1000);
-
   } else {
-    freeInput.style.display = 'none';
-    queryNav.style.display = 'block';
-    badgeDiv.innerHTML = '<i class="fas fa-lock me-1"></i> Locked';
-    badgeDiv.style.color = 'var(--red)';
-    timerDiv.style.display = 'none';
+    free.style.display = 'none'; nav.style.display = 'block';
+    badge.className = 'lock-badge locked'; icon.className = 'ph ph-lock'; lbl.innerText = 'Locked — use queries'; timer.style.display = 'none';
   }
 }
 
-// ── 7. QUERY NAVIGATOR LOGIC ──
-function showQueries(category) {
-  const subMenu = document.getElementById('querySubMenu');
-  subMenu.innerHTML = '';
-  subMenu.style.display = 'flex';
-
-  const queries = queryData[category];
-  queries.forEach(q => {
-    const btn = document.createElement('button');
-    btn.className = 'btn btn-sm';
-    btn.style.cssText = 'background:var(--surface); color:var(--ink); border:1px solid var(--border2); font-size:13px; font-weight:500; padding:6px 12px;';
-    btn.innerText = q.label;
-    btn.onclick = () => {
-      sendStudentTemplate(q.action, q.label, q.hasFile || false, q.fileCat || '');
-      subMenu.style.display = 'none'; 
+/* ── QUERY NAV ── */
+function showQueries(cat, btnEl) {
+  document.querySelectorAll('.query-cat').forEach(b => b.classList.remove('active'));
+  btnEl.classList.add('active');
+  const sub = document.getElementById('querySubMenu');
+  sub.innerHTML = ''; sub.style.display = 'flex';
+  queryData[cat].forEach(q => {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'query-sub'; b.innerText = q.label;
+    b.onclick = () => {
+      sendStudentTemplate(q.action, q.label, q.hasFile||false, q.fileCat||'');
+      sub.style.display = 'none'; document.querySelectorAll('.query-cat').forEach(x => x.classList.remove('active'));
     };
-    subMenu.appendChild(btn);
+    sub.appendChild(b);
   });
 }
 
-// ── UTILITY FUNCTIONS ──
-function scrollToBottom() {
-  const stream = document.getElementById('chatStream');
-  stream.scrollTop = stream.scrollHeight;
-}
-
-function getCookie(name) {
-  let cookieValue = null;
-  if (document.cookie && document.cookie !== '') {
-    const cookies = document.cookie.split(';');
-    for (let i = 0; i < cookies.length; i++) {
-      const cookie = cookies[i].trim();
-      if (cookie.substring(0, name.length + 1) === (name + '=')) {
-        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-        break;
+/* ── LISTENERS ── */
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.chat-textarea').forEach(ta => {
+    ta.addEventListener('input', () => { ta.style.height = 'auto'; ta.style.height = Math.min(ta.scrollHeight, 120) + 'px'; });
+    ta.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        if (ta.id === 'textInput') sendMessage(e, 'text');
+        else if (ta.id === 'studentTextInput') sendStudentText();
       }
-    }
-  }
-  return cookieValue;
-}
+    });
+  });
 
-// ── SEND STUDENT FILE (FROM UNLOCKED INPUT) ──
-function sendStudentFile(inputElement) {
-  const file = inputElement.files[0];
-  if (!file) return;
-  
-  const formData = new FormData();
-  formData.append('message_type', 'file');
-  formData.append('file', file);
-  formData.append('content', `Shared a file: ${file.name}`);
-  formData.append('file_category', 'general'); 
-  
-  postStudentMessage(formData);
-  inputElement.value = ''; 
-}
+  const recruiterFileInput = document.getElementById('fileInput');
+  if (recruiterFileInput) { recruiterFileInput.addEventListener('change', function() { if (this.files[0]) sendMessage(null, 'file'); }); }
 
-// ── INIT ──
-fetchMessages(); 
-pollingInterval = setInterval(fetchMessages, 4000); 
+  const studentUniversalFileInput = document.getElementById('studentUniversalFileInput');
+  if (studentUniversalFileInput) { studentUniversalFileInput.addEventListener('change', function() { if (this.files[0]) sendStudentUniversalFile(this); }); }
+});
 
+/* ── UTILS ── */
+function scrollToBottom() { const s = document.getElementById('chatStream'); s.scrollTop = s.scrollHeight; }
+function getCookie(name) { let v = null; document.cookie.split(';').forEach(c => { c = c.trim(); if (c.startsWith(name+'=')) v = decodeURIComponent(c.slice(name.length+1)); }); return v; }
+
+fetchMessages();
+setInterval(fetchMessages, 4000);
 </script>
-
 {% endblock %}

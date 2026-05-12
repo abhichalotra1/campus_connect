@@ -1,85 +1,253 @@
-﻿{% extends 'base.html' %}
-{% block content %}
-<div class="row mt-3">
-    <div class="col-12">
-        <h3><i class="fas fa-search text-primary me-2"></i>Search Students</h3>
-        <p class="text-muted">Find students by branch, skill or CGPA</p>
-    </div>
+﻿{% extends "dashboard_base.html" %}
+{% block breadcrumb_page_name %}Search Students{% endblock %}
+
+{% block dashboard_content %}
+<style>
+  /* ── SEARCH STUDENTS STYLES ── */
+  .ss-header {
+    margin-bottom: 1.75rem;
+  }
+  .ss-title {
+    font-family: var(--font-display);
+    font-size: 26px;
+    font-weight: 800;
+    color: var(--ink);
+    margin: 0 0 4px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .ss-title i { color: var(--primary2); }
+  .ss-subtitle { color: var(--ink2); font-size: 14px; }
+
+  /* Filter Bar */
+  .filter-bar {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem;
+    margin-bottom: 1.75rem;
+  }
+  .filter-form {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr auto;
+    gap: 12px;
+    align-items: flex-end;
+  }
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-label { font-size: 12px; font-weight: 600; color: var(--ink3); text-transform: uppercase; letter-spacing: 0.5px; }
+  .form-control, .form-select {
+    background: var(--bg2) !important; border: 1px solid var(--border2) !important;
+    color: var(--ink) !important; border-radius: 10px !important;
+    font-family: var(--font-body) !important; font-size: 14px !important;
+    padding: 0.6rem 0.85rem !important; transition: all 0.18s !important;
+  }
+  .form-control:focus, .form-select:focus {
+    border-color: var(--primary) !important; box-shadow: 0 0 0 3px var(--p-soft) !important;
+    background: var(--bg3) !important;
+  }
+  .form-control::placeholder { color: var(--ink3) !important; }
+  
+  .filter-btn {
+    font-family: var(--font-display); font-weight: 700; font-size: 13.5px;
+    padding: 0.6rem 1.5rem; border-radius: 10px; border: none;
+    background: var(--primary); color: #fff; cursor: pointer;
+    transition: all 0.18s; display: inline-flex; align-items: center; gap: 6px;
+    height: 100%;
+  }
+  .filter-btn:hover { background: var(--primary2); box-shadow: 0 4px 12px var(--p-glow); }
+
+  /* Results Count */
+  .results-count {
+    font-size: 13px; color: var(--ink3); margin-bottom: 1rem;
+    font-family: var(--font-mono);
+  }
+  .results-count strong { color: var(--ink2); }
+
+  /* Student Grid */
+  .students-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+
+  /* Student Card */
+  .student-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    transition: all 0.25s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  .student-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--primary);
+    opacity: 0;
+    transition: opacity 0.25s;
+  }
+  .student-card:hover {
+    border-color: var(--border2);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+  }
+  .student-card:hover::before { opacity: 1; }
+
+  .student-top {
+    display: flex; align-items: center; gap: 12px;
+  }
+  .student-avatar {
+    width: 46px; height: 46px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+  }
+  .student-avatar-placeholder {
+    width: 46px; height: 46px;
+    border-radius: 50%;
+    background: var(--p-soft);
+    color: var(--primary2);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 18px; flex-shrink: 0;
+    font-family: var(--font-display);
+  }
+  .student-name { font-size: 15px; font-weight: 700; color: var(--ink); margin-bottom: 2px; }
+  .student-email { font-size: 12px; color: var(--ink3); word-break: break-all; }
+
+  .student-info {
+    display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--ink2);
+  }
+  .info-label { color: var(--ink3); font-weight: 600; margin-right: 4px; }
+
+  /* Skills */
+  .skill-stack { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 2px; }
+  .skill-tag {
+    padding: 3px 9px; border-radius: 6px; font-size: 11px; font-weight: 600;
+    background: var(--bg2); color: var(--ink2); border: 1px solid var(--border);
+    font-family: var(--font-mono);
+  }
+
+  /* Actions */
+  .student-actions {
+    display: flex; gap: 8px; margin-top: auto; padding-top: 4px;
+  }
+  .btn-action {
+    padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 600;
+    text-decoration: none; display: inline-flex; align-items: center; gap: 5px;
+    transition: all 0.15s; border: 1px solid var(--border2); color: var(--ink2);
+    background: var(--surface2);
+  }
+  .btn-action:hover { color: var(--primary2); border-color: var(--primary); background: var(--p-soft); }
+
+  /* Empty State */
+  .empty-state {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
+    padding: 4rem 2rem; text-align: center; grid-column: 1 / -1;
+  }
+  .empty-icon { font-size: 40px; color: var(--ink3); margin-bottom: 16px; display: block; }
+  .empty-title { font-family: var(--font-display); font-weight: 700; color: var(--ink); margin-bottom: 8px; font-size: 18px;}
+
+  /* Responsive */
+  @media(max-width: 1100px) { .students-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media(max-width: 768px) {
+    .filter-form { grid-template-columns: 1fr; }
+    .students-grid { grid-template-columns: 1fr; }
+  }
+</style>
+
+<div class="ss-header">
+  <h1 class="ss-title"><i class="fas fa-search"></i> Search Students</h1>
+  <p class="ss-subtitle">Find students by branch, skill or CGPA</p>
 </div>
-<div class="card p-3 mt-3">
-    <form method="GET" class="row g-2">
-        <div class="col-md-3">
-            <label class="form-label">Branch</label>
-            <select name="branch" class="form-select">
-                <option value="">All Branches</option>
-                <option value="CSE" {% if branch == 'CSE' %}selected{% endif %}>CSE</option>
-                <option value="ECE" {% if branch == 'ECE' %}selected{% endif %}>ECE</option>
-                <option value="ME"  {% if branch == 'ME'  %}selected{% endif %}>ME</option>
-                <option value="CE"  {% if branch == 'CE'  %}selected{% endif %}>CE</option>
-                <option value="EE"  {% if branch == 'EE'  %}selected{% endif %}>EE</option>
-                <option value="IT"  {% if branch == 'IT'  %}selected{% endif %}>IT</option>
-            </select>
-        </div>
-        <div class="col-md-3">
-            <label class="form-label">Skill</label>
-            <input type="text" name="skill" class="form-control" placeholder="e.g. Python, Django..." value="{{ skill }}">
-        </div>
-        <div class="col-md-3">
-            <label class="form-label">Min CGPA</label>
-            <input type="number" name="min_cgpa" class="form-control" step="0.1" min="0" max="10" placeholder="e.g. 7.5" value="{{ min_cgpa }}">
-        </div>
-        <div class="col-md-3 d-flex align-items-end">
-            <button type="submit" class="btn btn-primary w-100">Search</button>
-        </div>
-    </form>
+
+<!-- Filter Bar -->
+<div class="filter-bar">
+  <form method="GET" class="filter-form">
+    <div class="form-group">
+      <label class="form-label">Branch</label>
+      <select name="branch" class="form-select">
+        <option value="">All Branches</option>
+        <option value="CSE" {% if branch == 'CSE' %}selected{% endif %}>CSE</option>
+        <option value="ECE" {% if branch == 'ECE' %}selected{% endif %}>ECE</option>
+        <option value="ME" {% if branch == 'ME' %}selected{% endif %}>ME</option>
+        <option value="CE" {% if branch == 'CE' %}selected{% endif %}>CE</option>
+        <option value="EE" {% if branch == 'EE' %}selected{% endif %}>EE</option>
+        <option value="IT" {% if branch == 'IT' %}selected{% endif %}>IT</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Skill</label>
+      <input type="text" name="skill" class="form-control" placeholder="e.g. Python, Django..." value="{{ skill }}">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Min CGPA</label>
+      <input type="number" name="min_cgpa" class="form-control" step="0.1" min="0" max="10" placeholder="e.g. 7.5" value="{{ min_cgpa }}">
+    </div>
+    <button type="submit" class="filter-btn"><i class="fas fa-search"></i> Search</button>
+  </form>
 </div>
-<div class="row mt-4">
-    <div class="col-12">
-        <p class="text-muted">Found <strong>{{ students|length }}</strong> students</p>
-    </div>
-    {% for profile in students %}
-    <div class="col-md-4 mb-3">
-        <div class="card p-3 h-100">
-            <div class="d-flex align-items-center gap-3 mb-3">
-                {% if profile.profile_pic %}
-                    <img src="{{ profile.profile_pic.url }}" class="rounded-circle" style="width:46px;height:46px;object-fit:cover;">
-                {% else %}
-                    <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center" style="width:46px;height:46px;">
-                        <span class="text-white fw-bold">{{ profile.user.first_name|first|upper }}</span>
-                    </div>
-                {% endif %}
-                <div>
-                    <h6 class="mb-0">{{ profile.user.get_full_name }}</h6>
-                    <small class="text-muted">{{ profile.user.email }}</small>
-                </div>
-            </div>
-            <p class="mb-1"><strong>Branch:</strong> {{ profile.branch|default:'-' }}</p>
-            <p class="mb-1"><strong>CGPA:</strong> {{ profile.cgpa|default:'-' }}</p>
-            <p class="mb-1"><strong>Passing Year:</strong> {{ profile.passing_year|default:'-' }}</p>
-            <div class="mb-2">
-                {% for skill in profile.skills.split %}
-                    <span class="badge bg-secondary me-1">{{ skill }}</span>
-                {% endfor %}
-            </div>
-            <div class="mt-auto d-flex gap-2">
-                {% if profile.resume %}
-                    <a href="{{ profile.resume.url }}" target="_blank" class="btn btn-outline-primary btn-sm">
-                        <i class="fas fa-file-pdf me-1"></i>Resume
-                    </a>
-                {% endif %}
-                {% if profile.linkedin %}
-                    <a href="{{ profile.linkedin }}" target="_blank" class="btn btn-outline-primary btn-sm">
-                        <i class="fab fa-linkedin me-1"></i>LinkedIn
-                    </a>
-                {% endif %}
-            </div>
+
+<div class="results-count">Found <strong>{{ students|length }}</strong> students</div>
+
+<div class="students-grid">
+  {% for profile in students %}
+  <div class="student-card">
+    <div class="student-top">
+      {% if profile.profile_pic %}
+        <img src="{{ profile.profile_pic.url }}" alt="{{ profile.user.get_full_name }}" class="student-avatar">
+      {% else %}
+        <div class="student-avatar-placeholder">
+          {{ profile.user.first_name|first|upper }}
         </div>
+      {% endif %}
+      <div>
+        <div class="student-name">{{ profile.user.get_full_name }}</div>
+        <div class="student-email">{{ profile.user.email }}</div>
+      </div>
     </div>
-    {% empty %}
-    <div class="col-12 text-center mt-4">
-        <i class="fas fa-user-slash fa-3x text-muted mb-3"></i>
-        <h5 class="text-muted">No students found!</h5>
+    
+    <div class="student-info">
+      <div><span class="info-label">Branch:</span> {{ profile.branch|default:'-' }}</div>
+      <div><span class="info-label">CGPA:</span> {{ profile.cgpa|default:'-' }}</div>
+      <div><span class="info-label">Year:</span> {{ profile.passing_year|default:'-' }}</div>
     </div>
-    {% endfor %}
+
+    {% if profile.skills %}
+    <div class="skill-stack">
+      {% for skill in profile.skills.split %}
+        <span class="skill-tag">{{ skill }}</span>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="student-actions">
+      {% if profile.resume %}
+        <a href="{{ profile.resume.url }}" target="_blank" class="btn-action">
+          <i class="fas fa-file-pdf"></i> Resume
+        </a>
+      {% endif %}
+      {% if profile.linkedin %}
+        <a href="{{ profile.linkedin }}" target="_blank" class="btn-action">
+          <i class="fab fa-linkedin"></i> LinkedIn
+        </a>
+      {% endif %}
+    </div>
+  </div>
+  {% empty %}
+  <div class="empty-state">
+    <i class="fas fa-user-slash empty-icon"></i>
+    <h3 class="empty-title">No students found!</h3>
+  </div>
+  {% endfor %}
 </div>
+
 {% endblock %}

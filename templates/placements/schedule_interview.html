@@ -1,21 +1,128 @@
-{% extends 'base.html' %}
-{% block content %}
-<div class="row justify-content-center mt-3">
-    <div class="col-md-7">
-        <div class="card p-4">
-            <h3 class="mb-4"><i class="fas fa-calendar-plus text-primary me-2"></i>Schedule Interview</h3>
-            <div class="alert alert-info mb-4">
-                <strong>Student:</strong> {{ application.student.get_full_name }}<br>
-                <strong>Company:</strong> {{ application.drive.company }}<br>
-                <strong>Role:</strong> {{ application.drive.role }}
-            </div>
-            <form method="POST">{% csrf_token %}
-                <div class="mb-3"><label class="form-label">Interview Date & Time</label><input type="datetime-local" name="scheduled_at" class="form-control" required></div>
-                <div class="mb-3"><label class="form-label">Location / Room</label><input type="text" name="location" class="form-control" placeholder="e.g. Room 101 or Online"></div>
-                <div class="mb-3"><label class="form-label">Meeting Link (optional)</label><input type="url" name="meeting_link" class="form-control" placeholder="https://meet.google.com/..."></div>
-                <div class="mb-3"><label class="form-label">Notes for Student</label><textarea name="notes" class="form-control" rows="3" placeholder="Any instructions for the student..."></textarea></div>
-<button type="submit" class="btn btn-primary w-100" onclick="submitWithLoading(this, 'Scheduling...')"><i class="fas fa-calendar-check me-2"></i>Schedule Interview</button>            </form>
-        </div>
+{% extends "dashboard_base.html" %}
+{% block breadcrumb_page_name %}Schedule Interview{% endblock %}
+
+{% block dashboard_content %}
+<style>
+  /* ── SCHEDULE INTERVIEW STYLES ── */
+  .si-wrapper {
+    display: flex;
+    justify-content: center;
+    padding-top: 1rem;
+    padding-bottom: 2rem;
+  }
+  .si-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 2rem;
+    width: 100%;
+    max-width: 640px;
+    transition: border-color 0.2s;
+  }
+  .si-card:hover { border-color: var(--border2); }
+
+  .si-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .si-icon {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    background: var(--green-soft);
+    color: var(--green);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; flex-shrink: 0;
+  }
+  .si-title {
+    font-family: var(--font-display);
+    font-weight: 800; font-size: 20px;
+    color: var(--ink); margin: 0;
+  }
+
+  /* Context Card */
+  .context-card {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 14px 16px; border-radius: 12px;
+    background: var(--p-soft); border: 1px solid rgba(79,70,229,0.2);
+    margin-bottom: 1.5rem;
+  }
+  .context-icon { color: var(--primary2); font-size: 16px; margin-top: 2px; flex-shrink: 0; }
+  .context-info { font-size: 13px; color: var(--ink2); line-height: 1.7; }
+  .context-info strong { color: var(--ink); font-weight: 600; }
+
+  /* Forms */
+  .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 18px; }
+  .form-label { font-size: 13px; font-weight: 600; color: var(--ink2); }
+  .form-control {
+    background: var(--bg2) !important; border: 1px solid var(--border2) !important;
+    color: var(--ink) !important; border-radius: 10px !important;
+    font-family: var(--font-body) !important; font-size: 14px !important;
+    padding: 0.65rem 0.85rem !important; transition: all 0.18s !important;
+  }
+  .form-control:focus {
+    border-color: var(--primary) !important; box-shadow: 0 0 0 3px var(--p-soft) !important;
+    background: var(--bg3) !important;
+  }
+  .form-control::placeholder { color: var(--ink3) !important; }
+  textarea.form-control { resize: vertical; min-height: 90px; }
+
+  /* Submit */
+  .btn-schedule {
+    font-family: var(--font-display); font-weight: 800; font-size: 15px; color: #fff;
+    background: var(--primary); border: none; padding: 12px; border-radius: 10px;
+    cursor: pointer; width: 100%; transition: all 0.18s; margin-top: 4px;
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .btn-schedule:hover { background: var(--primary2); box-shadow: 0 6px 20px var(--p-glow); }
+</style>
+
+<div class="si-wrapper">
+  <div class="si-card">
+    <div class="si-header">
+      <div class="si-icon"><i class="fas fa-calendar-plus"></i></div>
+      <h3 class="si-title">Schedule Interview</h3>
     </div>
+
+    <div class="context-card">
+      <i class="fas fa-info-circle context-icon"></i>
+      <div class="context-info">
+        <strong>Student:</strong> {{ application.student.get_full_name }}<br>
+        <strong>Company:</strong> {{ application.drive.company }}<br>
+        <strong>Role:</strong> {{ application.drive.role }}
+      </div>
+    </div>
+
+    <form method="POST">
+      {% csrf_token %}
+      
+      <div class="form-group">
+        <label class="form-label">Interview Date & Time</label>
+        <input type="datetime-local" name="scheduled_at" class="form-control" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Location / Room</label>
+        <input type="text" name="location" class="form-control" placeholder="e.g., Room 101 or Online">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Meeting Link <span style="color: var(--ink3); font-weight: 400;">(optional)</span></label>
+        <input type="url" name="meeting_link" class="form-control" placeholder="https://meet.google.com/...">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Notes for Student</label>
+        <textarea name="notes" class="form-control" placeholder="Any instructions for the student..."></textarea>
+      </div>
+
+      <button type="submit" class="btn-schedule" onclick="submitWithLoading(this, 'Scheduling...')">
+        <i class="fas fa-calendar-check"></i> Schedule Interview
+      </button>
+    </form>
+  </div>
 </div>
 {% endblock %}

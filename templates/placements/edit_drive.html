@@ -1,93 +1,231 @@
-{% extends 'base.html' %}
-{% block content %}
-<div class="row mt-4 justify-content-center">
-    <div class="col-md-8">
-        <h3 style="font-family: var(--font-display); font-weight: 800; margin-bottom: 20px;">
-            <i class="fas fa-pen me-2" style="color: var(--yellow);"></i>Edit Drive: {{ drive.role }}
-        </h3>
-        <div class="card p-4" style="border-radius: var(--radius-lg);">
-            <form method="POST" enctype="multipart/form-data"> <!-- Added enctype for logo upload -->
-                {% csrf_token %}
-                
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">Company Name</label>
-                        <input type="text" name="company" class="form-control" value="{{ drive.company }}" required>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">Company Logo</label>
-                        {% if drive.company_logo %}
-                            <small class="d-block mb-1" style="color: var(--ink3);">Current: <a href="{{ drive.company_logo.url }}" target="_blank" style="color: var(--primary2);">View Logo</a> (Upload new to replace)</small>
-                        {% endif %}
-                        <input type="file" name="company_logo" class="form-control" accept="image/*">
-                    </div>
-                </div>
+{% extends "dashboard_base.html" %}
+{% block breadcrumb_page_name %}Edit Drive{% endblock %}
 
-                <div class="mb-3">
-                    <label class="form-label">Role</label>
-                    <input type="text" name="role" class="form-control" value="{{ drive.role }}" required>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Description</label>
-                    <textarea name="description" class="form-control" rows="4" required>{{ drive.description }}</textarea>
-                </div>
-                <div class="row">
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label">Location</label>
-                        <input type="text" name="location" class="form-control" value="{{ drive.location }}" required>
-                    </div>
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label">Salary Amount</label>
-                        <input type="number" step="0.1" name="salary_amount" class="form-control" value="{{ drive.salary_amount }}" required>
-                    </div>
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label">Salary Type</label>
-                        <select name="salary_type" class="form-select" required>
-                            <option value="lpa" {% if drive.salary_type == 'lpa' %}selected{% endif %}>LPA</option>
-                            <option value="ctc" {% if drive.salary_type == 'ctc' %}selected{% endif %}>CTC</option>
-                            <option value="stipend" {% if drive.salary_type == 'stipend' %}selected{% endif %}>Stipend</option>
-                            <option value="not_disclosed" {% if drive.salary_type == 'not_disclosed' %}selected{% endif %}>Not Disclosed</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label">Job Type</label>
-                        <select name="job_type" class="form-select">
-                            <option value="full_time" {% if drive.job_type == 'full_time' %}selected{% endif %}>Full Time</option>
-                            <option value="internship" {% if drive.job_type == 'internship' %}selected{% endif %}>Internship</option>
-                            <option value="part_time" {% if drive.job_type == 'part_time' %}selected{% endif %}>Part Time</option>
-                        </select>
-                    </div>
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label">Eligible Branch</label>
-                        <select name="eligible_branch" class="form-select">
-                            <option value="ALL" {% if drive.eligible_branch == 'ALL' %}selected{% endif %}>All Branches</option>
-                            <option value="CSE" {% if drive.eligible_branch == 'CSE' %}selected{% endif %}>CSE</option>
-                            <option value="ECE" {% if drive.eligible_branch == 'ECE' %}selected{% endif %}>ECE</option>
-                            <option value="IT" {% if drive.eligible_branch == 'IT' %}selected{% endif %}>IT</option>
-                            <option value="ME" {% if drive.eligible_branch == 'ME' %}selected{% endif %}>ME</option>
-                            <option value="CE" {% if drive.eligible_branch == 'CE' %}selected{% endif %}>CE</option>
-                            <option value="EE" {% if drive.eligible_branch == 'EE' %}selected{% endif %}>EE</option>
-                        </select>
-                    </div>
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label">Min CGPA</label>
-                        <input type="number" step="0.1" name="min_cgpa" class="form-control" value="{{ drive.min_cgpa }}" required>
-                    </div>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Skills Required</label>
-                    <input type="text" name="skills_required" class="form-control" value="{{ drive.skills_required }}" placeholder="e.g., Python, SQL, React">
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Deadline</label>
-                    <input type="date" name="deadline" class="form-control" value="{{ drive.deadline|date:'Y-m-d' }}" required>
-                </div>
+{% block dashboard_content %}
+<style>
+  /* ── EDIT DRIVE FORM STYLES ── */
+  .ed-wrapper {
+    display: flex;
+    justify-content: center;
+    padding-top: 1rem;
+    padding-bottom: 2rem;
+  }
+  .ed-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 2rem;
+    width: 100%;
+    max-width: 860px;
+    transition: border-color 0.2s;
+  }
+  .ed-card:hover { border-color: var(--border2); }
 
-<button type="submit" class="btn btn-primary w-100" style="font-weight: 700; padding: 12px;" onclick="submitWithLoading(this, 'Saving...')">Save Changes</button>                <a href="{% url 'recruiter_dashboard' %}" class="btn btn-ghost w-100 mt-2" style="text-decoration: none; padding: 12px;">Cancel</a>
-            </form>
-        </div>
+  .ed-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 1.75rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .ed-icon {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    background: var(--yellow-soft);
+    color: var(--yellow);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; flex-shrink: 0;
+  }
+  .ed-title {
+    font-family: var(--font-display);
+    font-weight: 800; font-size: 20px;
+    color: var(--ink); margin: 0;
+  }
+
+  /* Section Labels */
+  .section-label {
+    font-size: 11px; color: var(--ink3); font-weight: 700;
+    text-transform: uppercase; letter-spacing: 1px;
+    margin-bottom: 16px; margin-top: 24px; font-family: var(--font-mono);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .section-label:first-of-type { margin-top: 0; }
+  .section-label::after {
+    content: ''; flex: 1; height: 1px; background: var(--border);
+  }
+
+  /* Forms */
+  .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 18px; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+  .form-label { font-size: 13px; font-weight: 600; color: var(--ink2); }
+  .required { color: var(--red); font-size: 12px; }
+  
+  .form-control, .form-select {
+    background: var(--bg2) !important; border: 1px solid var(--border2) !important;
+    color: var(--ink) !important; border-radius: 10px !important;
+    font-family: var(--font-body) !important; font-size: 14px !important;
+    padding: 0.65rem 0.85rem !important; transition: all 0.18s !important;
+  }
+  .form-control:focus, .form-select:focus {
+    border-color: var(--primary) !important; box-shadow: 0 0 0 3px var(--p-soft) !important;
+    background: var(--bg3) !important;
+  }
+  .form-control::placeholder { color: var(--ink3) !important; }
+  textarea.form-control { resize: vertical; min-height: 100px; }
+  
+  /* File Input Custom Style */
+  input[type="file"].form-control {
+    padding: 0.5rem 0.85rem !important; cursor: pointer;
+  }
+  input[type="file"].form-control::file-selector-button {
+    background: var(--primary); color: #fff; border: none;
+    padding: 5px 12px; border-radius: 6px; font-family: var(--font-display);
+    font-weight: 700; font-size: 12px; margin-right: 12px; cursor: pointer;
+    transition: background 0.15s;
+  }
+  input[type="file"].form-control::file-selector-button:hover { background: var(--primary2); }
+
+  .file-hint {
+    font-size: 12px; color: var(--ink3); margin-top: 4px;
+  }
+  .file-hint a { color: var(--primary2); text-decoration: none; font-weight: 600; }
+  .file-hint a:hover { text-decoration: underline; }
+
+  /* Action Buttons */
+  .action-bar {
+    display: flex; flex-direction: column; gap: 10px; margin-top: 24px;
+    padding-top: 1.25rem; border-top: 1px solid var(--border);
+  }
+  .btn-save {
+    font-family: var(--font-display); font-weight: 800; font-size: 15px; color: #fff;
+    background: var(--primary); border: none; padding: 12px; border-radius: 10px;
+    cursor: pointer; width: 100%; transition: all 0.18s;
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .btn-save:hover { background: var(--primary2); box-shadow: 0 6px 20px var(--p-glow); }
+
+  .btn-cancel {
+    font-family: var(--font-body); font-weight: 600; font-size: 14px;
+    color: var(--ink2); background: transparent; border: 1px solid var(--border2);
+    padding: 12px; border-radius: 10px; cursor: pointer;
+    text-decoration: none; transition: all 0.18s; text-align: center;
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .btn-cancel:hover { background: var(--surface2); color: var(--ink); border-color: var(--ink3); }
+
+  @media(max-width: 768px) {
+    .form-row, .form-row-3 { grid-template-columns: 1fr; }
+  }
+</style>
+
+<div class="ed-wrapper">
+  <div class="ed-card">
+    <div class="ed-header">
+      <div class="ed-icon"><i class="fas fa-pen"></i></div>
+      <h3 class="ed-title">Edit Drive: {{ drive.role }}</h3>
     </div>
+
+    <form method="POST" enctype="multipart/form-data">
+      {% csrf_token %}
+
+      <!-- Company Info -->
+      <div class="section-label">Company Information</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Company Name <span class="required">*</span></label>
+          <input type="text" name="company" class="form-control" value="{{ drive.company }}" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Company Logo</label>
+          <input type="file" name="company_logo" class="form-control" accept="image/*">
+          {% if drive.company_logo %}
+            <div class="file-hint">Current: <a href="{{ drive.company_logo.url }}" target="_blank">View Logo</a> (Upload new to replace)</div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Role Info -->
+      <div class="section-label">Role Details</div>
+      <div class="form-group">
+        <label class="form-label">Role / Job Title <span class="required">*</span></label>
+        <input type="text" name="role" class="form-control" value="{{ drive.role }}" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description <span class="required">*</span></label>
+        <textarea name="description" class="form-control" rows="4" required>{{ drive.description }}</textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Skills Required</label>
+        <input type="text" name="skills_required" class="form-control" value="{{ drive.skills_required }}" placeholder="e.g., Python, SQL, React (comma separated)">
+      </div>
+
+      <!-- Compensation & Location -->
+      <div class="section-label">Compensation & Location</div>
+      <div class="form-row-3">
+        <div class="form-group">
+          <label class="form-label">Location <span class="required">*</span></label>
+          <input type="text" name="location" class="form-control" value="{{ drive.location }}" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Salary Amount <span class="required">*</span></label>
+          <input type="number" step="0.1" name="salary_amount" class="form-control" value="{{ drive.salary_amount }}" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Salary Type</label>
+          <select name="salary_type" class="form-select" required>
+            <option value="lpa" {% if drive.salary_type == 'lpa' %}selected{% endif %}>LPA</option>
+            <option value="ctc" {% if drive.salary_type == 'ctc' %}selected{% endif %}>CTC</option>
+            <option value="stipend" {% if drive.salary_type == 'stipend' %}selected{% endif %}>Stipend</option>
+            <option value="not_disclosed" {% if drive.salary_type == 'not_disclosed' %}selected{% endif %}>Not Disclosed</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Eligibility -->
+      <div class="section-label">Eligibility & Timeline</div>
+      <div class="form-row-3">
+        <div class="form-group">
+          <label class="form-label">Job Type</label>
+          <select name="job_type" class="form-select">
+            <option value="full_time" {% if drive.job_type == 'full_time' %}selected{% endif %}>Full Time</option>
+            <option value="internship" {% if drive.job_type == 'internship' %}selected{% endif %}>Internship</option>
+            <option value="part_time" {% if drive.job_type == 'part_time' %}selected{% endif %}>Part Time</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Eligible Branch</label>
+          <select name="eligible_branch" class="form-select">
+            <option value="ALL" {% if drive.eligible_branch == 'ALL' %}selected{% endif %}>All Branches</option>
+            <option value="CSE" {% if drive.eligible_branch == 'CSE' %}selected{% endif %}>CSE</option>
+            <option value="ECE" {% if drive.eligible_branch == 'ECE' %}selected{% endif %}>ECE</option>
+            <option value="IT" {% if drive.eligible_branch == 'IT' %}selected{% endif %}>IT</option>
+            <option value="ME" {% if drive.eligible_branch == 'ME' %}selected{% endif %}>ME</option>
+            <option value="CE" {% if drive.eligible_branch == 'CE' %}selected{% endif %}>CE</option>
+            <option value="EE" {% if drive.eligible_branch == 'EE' %}selected{% endif %}>EE</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Min CGPA <span class="required">*</span></label>
+          <input type="number" step="0.1" name="min_cgpa" class="form-control" value="{{ drive.min_cgpa }}" required>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Application Deadline <span class="required">*</span></label>
+        <input type="date" name="deadline" class="form-control" value="{{ drive.deadline|date:'Y-m-d' }}" required>
+      </div>
+
+      <div class="action-bar">
+        <button type="submit" class="btn-save" onclick="submitWithLoading(this, 'Saving...')">
+          <i class="fas fa-floppy-disk"></i> Save Changes
+        </button>
+        <a href="{% url 'recruiter_dashboard' %}" class="btn-cancel">
+          Cancel
+        </a>
+      </div>
+    </form>
+  </div>
 </div>
 {% endblock %}

@@ -1,299 +1,170 @@
-<!DOCTYPE html>
-<html lang="en" data-theme="dark">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Social Sign In — Campus Connect</title>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+{% extends 'base.html' %}
+
+{% block content %}
 <style>
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  /* ── AUTH PAGES LAYOUT ── */
+  .auth-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 3rem 1rem;
+    min-height: 75vh;
+  }
+  .auth-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 2.5rem;
+    width: 100%;
+    max-width: 440px;
+    position: relative;
+    overflow: hidden;
+    animation: fadeUp 0.5s ease both;
+  }
+  /* Top accent line */
+  .auth-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, var(--primary), transparent);
+  }
 
-:root {
-  --font-display: 'Bricolage Grotesque', sans-serif;
-  --font-body:    'Plus Jakarta Sans', sans-serif;
-  --font-mono:    'DM Mono', monospace;
-  --bg:#0d0f14; --bg2:#12141c; --bg3:#181b26;
-  --surface:#1a1d2a; --surface2:#1e2230;
-  --border:rgba(255,255,255,0.07); --border2:rgba(255,255,255,0.13);
-  --ink:#eef0ff; --ink2:#8b92b8; --ink3:#454a6b;
-  --primary:#4f46e5; --primary2:#6c63ff;
-  --p-glow:rgba(79,70,229,0.28); --p-soft:rgba(79,70,229,0.10);
-  --green:#22d3a0; --green-soft:rgba(34,211,160,0.10);
-  --red:#f43f5e; --red-soft:rgba(244,63,94,0.10);
-  --radius-lg:18px;
-}
-[data-theme="light"] {
-  --bg:#f8fafc; --bg2:#f1f4fb; --bg3:#e8ecf5;
-  --surface:#fff; --surface2:#f4f6fc;
-  --border:rgba(0,0,0,0.07); --border2:rgba(0,0,0,0.12);
-  --ink:#0d0f14; --ink2:#4a5080; --ink3:#9298b8;
-}
+  .auth-header { text-align: center; margin-bottom: 2rem; }
+  .auth-eyebrow {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 5px 13px 5px 9px; border-radius: 50px;
+    border: 1px solid rgba(79,70,229,0.3); background: var(--p-soft);
+    font-size: 11px; font-weight: 700; color: var(--primary2);
+    font-family: var(--font-mono); letter-spacing: 0.5px; text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+  .live-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--green); box-shadow: 0 0 0 3px var(--green-soft);
+    animation: blink 2.2s ease infinite;
+  }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
 
-html { scroll-behavior: smooth; }
-body {
-  font-family: var(--font-body);
-  background: var(--bg); color: var(--ink);
-  min-height: 100vh; display: flex; flex-direction: column;
-  overflow-x: hidden; transition: background 0.3s, color 0.3s;
-}
+  .auth-title {
+    font-family: var(--font-display); font-weight: 800; font-size: 24px;
+    color: var(--ink); margin: 0 0 6px; letter-spacing: -0.5px;
+  }
+  .auth-subtitle { color: var(--ink2); font-size: 14px; line-height: 1.6; }
 
-.bg-glow {
-  position: fixed; top: 0; left: 50%; transform: translateX(-50%);
-  width: 900px; height: 550px; pointer-events: none; z-index: 0;
-  background: radial-gradient(ellipse at 50% 0%, rgba(79,70,229,0.14) 0%, transparent 65%);
-}
-.bg-grid {
-  position: fixed; inset: 0; pointer-events: none; z-index: 0;
-  background-image:
-    linear-gradient(var(--border) 1px, transparent 1px),
-    linear-gradient(90deg, var(--border) 1px, transparent 1px);
-  background-size: 60px 60px;
-  mask-image: radial-gradient(ellipse 80% 55% at 50% 0%, black 30%, transparent 100%);
-}
+  /* Provider Badge */
+  .provider-badge {
+    display: flex; align-items: center; gap: 14px;
+    padding: 16px 18px; border-radius: 12px;
+    background: var(--bg2); border: 1px solid var(--border);
+    margin-bottom: 22px;
+  }
+  .provider-icon {
+    width: 44px; height: 44px; border-radius: 11px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 21px; flex-shrink: 0;
+    background: var(--surface2); border: 1px solid var(--border2);
+  }
+  .provider-icon.google { color: #ea4335; }
+  .provider-icon.github { color: var(--ink); }
+  .provider-icon.facebook { color: #1877f2; }
+  .provider-icon.linkedin { color: #0a66c2; }
+  .provider-name { font-size: 14px; font-weight: 700; color: var(--ink); }
+  .provider-email { font-size: 12px; color: var(--ink2); margin-top: 2px; font-family: var(--font-mono); word-break: break-all; }
 
-nav {
-  position: relative; z-index: 10;
-  padding: 0 5%; height: 60px;
-  display: flex; align-items: center; justify-content: space-between;
-  border-bottom: 1px solid var(--border);
-  background: rgba(13,15,20,0.7); backdrop-filter: blur(20px);
-}
-[data-theme="light"] nav { background: rgba(248,250,252,0.8); }
+  /* Info Banner */
+  .info-banner {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 12px 14px; border-radius: 10px;
+    background: var(--p-soft); border: 1px solid rgba(79,70,229,0.22);
+    margin-bottom: 26px; font-size: 13px; color: var(--ink2); line-height: 1.55;
+  }
+  .info-banner i { color: var(--primary2); font-size: 14px; margin-top: 1px; flex-shrink: 0; }
+  .info-banner strong { color: var(--ink); }
 
-.nav-logo {
-  font-family: var(--font-display); font-weight: 800; font-size: 17px;
-  color: var(--ink); text-decoration: none;
-  display: flex; align-items: center; gap: 10px; letter-spacing: -0.3px;
-}
-.logo-icon {
-  width: 31px; height: 31px; border-radius: 9px; background: var(--primary);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 13px; color: #fff; box-shadow: 0 0 0 3px var(--p-soft);
-}
-.nav-actions { display: flex; align-items: center; gap: 10px; }
-.nav-back {
-  font-size: 13px; color: var(--ink2); text-decoration: none;
-  display: flex; align-items: center; gap: 7px; transition: color 0.18s;
-}
-.nav-back:hover { color: var(--ink); }
-.theme-toggle {
-  width: 34px; height: 34px; border-radius: 9px;
-  background: var(--surface2); border: 1px solid var(--border2);
-  color: var(--ink2); cursor: pointer; font-size: 13px;
-  display: flex; align-items: center; justify-content: center; transition: all 0.18s;
-}
-.theme-toggle:hover { color: var(--primary); border-color: var(--primary); }
+  /* Submit */
+  .btn-auth {
+    font-family: var(--font-display); font-weight: 800; font-size: 15px; color: #fff;
+    background: var(--primary); border: none; padding: 12px; border-radius: 10px;
+    cursor: pointer; width: 100%; transition: all 0.18s;
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .btn-auth:hover { background: var(--primary2); box-shadow: 0 6px 20px var(--p-glow); }
 
-main {
-  flex: 1; position: relative; z-index: 1;
-  display: flex; align-items: center; justify-content: center;
-  padding: 48px 20px;
-}
+  /* Cancel */
+  .btn-cancel {
+    width: 100%; padding: 12px; border-radius: 10px; margin-top: 10px;
+    border: 1px solid var(--border2); background: transparent; color: var(--ink2);
+    font-family: var(--font-body); font-size: 14px; font-weight: 600;
+    cursor: pointer; transition: all 0.18s; text-decoration: none;
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .btn-cancel:hover { background: var(--surface2); color: var(--ink); }
 
-.auth-card {
-  width: 100%; max-width: 420px;
-  animation: fadeUp 0.55s cubic-bezier(0.22,1,0.36,1) both;
-}
+  /* Footer Links */
+  .auth-footer {
+    text-align: center; margin-top: 20px; font-size: 13px; color: var(--ink3);
+  }
+  .auth-link { color: var(--primary2); font-weight: 700; text-decoration: none; transition: color 0.15s; }
+  .auth-link:hover { color: var(--ink); }
 
-.auth-header { text-align: center; margin-bottom: 28px; }
-.auth-eyebrow {
-  display: inline-flex; align-items: center; gap: 7px;
-  padding: 5px 13px 5px 9px; border-radius: 50px;
-  border: 1px solid rgba(79,70,229,0.3); background: var(--p-soft);
-  font-size: 11px; font-weight: 700; color: var(--primary2);
-  font-family: var(--font-mono); letter-spacing: 0.5px; text-transform: uppercase;
-  margin-bottom: 16px;
-}
-.live-dot {
-  width: 6px; height: 6px; border-radius: 50%;
-  background: var(--green); box-shadow: 0 0 0 3px var(--green-soft);
-  animation: blink 2.2s ease infinite;
-}
-@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
-
-.auth-title {
-  font-family: var(--font-display);
-  font-size: 30px; font-weight: 800; letter-spacing: -0.8px; margin-bottom: 8px;
-}
-.auth-sub { font-size: 14px; color: var(--ink2); line-height: 1.65; }
-
-.form-box {
-  background: var(--surface); border: 1px solid var(--border2);
-  border-radius: var(--radius-lg); padding: 30px 32px;
-  position: relative; overflow: hidden;
-}
-.form-box::before {
-  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
-  background: linear-gradient(90deg, transparent, var(--primary), transparent);
-  opacity: 0.5;
-}
-
-/* provider badge */
-.provider-badge {
-  display: flex; align-items: center; gap: 14px;
-  padding: 16px 18px; border-radius: 12px;
-  background: var(--bg2); border: 1px solid var(--border2);
-  margin-bottom: 22px;
-}
-.provider-icon {
-  width: 44px; height: 44px; border-radius: 11px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 21px; flex-shrink: 0;
-  background: var(--surface2); border: 1px solid var(--border2);
-}
-.provider-icon.google  { color: #ea4335; }
-.provider-icon.github  { color: var(--ink); }
-.provider-icon.facebook{ color: #1877f2; }
-.provider-icon.linkedin{ color: #0a66c2; }
-.provider-name { font-size: 14px; font-weight: 700; color: var(--ink); }
-.provider-email{ font-size: 12px; color: var(--ink2); margin-top: 2px; font-family: var(--font-mono); }
-
-/* shield info */
-.info-banner {
-  display: flex; align-items: flex-start; gap: 10px;
-  padding: 12px 14px; border-radius: 10px;
-  background: var(--p-soft); border: 1px solid rgba(79,70,229,0.22);
-  margin-bottom: 26px; font-size: 13px; color: var(--ink2); line-height: 1.55;
-}
-.info-banner i { color: var(--primary2); font-size: 14px; margin-top: 1px; flex-shrink: 0; }
-.info-banner strong { color: var(--ink); }
-
-/* buttons */
-.btn-continue {
-  width: 100%; padding: 13px; border-radius: 10px; border: none;
-  background: var(--primary); color: #fff;
-  font-family: var(--font-display); font-size: 15px; font-weight: 700;
-  cursor: pointer; position: relative; overflow: hidden; transition: all 0.2s;
-  display: flex; align-items: center; justify-content: center; gap: 9px;
-}
-.btn-continue::before {
-  content: ''; position: absolute; inset: 0;
-  background: linear-gradient(135deg, rgba(255,255,255,0.14) 0%, transparent 55%);
-}
-.btn-continue:hover { background: var(--primary2); transform: translateY(-1px); box-shadow: 0 8px 24px var(--p-glow); }
-.btn-continue:active { transform: translateY(0); }
-
-.btn-cancel {
-  width: 100%; padding: 12px; border-radius: 10px; margin-top: 10px;
-  border: 1px solid var(--border2); background: transparent; color: var(--ink2);
-  font-family: var(--font-body); font-size: 14px; font-weight: 600;
-  cursor: pointer; transition: all 0.18s; text-decoration: none;
-  display: flex; align-items: center; justify-content: center; gap: 8px;
-}
-.btn-cancel:hover { background: var(--surface2); color: var(--ink); }
-
-.auth-footer {
-  text-align: center; margin-top: 20px;
-  font-size: 13.5px; color: var(--ink2);
-}
-.auth-footer a { color: var(--primary2); text-decoration: none; font-weight: 600; }
-.auth-footer a:hover { color: var(--ink); }
-
-@keyframes fadeUp {
-  from { opacity:0; transform:translateY(24px); }
-  to   { opacity:1; transform:translateY(0); }
-}
-@media(max-width:480px) { .form-box { padding: 24px 20px; } }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: translateY(0); } }
 </style>
-</head>
-<body>
-<div class="bg-glow"></div>
-<div class="bg-grid"></div>
 
-<nav>
-  <a class="nav-logo" href="/">
-    <div class="logo-icon"><i class="fa-solid fa-graduation-cap"></i></div>
-    Campus Connect
-  </a>
-  <div class="nav-actions">
-    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">
-      <i class="fa-solid fa-moon" id="themeIcon"></i>
-    </button>
-    <a class="nav-back" href="/accounts/login/">
-      <i class="fa-solid fa-arrow-left" style="font-size:11px;"></i> Back to login
-    </a>
-  </div>
-</nav>
-
-<main>
+<div class="auth-wrapper">
   <div class="auth-card">
     <div class="auth-header">
-      <div class="auth-eyebrow"><span class="live-dot"></span>Social Login</div>
-      <h1 class="auth-title">Sign in via<br>{{ account.get_provider.name }}</h1>
-      <p class="auth-sub">You're one tap away from your Campus Connect account.</p>
+      <div class="auth-eyebrow"><span class="live-dot"></span> Social Login</div>
+      <h3 class="auth-title">Sign in via {{ account.get_provider.name }}</h3>
+      <p class="auth-subtitle">You're one tap away from your Campus Connect account.</p>
     </div>
 
-    <div class="form-box">
-
-      <!-- Provider badge -->
-      <div class="provider-badge">
-        <div class="provider-icon {% if 'google' in account.get_provider.id %}google{% elif 'github' in account.get_provider.id %}github{% elif 'facebook' in account.get_provider.id %}facebook{% else %}linkedin{% endif %}">
-          {% if 'google' in account.get_provider.id %}
-            <i class="fa-brands fa-google"></i>
-          {% elif 'github' in account.get_provider.id %}
-            <i class="fa-brands fa-github"></i>
-          {% elif 'facebook' in account.get_provider.id %}
-            <i class="fa-brands fa-facebook"></i>
-          {% else %}
-            <i class="fa-brands fa-linkedin"></i>
-          {% endif %}
-        </div>
-        <div>
-          <div class="provider-name">{{ account.get_provider.name }} Account</div>
-          <div class="provider-email">
-            {% if account.extra_data.email %}{{ account.extra_data.email }}{% else %}Authenticated successfully{% endif %}
-          </div>
+    <!-- Provider Badge -->
+    <div class="provider-badge">
+      <div class="provider-icon {% if 'google' in account.get_provider.id %}google{% elif 'github' in account.get_provider.id %}github{% elif 'facebook' in account.get_provider.id %}facebook{% else %}linkedin{% endif %}">
+        {% if 'google' in account.get_provider.id %}
+          <i class="fa-brands fa-google"></i>
+        {% elif 'github' in account.get_provider.id %}
+          <i class="fa-brands fa-github"></i>
+        {% elif 'facebook' in account.get_provider.id %}
+          <i class="fa-brands fa-facebook"></i>
+        {% else %}
+          <i class="fa-brands fa-linkedin"></i>
+        {% endif %}
+      </div>
+      <div>
+        <div class="provider-name">{{ account.get_provider.name }} Account</div>
+        <div class="provider-email">
+          {% if account.extra_data.email %}{{ account.extra_data.email }}{% else %}Authenticated successfully{% endif %}
         </div>
       </div>
-
-      <!-- Info -->
-      <div class="info-banner">
-        <i class="fa-solid fa-shield-halved"></i>
-        <span>Signing in with your <strong>{{ account.get_provider.name }}</strong> account. Your credentials are handled securely — Campus Connect never sees your password.</span>
-      </div>
-
-      <!-- Form -->
-      <form method="post" action="{{ request.path }}">
-        {% csrf_token %}
-        <input type="hidden" name="process" value="{{ process }}">
-        <input type="hidden" name="scope" value="{{ scope }}">
-        <input type="hidden" name="auth_params" value="{{ auth_params }}">
-
-        <button type="submit" class="btn-continue">
-          <i class="fa-solid fa-arrow-right-to-bracket"></i>
-          Continue with {{ account.get_provider.name }}
-        </button>
-      </form>
-
-      <a href="/accounts/login/" class="btn-cancel">
-        <i class="fa-solid fa-xmark"></i>
-        Cancel, go back
-      </a>
     </div>
+
+    <!-- Security Info -->
+    <div class="info-banner">
+      <i class="fa-solid fa-shield-halved"></i>
+      <span>Signing in with your <strong>{{ account.get_provider.name }}</strong> account. Your credentials are handled securely — Campus Connect never sees your password.</span>
+    </div>
+
+    <!-- Submit Form -->
+    <form method="post" action="{{ request.path }}">
+      {% csrf_token %}
+      <input type="hidden" name="process" value="{{ process }}">
+      <input type="hidden" name="scope" value="{{ scope }}">
+      <input type="hidden" name="auth_params" value="{{ auth_params }}">
+
+      <button type="submit" class="btn-auth">
+        <i class="fa-solid fa-arrow-right-to-bracket"></i> Continue with {{ account.get_provider.name }}
+      </button>
+    </form>
+
+    <a href="{% url 'login' %}" class="btn-cancel">
+      <i class="fa-solid fa-xmark"></i> Cancel, go back
+    </a>
 
     <div class="auth-footer">
-      No account yet? <a href="/accounts/signup/">Create one free →</a>
+      No account yet? <a href="{% url 'register' %}" class="auth-link">Create one free →</a>
     </div>
   </div>
-</main>
-
-<script>
-const _h = document.documentElement;
-const _t = localStorage.getItem('cc-theme') || 'dark';
-_h.setAttribute('data-theme', _t);
-_si(_t);
-function toggleTheme() {
-  const cur = _h.getAttribute('data-theme');
-  const nxt = cur === 'dark' ? 'light' : 'dark';
-  _h.setAttribute('data-theme', nxt);
-  localStorage.setItem('cc-theme', nxt);
-  _si(nxt);
-}
-function _si(t) {
-  const i = document.getElementById('themeIcon');
-  if (i) i.className = t === 'dark' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
-}
-</script>
-</body>
-</html>
+</div>
+{% endblock %}

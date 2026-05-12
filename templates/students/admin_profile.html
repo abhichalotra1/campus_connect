@@ -1,104 +1,182 @@
-{% extends 'base.html' %}
-{% block title %}Admin Profile – Campus Connect{% endblock %}
+{% extends "dashboard_base.html" %}
+{% block breadcrumb_page_name %}Admin Profile{% endblock %}
 
-{% block content %}
-<div style="max-width: 800px; margin: 0 auto; padding: 2rem 0;">
-  
-  <!-- Header Section -->
-  <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px; margin-bottom:2rem;">
-    <div style="display:flex; align-items:center; gap:16px;">
-      <div style="width:60px; height:60px; border-radius:14px; background:var(--p-soft); display:flex; align-items:center; justify-content:center;">
-        <i class="fas fa-user-shield" style="font-size:24px; color:var(--primary2);"></i>
-      </div>
-      <div>
-        <h1 style="font-family:var(--font-display); font-size:24px; font-weight:800; color:var(--ink); margin:0;">
-          Platform Administrator
-        </h1>
-        <p style="color:var(--ink3); font-size:14px; margin:4px 0 0;">Manage your profile and platform settings.</p>
-      </div>
-    </div>
-    <a href="{% url 'edit_profile' %}" 
-       style="font-size:13px; font-weight:700; color:#fff; text-decoration:none; padding:9px 18px; border-radius:9px; background:var(--primary); display:inline-flex; align-items:center; gap:6px; transition: all 0.15s;">
-      <i class="fas fa-pen"></i> Edit Profile
-    </a>
-  </div>
+{% block dashboard_content %}
+<style>
+  /* ── ADMIN PROFILE STYLES ── */
+  .ap-wrapper {
+    display: flex;
+    justify-content: center;
+    padding-bottom: 2rem;
+  }
+  .ap-container {
+    width: 100%;
+    max-width: 800px;
+  }
 
-  <!-- Profile Details Card -->
-  <div style="background:var(--surface); border:1px solid var(--border2); border-radius:var(--radius-lg); padding:2rem; margin-bottom:1.5rem;">
-    <h3 style="font-family:var(--font-display); font-weight:700; color:var(--ink); margin:0 0 1.5rem; font-size:18px;">
-      Personal Information
-    </h3>
-    
-    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:1.5rem;">
-      <!-- Full Name -->
-      <div>
-        <div style="font-size:12px; color:var(--ink3); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;">Full Name</div>
-        <div style="font-size:15px; color:var(--ink); font-weight:600;">
-          {{ request.user.get_full_name|default:"Not Provided" }}
+  /* Header */
+  .ap-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 2rem;
+  }
+  .ap-user {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .ap-icon {
+    width: 60px; height: 60px;
+    border-radius: 14px;
+    background: var(--p-soft);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px; color: var(--primary2); flex-shrink: 0;
+  }
+  .ap-title {
+    font-family: var(--font-display); font-size: 24px; font-weight: 800;
+    color: var(--ink); margin: 0;
+  }
+  .ap-subtitle { color: var(--ink3); font-size: 14px; margin-top: 4px; }
+
+  .btn-edit {
+    font-family: var(--font-display); font-weight: 700; font-size: 13px;
+    color: #fff; background: var(--primary); border: none; padding: 9px 18px;
+    border-radius: 9px; text-decoration: none; display: inline-flex;
+    align-items: center; gap: 6px; transition: all 0.18s;
+  }
+  .btn-edit:hover { background: var(--primary2); box-shadow: 0 4px 12px var(--p-glow); }
+
+  /* Panel Component */
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.75rem;
+    margin-bottom: 1.5rem;
+    transition: border-color 0.2s;
+  }
+  .panel:hover { border-color: var(--border2); }
+  .panel-title {
+    font-family: var(--font-display); font-weight: 700; color: var(--ink);
+    margin: 0 0 1.5rem; font-size: 18px; display: flex; align-items: center; gap: 10px;
+  }
+
+  /* Info Grid */
+  .info-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem;
+  }
+  .info-item { display: flex; flex-direction: column; gap: 4px; }
+  .info-label {
+    font-size: 11px; color: var(--ink3); text-transform: uppercase;
+    letter-spacing: 0.8px; font-weight: 700; font-family: var(--font-mono);
+  }
+  .info-value { font-size: 15px; color: var(--ink); font-weight: 600; }
+  .info-value.mono { font-family: var(--font-mono); }
+  .info-value.accent { color: var(--primary2); }
+  .info-value.muted { color: var(--ink3); font-weight: 500; }
+
+  /* Stats Grid */
+  .stats-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px;
+  }
+  .stat-card {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 1.25rem; text-align: center;
+    transition: all 0.25s ease;
+  }
+  .stat-card:hover { border-color: var(--border2); transform: translateY(-2px); }
+  .stat-icon { font-size: 20px; margin-bottom: 8px; display: block; }
+  .stat-num { font-family: var(--font-display); font-size: 26px; font-weight: 800; color: var(--ink); }
+  .stat-label { font-size: 12px; color: var(--ink3); margin-top: 2px; }
+
+  /* Permissions Grid */
+  .perms-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px;
+  }
+  .perm-badge {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--green-soft); border: 1px solid rgba(34,211,160,0.2);
+    padding: 12px 16px; border-radius: 10px;
+  }
+  .perm-icon { color: var(--green); font-size: 16px; flex-shrink: 0; }
+  .perm-text { font-size: 14px; color: var(--ink); font-weight: 500; }
+</style>
+
+<div class="ap-wrapper">
+  <div class="ap-container">
+
+    <!-- Header Section -->
+    <div class="ap-header">
+      <div class="ap-user">
+        <div class="ap-icon"><i class="fas fa-user-shield"></i></div>
+        <div>
+          <h1 class="ap-title">Platform Administrator</h1>
+          <p class="ap-subtitle">Manage your profile and platform settings.</p>
         </div>
       </div>
-      
-      <!-- Username -->
-      <div>
-        <div style="font-size:12px; color:var(--ink3); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;">Username</div>
-        <div style="font-size:15px; color:var(--ink); font-weight:600; font-family:var(--font-mono);">
-          @{{ request.user.username }}
-        </div>
-      </div>
+      <a href="{% url 'edit_profile' %}" class="btn-edit"><i class="fas fa-pen"></i> Edit Profile</a>
+    </div>
 
-      <!-- Email -->
-      <div>
-        <div style="font-size:12px; color:var(--ink3); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;">Email Address</div>
-        <div style="font-size:15px; color:var(--primary2); font-weight:600;">
-          {{ request.user.email }}
+    <!-- Profile Details Card -->
+    <div class="panel">
+      <h3 class="panel-title">Personal Information</h3>
+      <div class="info-grid">
+        <div class="info-item">
+          <span class="info-label">Full Name</span>
+          <span class="info-value">{{ request.user.get_full_name|default:"Not Provided" }}</span>
         </div>
-      </div>
-
-      <!-- Phone -->
-      <div>
-        <div style="font-size:12px; color:var(--ink3); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;">Phone Number</div>
-        <div style="font-size:15px; color:var(--ink); font-weight:600;">
-          {{ request.user.phone|default:"Not Provided" }}
+        <div class="info-item">
+          <span class="info-label">Username</span>
+          <span class="info-value mono">@{{ request.user.username }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Email Address</span>
+          <span class="info-value accent">{{ request.user.email }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Phone Number</span>
+          <span class="info-value {% if not request.user.phone %}muted{% endif %}">
+            {{ request.user.phone|default:"Not Provided" }}
+          </span>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- Platform Stats Overview -->
-  <div style="background:var(--surface); border:1px solid var(--border2); border-radius:var(--radius-lg); padding:2rem; margin-bottom:1.5rem;">
-    <h3 style="font-family:var(--font-display); font-weight:700; color:var(--ink); margin:0 0 1.5rem; font-size:18px;">
-      Platform Overview
-    </h3>
-    
-    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap:12px;">
-      <div style="background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius); padding:1.25rem; text-align:center;">
-        <i class="fas fa-user-graduate" style="color:var(--primary2); font-size:20px; margin-bottom:8px; display:block;"></i>
-        <div style="font-family:var(--font-display); font-size:26px; font-weight:800; color:var(--ink);">{{ total_students }}</div>
-        <div style="font-size:12px; color:var(--ink3); margin-top:2px;">Students</div>
-      </div>
-      <div style="background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius); padding:1.25rem; text-align:center;">
-        <i class="fas fa-building" style="color:var(--green); font-size:20px; margin-bottom:8px; display:block;"></i>
-        <div style="font-family:var(--font-display); font-size:26px; font-weight:800; color:var(--ink);">{{ total_recruiters }}</div>
-        <div style="font-size:12px; color:var(--ink3); margin-top:2px;">Recruiters</div>
+    <!-- Platform Stats Overview -->
+    <div class="panel">
+      <h3 class="panel-title">Platform Overview</h3>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <span class="stat-icon" style="color:var(--primary2);"><i class="fas fa-user-graduate"></i></span>
+          <div class="stat-num">{{ total_students }}</div>
+          <div class="stat-label">Students</div>
+        </div>
+        <div class="stat-card">
+          <span class="stat-icon" style="color:var(--green);"><i class="fas fa-building"></i></span>
+          <div class="stat-num">{{ total_recruiters }}</div>
+          <div class="stat-label">Recruiters</div>
+        </div>
       </div>
     </div>
-  </div>
 
-  <!-- Permissions Card -->
-  <div style="background:var(--surface); border:1px solid var(--border2); border-radius:var(--radius-lg); padding:2rem;">
-    <h3 style="font-family:var(--font-display); font-weight:700; color:var(--ink); margin:0 0 1.5rem; font-size:18px;">
-      Administrator Privileges
-    </h3>
-    
-    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:12px;">
-      {% for perm in permissions %}
-      <div style="display:flex; align-items:center; gap:10px; background:var(--green-soft); border:1px solid rgba(34,211,160,0.2); padding:12px 16px; border-radius:10px;">
-        <i class="fas fa-check-circle" style="color:var(--green); font-size:16px; flex-shrink:0;"></i>
-        <span style="font-size:14px; color:var(--ink); font-weight:500;">{{ perm }}</span>
+    <!-- Permissions Card -->
+    <div class="panel">
+      <h3 class="panel-title">Administrator Privileges</h3>
+      <div class="perms-grid">
+        {% for perm in permissions %}
+        <div class="perm-badge">
+          <i class="fas fa-check-circle perm-icon"></i>
+          <span class="perm-text">{{ perm }}</span>
+        </div>
+        {% empty %}
+        <p style="color: var(--ink3); font-size: 14px;">No specific permissions assigned (Superuser).</p>
+        {% endfor %}
       </div>
-      {% endfor %}
     </div>
-  </div>
 
+  </div>
 </div>
 {% endblock %}

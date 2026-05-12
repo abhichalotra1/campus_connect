@@ -1,231 +1,189 @@
 {% extends 'base.html' %}
 {% block title %}Complete Sign Up — Campus Connect{% endblock %}
 
-{% block extra_css %}
-<style>
-/* shared auth page chrome — reuses base tokens */
-.auth-wrap {
-  min-height: calc(100vh - 160px);
-  display: flex; align-items: center; justify-content: center;
-  padding: 40px 20px;
-}
-
-.auth-card {
-  width: 100%; max-width: 460px;
-  animation: authFadeUp 0.55s cubic-bezier(0.22,1,0.36,1) both;
-}
-
-.auth-header { text-align: center; margin-bottom: 28px; }
-
-.auth-eyebrow {
-  display: inline-flex; align-items: center; gap: 7px;
-  padding: 5px 13px 5px 9px; border-radius: 50px;
-  border: 1px solid rgba(79,70,229,0.3); background: var(--p-soft);
-  font-size: 11px; font-weight: 700; color: var(--primary2);
-  font-family: var(--font-mono); letter-spacing: 0.5px; text-transform: uppercase;
-  margin-bottom: 16px;
-}
-.live-dot {
-  width: 6px; height: 6px; border-radius: 50%;
-  background: var(--green); box-shadow: 0 0 0 3px var(--green-soft);
-  animation: blink 2.2s ease infinite;
-}
-@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
-
-.auth-title {
-  font-family: var(--font-display);
-  font-size: 32px; font-weight: 800;
-  letter-spacing: -1px; margin-bottom: 8px;
-}
-.auth-sub { font-size: 14px; color: var(--ink2); line-height: 1.65; }
-
-/* form box */
-.form-box {
-  background: var(--surface);
-  border: 1px solid var(--border2);
-  border-radius: var(--radius-lg);
-  padding: 30px 32px;
-  position: relative; overflow: hidden;
-}
-.form-box::before {
-  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
-  background: linear-gradient(90deg, transparent, var(--primary), transparent);
-  opacity: 0.5;
-}
-
-/* success info banner */
-.social-ok {
-  display: flex; align-items: center; gap: 10px;
-  padding: 11px 14px; border-radius: 10px;
-  background: var(--green-soft); border: 1px solid rgba(34,211,160,0.28);
-  margin-bottom: 22px; font-size: 13px; color: var(--green); font-weight: 500;
-}
-.social-ok i { font-size: 15px; flex-shrink: 0; }
-
-/* fields */
-.field { margin-bottom: 16px; }
-.field-label { margin-bottom: 7px; }
-.field-label label { font-size: 13px; font-weight: 600; color: var(--ink2); }
-
-.input-wrap { position: relative; }
-.input-icon {
-  position: absolute; left: 13px; top: 50%; transform: translateY(-50%);
-  color: var(--ink3); font-size: 13px; pointer-events: none; transition: color 0.18s;
-}
-.input-wrap input,
-.input-wrap select {
-  width: 100%; padding: 11px 13px 11px 38px;
-  background: var(--bg2); border: 1px solid var(--border2);
-  border-radius: 10px; color: var(--ink);
-  font-family: var(--font-body); font-size: 14px; font-weight: 500;
-  outline: none; transition: all 0.18s; -webkit-appearance: none; appearance: none;
-}
-.input-wrap select option { background: var(--bg2); }
-.input-wrap input::placeholder { color: var(--ink3); }
-.input-wrap input:focus,
-.input-wrap select:focus {
-  border-color: var(--primary); background: var(--bg3);
-  box-shadow: 0 0 0 3px var(--p-soft);
-}
-.input-wrap:focus-within .input-icon { color: var(--primary2); }
-
-.field-error {
-  font-size: 12px; color: var(--red);
-  display: flex; align-items: center; gap: 5px; margin-top: 6px;
-}
-
-/* role cards */
-.role-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 4px; }
-.role-card {
-  padding: 14px; border-radius: 12px;
-  border: 1.5px solid var(--border2); background: var(--bg2);
-  cursor: pointer; transition: all 0.18s; text-align: center;
-}
-.role-card:hover { border-color: var(--primary); background: var(--bg3); }
-.role-card input[type="radio"] { display: none; }
-.role-card.selected { border-color: var(--primary); background: var(--p-soft); }
-.role-card .role-icon { font-size: 22px; margin-bottom: 6px; display: block; }
-.role-card .role-name { font-size: 13px; font-weight: 700; color: var(--ink); }
-.role-card .role-desc { font-size: 11.5px; color: var(--ink2); margin-top: 2px; }
-
-/* submit */
-.btn-submit {
-  width: 100%; padding: 13px; border-radius: 10px; border: none;
-  background: var(--primary); color: #fff;
-  font-family: var(--font-display); font-size: 15px; font-weight: 700;
-  cursor: pointer; position: relative; overflow: hidden;
-  transition: all 0.2s;
-  display: flex; align-items: center; justify-content: center; gap: 9px;
-  margin-top: 20px;
-}
-.btn-submit::before {
-  content: ''; position: absolute; inset: 0;
-  background: linear-gradient(135deg, rgba(255,255,255,0.14) 0%, transparent 55%);
-}
-.btn-submit:hover { background: var(--primary2); transform: translateY(-1px); box-shadow: 0 8px 24px var(--p-glow); }
-.btn-submit:active { transform: translateY(0); }
-
-.auth-footer {
-  text-align: center; margin-top: 20px;
-  font-size: 13.5px; color: var(--ink2);
-}
-.auth-footer a { color: var(--primary2); text-decoration: none; font-weight: 600; }
-.auth-footer a:hover { color: var(--ink); }
-
-@keyframes authFadeUp {
-  from { opacity:0; transform:translateY(24px); }
-  to   { opacity:1; transform:translateY(0); }
-}
-
-@media (max-width:480px) {
-  .form-box { padding: 24px 20px; }
-  .role-grid { grid-template-columns: 1fr; }
-}
-</style>
-{% endblock %}
-
 {% block content %}
-<div class="auth-wrap">
+<style>
+  /* ── AUTH PAGES LAYOUT ── */
+  .auth-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 3rem 1rem;
+    min-height: 75vh;
+  }
+  .auth-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 2.5rem;
+    width: 100%;
+    max-width: 460px;
+    position: relative;
+    overflow: hidden;
+    animation: fadeUp 0.5s ease both;
+  }
+  /* Top accent line */
+  .auth-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, var(--primary), transparent);
+  }
+
+  .auth-header { text-align: center; margin-bottom: 2rem; }
+  .auth-eyebrow {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 5px 13px 5px 9px; border-radius: 50px;
+    border: 1px solid rgba(79,70,229,0.3); background: var(--p-soft);
+    font-size: 11px; font-weight: 700; color: var(--primary2);
+    font-family: var(--font-mono); letter-spacing: 0.5px; text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+  .live-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--green); box-shadow: 0 0 0 3px var(--green-soft);
+    animation: blink 2.2s ease infinite;
+  }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  .auth-title {
+    font-family: var(--font-display); font-weight: 800; font-size: 24px;
+    color: var(--ink); margin: 0 0 6px; letter-spacing: -0.5px;
+  }
+  .auth-subtitle { color: var(--ink2); font-size: 14px; line-height: 1.6; }
+
+  /* Success Banner */
+  .success-banner {
+    display: flex; align-items: center; gap: 10px;
+    padding: 11px 14px; border-radius: 10px;
+    background: var(--green-soft); border: 1px solid rgba(34,211,160,0.28);
+    margin-bottom: 22px; font-size: 13px; color: var(--green); font-weight: 600;
+  }
+  .success-banner i { font-size: 15px; flex-shrink: 0; }
+
+  /* Forms */
+  .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 18px; position: relative; }
+  .form-label { font-size: 13px; font-weight: 600; color: var(--ink2); }
+  .input-wrap { position: relative; }
+  .input-icon {
+    position: absolute; left: 13px; top: 50%; transform: translateY(-50%);
+    color: var(--ink3); font-size: 13px; pointer-events: none; transition: color 0.18s;
+  }
+  .form-control {
+    background: var(--bg2) !important; border: 1px solid var(--border2) !important;
+    color: var(--ink) !important; border-radius: 10px !important;
+    font-family: var(--font-body) !important; font-size: 14px !important;
+    padding: 0.6rem 0.85rem 0.6rem 2.5rem !important; transition: all 0.18s !important; width: 100%;
+  }
+  .form-control:focus {
+    border-color: var(--primary) !important; box-shadow: 0 0 0 3px var(--p-soft) !important;
+    background: var(--bg3) !important;
+  }
+  .form-control:focus + .input-icon { color: var(--primary2); }
+  .form-control::placeholder { color: var(--ink3) !important; }
+  .field-error { font-size: 12px; color: var(--red); display: flex; align-items: center; gap: 5px; margin-top: 6px; }
+
+  /* Role Cards */
+  .role-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 6px; }
+  .role-card {
+    padding: 16px; border-radius: 12px;
+    border: 2px solid var(--border2); background: var(--bg2);
+    cursor: pointer; transition: all 0.2s; text-align: center;
+  }
+  .role-card:hover { border-color: var(--primary); background: var(--bg3); }
+  .role-card input[type="radio"] { display: none; }
+  .role-card.selected { border-color: var(--primary); background: var(--p-soft); box-shadow: 0 0 0 3px var(--p-soft); }
+  .role-icon { font-size: 24px; margin-bottom: 8px; display: block; }
+  .role-name { font-size: 14px; font-weight: 700; color: var(--ink); font-family: var(--font-display); }
+  .role-desc { font-size: 11.5px; color: var(--ink2); margin-top: 3px; }
+
+  /* Submit */
+  .btn-auth {
+    font-family: var(--font-display); font-weight: 800; font-size: 15px; color: #fff;
+    background: var(--primary); border: none; padding: 12px; border-radius: 10px;
+    cursor: pointer; width: 100%; transition: all 0.18s; margin-top: 20px;
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .btn-auth:hover { background: var(--primary2); box-shadow: 0 6px 20px var(--p-glow); }
+
+  /* Footer Links */
+  .auth-footer { text-align: center; margin-top: 20px; font-size: 13px; color: var(--ink3); }
+  .auth-link { color: var(--primary2); font-weight: 700; text-decoration: none; transition: color 0.15s; }
+  .auth-link:hover { color: var(--ink); }
+
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: translateY(0); } }
+  @media (max-width: 480px) { .role-grid { grid-template-columns: 1fr; } }
+</style>
+
+<div class="auth-wrapper">
   <div class="auth-card">
     <div class="auth-header">
-      <div class="auth-eyebrow"><span class="live-dot"></span>Almost there</div>
-      <h1 class="auth-title">Complete Sign Up</h1>
-      <p class="auth-sub">Just a couple more details and you're in.</p>
+      <div class="auth-eyebrow"><span class="live-dot"></span> Almost there</div>
+      <h3 class="auth-title">Complete Sign Up</h3>
+      <p class="auth-subtitle">Just a couple more details and you're in.</p>
     </div>
 
-    <div class="form-box">
-      <div class="social-ok">
-        <i class="fa-solid fa-circle-check"></i>
-        Social login successful — finish setting up your account below.
+    <div class="success-banner">
+      <i class="fa-solid fa-circle-check"></i>
+      Social login successful — finish setting up your account below.
+    </div>
+
+    <form method="POST" action="{% url 'socialaccount_signup' %}">
+      {% csrf_token %}
+
+      {% if form.username %}
+      <div class="form-group">
+        <label class="form-label">Username</label>
+        <div class="input-wrap">
+          <input type="text" name="username" class="form-control" placeholder="Pick a username" value="{{ form.username.value|default:'' }}" autocomplete="username">
+          <i class="fa-solid fa-at input-icon"></i>
+        </div>
+        {% if form.username.errors %}
+          {% for err in form.username.errors %}<div class="field-error"><i class="fa-solid fa-circle-exclamation"></i> {{ err }}</div>{% endfor %}
+        {% endif %}
+      </div>
+      {% endif %}
+
+      {% if form.email %}
+      <div class="form-group">
+        <label class="form-label">Email Address</label>
+        <div class="input-wrap">
+          <input type="email" name="email" class="form-control" placeholder="Your email" value="{{ form.email.value|default:'' }}" autocomplete="email">
+          <i class="fa-solid fa-envelope input-icon"></i>
+        </div>
+        {% if form.email.errors %}
+          {% for err in form.email.errors %}<div class="field-error"><i class="fa-solid fa-circle-exclamation"></i> {{ err }}</div>{% endfor %}
+        {% endif %}
+      </div>
+      {% endif %}
+
+      <!-- Role Picker -->
+      <div class="form-group">
+        <label class="form-label">I'm joining as</label>
+        <div class="role-grid">
+          <label class="role-card selected" id="card-student">
+            <input type="radio" name="role" value="student" checked onchange="selectRole('student')">
+            <span class="role-icon">🎓</span>
+            <div class="role-name">Student</div>
+            <div class="role-desc">Looking for placements</div>
+          </label>
+          <label class="role-card" id="card-recruiter">
+            <input type="radio" name="role" value="recruiter" onchange="selectRole('recruiter')">
+            <span class="role-icon">🏢</span>
+            <div class="role-name">Recruiter</div>
+            <div class="role-desc">Posting drives & hiring</div>
+          </label>
+        </div>
       </div>
 
-      <form method="POST" action="{% url 'socialaccount_signup' %}">
-        {% csrf_token %}
-
-        {% if form.username %}
-        <div class="field">
-          <div class="field-label"><label>Username</label></div>
-          <div class="input-wrap">
-            <i class="fa-solid fa-at input-icon"></i>
-            <input type="text" name="username"
-              placeholder="Pick a username"
-              value="{{ form.username.value|default:'' }}"
-              autocomplete="username">
-          </div>
-          {% if form.username.errors %}
-            {% for err in form.username.errors %}
-            <div class="field-error"><i class="fa-solid fa-circle-exclamation"></i> {{ err }}</div>
-            {% endfor %}
-          {% endif %}
-        </div>
-        {% endif %}
-
-        {% if form.email %}
-        <div class="field">
-          <div class="field-label"><label>Email</label></div>
-          <div class="input-wrap">
-            <i class="fa-solid fa-envelope input-icon"></i>
-            <input type="email" name="email"
-              placeholder="Your email"
-              value="{{ form.email.value|default:'' }}"
-              autocomplete="email">
-          </div>
-          {% if form.email.errors %}
-            {% for err in form.email.errors %}
-            <div class="field-error"><i class="fa-solid fa-circle-exclamation"></i> {{ err }}</div>
-            {% endfor %}
-          {% endif %}
-        </div>
-        {% endif %}
-
-        <!-- Role picker -->
-        <div class="field">
-          <div class="field-label"><label>I'm joining as</label></div>
-          <div class="role-grid">
-            <label class="role-card selected" id="card-student">
-              <input type="radio" name="role" value="student" checked onchange="selectRole('student')">
-              <span class="role-icon">🎓</span>
-              <div class="role-name">Student</div>
-              <div class="role-desc">Looking for placements</div>
-            </label>
-            <label class="role-card" id="card-recruiter">
-              <input type="radio" name="role" value="recruiter" onchange="selectRole('recruiter')">
-              <span class="role-icon">🏢</span>
-              <div class="role-name">Recruiter</div>
-              <div class="role-desc">Posting drives &amp; hiring</div>
-            </label>
-          </div>
-        </div>
-
-        <button type="submit" class="btn-submit">
-          <i class="fa-solid fa-rocket"></i>
-          Create My Account
-        </button>
-      </form>
-    </div>
+      <button type="submit" class="btn-auth" onclick="submitWithLoading(this, 'Creating...')">
+        <i class="fa-solid fa-rocket"></i> Create My Account
+      </button>
+    </form>
 
     <div class="auth-footer">
-      Already have an account? <a href="/accounts/login/">Sign in →</a>
+      Already have an account? <a href="{% url 'login' %}" class="auth-link">Sign in →</a>
     </div>
   </div>
 </div>

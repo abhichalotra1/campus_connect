@@ -1,107 +1,309 @@
-{% extends 'base.html' %}
-{% load tz %}
+{% extends "dashboard_base.html" %}
+{% block breadcrumb_page_name %}My Interviews{% endblock %}
 
-{% block content %}
-<div class="mt-4 mb-4">
-    <h3 style="font-family: var(--font-display); font-weight: 800; letter-spacing: -0.5px;">
-        <i class="fas fa-calendar-days me-2" style="color: var(--primary);"></i>My Interviews
-    </h3>
-    <p style="color: var(--ink3); font-size: 14px; margin-top: 4px;">Track your upcoming and past interview schedules.</p>
+{% block dashboard_content %}
+<style>
+  /* ── INTERVIEWS PAGE STYLES ── */
+  .mi-header {
+    margin-bottom: 1.75rem;
+  }
+  .mi-title {
+    font-family: var(--font-display);
+    font-size: 26px;
+    font-weight: 800;
+    color: var(--ink);
+    margin: 0 0 4px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .mi-title i { color: var(--primary2); }
+  .mi-subtitle { color: var(--ink2); font-size: 14px; }
+
+  .section-label {
+    font-family: var(--font-display);
+    font-weight: 700;
+    color: var(--ink2);
+    margin-bottom: 14px;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .int-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-bottom: 2rem;
+  }
+
+  /* Interview Card Base */
+  .int-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    transition: all 0.25s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  .int-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 4px; height: 100%;
+    transition: opacity 0.25s;
+  }
+  .int-card:hover {
+    border-color: var(--border2);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+  }
+
+  /* Upcoming State */
+  .int-card.upcoming::before { background: var(--green); opacity: 1; }
+  .int-card.upcoming:hover::before { box-shadow: 0 0 10px rgba(34,211,160,0.5); }
+
+  /* Past State */
+  .int-card.past { opacity: 0.6; }
+  .int-card.past::before { background: var(--ink3); opacity: 1; }
+  .int-card.past:hover { opacity: 0.8; }
+
+  .int-inner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  /* Left Side */
+  .int-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex: 1;
+    min-width: 250px;
+  }
+  .int-logo {
+    width: 48px; height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: 800;
+    flex-shrink: 0;
+    font-family: var(--font-display);
+  }
+  .int-logo.upcoming-logo { background: var(--green-soft); color: var(--green); }
+  .int-logo.past-logo { background: var(--surface2); color: var(--ink3); }
+  
+  .int-role {
+    font-family: var(--font-display);
+    font-weight: 700;
+    color: var(--ink);
+    margin-bottom: 2px;
+    font-size: 16px;
+  }
+  .past .int-role { color: var(--ink3); }
+  
+  .int-meta {
+    font-size: 13px;
+    color: var(--ink3);
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .int-meta span { display: inline-flex; align-items: center; gap: 4px; }
+
+  /* Right Side */
+  .int-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+  .int-date {
+    font-size: 13px;
+    color: var(--ink2);
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .int-date i { color: var(--primary2); }
+  .int-time {
+    font-size: 12px;
+    color: var(--ink3);
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .int-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 4px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  /* Action Buttons */
+  .btn-join {
+    padding: 5px 12px;
+    border-radius: 8px;
+    background: var(--green-soft);
+    border: 1px solid rgba(34,211,160,0.3);
+    color: var(--green);
+    font-size: 12px;
+    font-weight: 700;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.18s;
+  }
+  .btn-join:hover { background: var(--green); color: #fff; }
+
+  .btn-location {
+    padding: 5px 12px;
+    border-radius: 8px;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    color: var(--ink2);
+    font-size: 12px;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  /* Empty State */
+  .int-empty {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    text-align: center;
+    color: var(--ink3);
+    font-size: 14px;
+  }
+
+  @media(max-width: 768px) {
+    .int-inner { flex-direction: column; align-items: flex-start; }
+    .int-right { width: 100%; flex-direction: row; justify-content: space-between; align-items: center; }
+    .int-actions { justify-content: flex-start; }
+  }
+</style>
+
+<div class="mi-header">
+  <h1 class="mi-title"><i class="fas fa-calendar-days"></i> My Interviews</h1>
+  <p class="mi-subtitle">Track your upcoming and past interview schedules.</p>
 </div>
 
 <!-- ── UPCOMING INTERVIEWS ── -->
-<h5 style="font-family: var(--font-display); font-weight: 700; color: var(--ink2); margin-bottom: 14px;">
-    <i class="fas fa-clock me-2" style="color: var(--green);"></i>Upcoming
-</h5>
+<div class="section-label">
+  <i class="fas fa-clock" style="color: var(--green);"></i> Upcoming
+</div>
 
+<div class="int-list">
 {% for interview in upcoming_interviews %}
-<div class="card p-4 mb-3" style="border-radius: var(--radius-lg); transition: all 0.2s; border-left: 4px solid var(--green);">
-    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start gap-3">
-        
-        <!-- Left: Company Info -->
-        <div style="display: flex; align-items: center; gap: 16px;">
-            <div style="width: 48px; height: 48px; border-radius: 12px; background: var(--green-soft); color: var(--green); display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 800; flex-shrink: 0;">
-                {{ interview.application.drive.company|first|upper }}
-            </div>
-            <div>
-                <h5 style="font-family: var(--font-display); font-weight: 700; margin-bottom: 2px;">{{ interview.application.drive.role }}</h5>
-                <div style="font-size: 13px; color: var(--ink3); display: flex; gap: 12px; flex-wrap: wrap;">
-                    <span><i class="fas fa-building me-1"></i> {{ interview.application.drive.company }}</span>
-                    <span><i class="fas fa-briefcase me-1"></i> {{ interview.application.status }}</span>
-                </div>
-            </div>
+<div class="int-card upcoming">
+  <div class="int-inner">
+    
+    <!-- Left: Company Info -->
+    <div class="int-left">
+      <div class="int-logo upcoming-logo">
+        {{ interview.application.drive.company|first|upper }}
+      </div>
+      <div>
+        <div class="int-role">{{ interview.application.drive.role }}</div>
+        <div class="int-meta">
+          <span><i class="fas fa-building"></i> {{ interview.application.drive.company }}</span>
+          <span><i class="fas fa-briefcase"></i> {{ interview.application.status }}</span>
         </div>
-
-        <!-- Right: Date & Action -->
-        <div class="d-flex flex-column align-items-md-end gap-2 flex-shrink-0">
-            <div style="font-size: 13px; color: var(--ink2); font-weight: 600;">
-                <i class="fas fa-calendar me-1" style="color: var(--primary2);"></i> {{ interview.scheduled_at|date:"d M, Y" }}
-            </div>
-            <div style="font-size: 12px; color: var(--ink3);">
-                <i class="fas fa-clock me-1"></i> {{ interview.scheduled_at|date:"h:i A" }}
-            </div>
-            
-            <!-- Action Buttons -->
-            <div style="display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap; justify-content: flex-end;">
-                {% if interview.meeting_link %}
-                <a href="{{ interview.meeting_link }}" target="_blank" style="padding: 5px 12px; border-radius: 7px; background: var(--green-soft); border: 1px solid rgba(34,211,160,0.3); color: var(--green); font-size: 12px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 5px;">
-                    <i class="fas fa-video"></i> Join
-                </a>
-                {% endif %}
-                
-                {% if interview.location %}
-                <span style="padding: 5px 12px; border-radius: 7px; background: var(--surface2); border: 1px solid var(--border2); color: var(--ink2); font-size: 12px; font-weight: 500; display: inline-flex; align-items: center; gap: 5px;">
-                    <i class="fas fa-location-dot"></i> {{ interview.location|truncatechars:15 }}
-                </span>
-                {% endif %}
-            </div>
-        </div>
+      </div>
     </div>
+
+    <!-- Right: Date & Action -->
+    <div class="int-right">
+      <div class="int-date">
+        <i class="fas fa-calendar"></i> {{ interview.scheduled_at|date:"d M, Y" }}
+      </div>
+      <div class="int-time">
+        <i class="fas fa-clock"></i> {{ interview.scheduled_at|date:"h:i A" }}
+      </div>
+      
+      <div class="int-actions">
+        {% if interview.meeting_link %}
+        <a href="{{ interview.meeting_link }}" target="_blank" class="btn-join">
+          <i class="fas fa-video"></i> Join
+        </a>
+        {% endif %}
+        
+        {% if interview.location %}
+        <span class="btn-location">
+          <i class="fas fa-location-dot"></i> {{ interview.location|truncatechars:15 }}
+        </span>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
 </div>
 {% empty %}
-    <div class="card p-4 mb-3" style="border-radius: var(--radius-lg); text-align: center; color: var(--ink3);">
-        No upcoming interviews scheduled.
-    </div>
+<div class="int-empty">
+  No upcoming interviews scheduled.
+</div>
 {% endfor %}
+</div>
 
 <!-- ── PAST INTERVIEWS ── -->
-<h5 style="font-family: var(--font-display); font-weight: 700; color: var(--ink2); margin-top: 32px; margin-bottom: 14px;">
-    <i class="fas fa-history me-2" style="color: var(--ink3);"></i>Past
-</h5>
+<div class="section-label" style="margin-top: 32px;">
+  <i class="fas fa-history" style="color: var(--ink3);"></i> Past
+</div>
 
+<div class="int-list">
 {% for interview in past_interviews %}
-<div class="card p-4 mb-3" style="border-radius: var(--radius-lg); transition: all 0.2s; border-left: 4px solid var(--ink3); opacity: 0.65;">
-    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start gap-3">
-        
-        <!-- Left: Company Info -->
-        <div style="display: flex; align-items: center; gap: 16px;">
-            <div style="width: 48px; height: 48px; border-radius: 12px; background: var(--surface2); color: var(--ink3); display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 800; flex-shrink: 0;">
-                {{ interview.application.drive.company|first|upper }}
-            </div>
-            <div>
-                <h5 style="font-family: var(--font-display); font-weight: 700; margin-bottom: 2px; color: var(--ink3);">{{ interview.application.drive.role }}</h5>
-                <div style="font-size: 13px; color: var(--ink3); display: flex; gap: 12px; flex-wrap: wrap;">
-                    <span><i class="fas fa-building me-1"></i> {{ interview.application.drive.company }}</span>
-                    <span><i class="fas fa-briefcase me-1"></i> {{ interview.application.status }}</span>
-                </div>
-            </div>
+<div class="int-card past">
+  <div class="int-inner">
+    
+    <!-- Left: Company Info -->
+    <div class="int-left">
+      <div class="int-logo past-logo">
+        {{ interview.application.drive.company|first|upper }}
+      </div>
+      <div>
+        <div class="int-role">{{ interview.application.drive.role }}</div>
+        <div class="int-meta">
+          <span><i class="fas fa-building"></i> {{ interview.application.drive.company }}</span>
+          <span><i class="fas fa-briefcase"></i> {{ interview.application.status }}</span>
         </div>
-
-        <!-- Right: Date -->
-        <div class="d-flex flex-column align-items-md-end gap-2 flex-shrink-0">
-            <div style="font-size: 13px; color: var(--ink2); font-weight: 600;">
-                <i class="fas fa-calendar me-1"></i> {{ interview.scheduled_at|date:"d M, Y" }}
-            </div>
-            <div style="font-size: 12px; color: var(--ink3);">
-                <i class="fas fa-clock me-1"></i> {{ interview.scheduled_at|date:"h:i A" }}
-            </div>
-        </div>
+      </div>
     </div>
+
+    <!-- Right: Date -->
+    <div class="int-right">
+      <div class="int-date">
+        <i class="fas fa-calendar"></i> {{ interview.scheduled_at|date:"d M, Y" }}
+      </div>
+      <div class="int-time">
+        <i class="fas fa-clock"></i> {{ interview.scheduled_at|date:"h:i A" }}
+      </div>
+    </div>
+
+  </div>
 </div>
 {% empty %}
-    <div class="card p-4 mb-3" style="border-radius: var(--radius-lg); text-align: center; color: var(--ink3);">
-        No past interviews.
-    </div>
+<div class="int-empty">
+  No past interviews.
+</div>
 {% endfor %}
+</div>
 
 {% endblock %}

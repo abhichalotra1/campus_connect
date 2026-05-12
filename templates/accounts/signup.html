@@ -1,43 +1,117 @@
 {% extends 'base.html' %}
+
 {% block content %}
-<div class="row justify-content-center mt-4">
-  <div class="col-md-5">
-    <div class="card p-4">
-      <h4 class="mb-1"><i class="fas fa-user-plus text-primary me-2"></i>Complete Sign Up</h4>
-      <p class="text-muted mb-4" style="font-size:13px;">Finish setting up your Campus Connect account.</p>
+<style>
+  /* ── AUTH PAGES LAYOUT ── */
+  .auth-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding-top: 3rem;
+    padding-bottom: 3rem;
+    min-height: 70vh;
+  }
+  .auth-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 2.5rem;
+    width: 100%;
+    max-width: 440px;
+    position: relative;
+    overflow: hidden;
+    animation: fadeUp 0.5s ease both;
+  }
+  /* Top accent line */
+  .auth-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, var(--primary), transparent);
+  }
 
-      <form method="POST">
-        {% csrf_token %}
+  .auth-header { margin-bottom: 2rem; }
+  .auth-title {
+    font-family: var(--font-display); font-weight: 800; font-size: 22px;
+    color: var(--ink); margin: 0 0 6px; display: flex; align-items: center; gap: 10px;
+  }
+  .auth-title i { color: var(--primary2); }
+  .auth-subtitle { color: var(--ink3); font-size: 13px; }
 
-        {% if form.username %}
-        <div class="mb-3">
-          <label class="form-label">Username</label>
-          {{ form.username }}
-          {% if form.username.errors %}<div style="color:#ef4444;font-size:12px;">{{ form.username.errors.0 }}</div>{% endif %}
-        </div>
-        {% endif %}
+  /* Forms */
+  .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 20px; }
+  .form-label { font-size: 13px; font-weight: 600; color: var(--ink2); }
+  
+  /* Override Django's default auto-generated input classes */
+  input[type="text"], input[type="email"], .form-control, .form-select {
+    background: var(--bg2) !important; border: 1px solid var(--border2) !important;
+    color: var(--ink) !important; border-radius: 10px !important;
+    font-family: var(--font-body) !important; font-size: 14px !important;
+    padding: 0.65rem 0.85rem !important; transition: all 0.18s !important; width: 100%;
+  }
+  input:focus, .form-control:focus, .form-select:focus {
+    border-color: var(--primary) !important; box-shadow: 0 0 0 3px var(--p-soft) !important;
+    background: var(--bg3) !important; outline: none !important;
+  }
+  input::placeholder { color: var(--ink3) !important; }
 
-        {% if form.email %}
-        <div class="mb-3">
-          <label class="form-label">Email</label>
-          {{ form.email }}
-          {% if form.email.errors %}<div style="color:#ef4444;font-size:12px;">{{ form.email.errors.0 }}</div>{% endif %}
-        </div>
-        {% endif %}
+  .field-error { font-size: 12px; color: var(--red); margin-top: 4px; display: block; }
 
-        <div class="mb-4">
-          <label class="form-label">Role</label>
-          <select name="role" class="form-select">
-            <option value="student">Student</option>
-            <option value="recruiter">Recruiter</option>
-          </select>
-        </div>
+  /* Submit */
+  .btn-auth {
+    font-family: var(--font-display); font-weight: 800; font-size: 15px; color: #fff;
+    background: var(--primary); border: none; padding: 12px; border-radius: 10px;
+    cursor: pointer; width: 100%; transition: all 0.18s;
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .btn-auth:hover { background: var(--primary2); box-shadow: 0 6px 20px var(--p-glow); }
 
-        <button type="submit" class="btn btn-primary w-100">
-          <i class="fas fa-check me-2"></i>Create Account
-        </button>
-      </form>
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+
+<div class="auth-wrapper">
+  <div class="auth-card">
+    <div class="auth-header">
+      <h3 class="auth-title"><i class="fas fa-user-plus"></i> Complete Sign Up</h3>
+      <p class="auth-subtitle">Finish setting up your Campus Connect account.</p>
     </div>
+
+    <form method="POST">
+      {% csrf_token %}
+
+      {% if form.username %}
+      <div class="form-group">
+        <label class="form-label">Username</label>
+        {{ form.username }}
+        {% if form.username.errors %}
+          {% for error in form.username.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
+        {% endif %}
+      </div>
+      {% endif %}
+
+      {% if form.email %}
+      <div class="form-group">
+        <label class="form-label">Email Address</label>
+        {{ form.email }}
+        {% if form.email.errors %}
+          {% for error in form.email.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
+        {% endif %}
+      </div>
+      {% endif %}
+
+      <div class="form-group">
+        <label class="form-label">I am a...</label>
+        <select name="role" class="form-select" required>
+          <option value="student">Student</option>
+          <option value="recruiter">Recruiter</option>
+        </select>
+      </div>
+
+      <button type="submit" class="btn-auth" onclick="submitWithLoading(this, 'Creating...')">
+        <i class="fas fa-check"></i> Create Account
+      </button>
+    </form>
   </div>
 </div>
 {% endblock %}

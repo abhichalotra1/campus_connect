@@ -1,25 +1,102 @@
 {% extends 'base.html' %}
+
 {% block content %}
-<div class="row justify-content-center mt-4">
-  <div class="col-md-5">
-    <div class="card p-4 text-center">
-      <i class="fas fa-envelope fa-3x mb-3" style="color:var(--primary)"></i>
-      <h4 class="mb-2">Confirm Your Email</h4>
-      <p class="text-muted mb-4" style="font-size:13px;">
-        Please confirm your email address to complete sign up.
-      </p>
-      {% if confirmation %}
-      <form method="POST">
-        {% csrf_token %}
-        <button type="submit" class="btn btn-primary w-100">
-          <i class="fas fa-check me-2"></i>Confirm Email
-        </button>
-      </form>
-      {% else %}
-      <p class="text-muted">This confirmation link is invalid or has expired.</p>
-      <a href="{% url 'login' %}" class="btn btn-primary mt-2">Back to Login</a>
-      {% endif %}
+<style>
+  /* ── AUTH PAGES LAYOUT ── */
+  .auth-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 3rem 1rem;
+    min-height: 75vh;
+  }
+  .auth-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 2.5rem;
+    width: 100%;
+    max-width: 440px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    animation: fadeUp 0.5s ease both;
+  }
+  /* Top accent line */
+  .auth-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, var(--primary), transparent);
+  }
+
+  .auth-icon {
+    width: 60px; height: 60px;
+    border-radius: 16px;
+    background: var(--p-soft);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px; margin: 0 auto 20px; color: var(--primary2);
+  }
+  .auth-title {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 22px;
+    color: var(--ink);
+    margin: 0 0 8px;
+  }
+  .auth-subtitle { color: var(--ink2); font-size: 14px; line-height: 1.6; margin-bottom: 28px; }
+
+  /* Invalid State Icon */
+  .auth-icon-invalid {
+    background: var(--red-soft);
+    color: var(--red);
+  }
+
+  /* Submit */
+  .btn-auth {
+    font-family: var(--font-display); font-weight: 800; font-size: 15px; color: #fff;
+    background: var(--primary); border: none; padding: 12px;
+    border-radius: 10px; cursor: pointer; width: 100%; transition: all 0.18s;
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    text-decoration: none;
+  }
+  .btn-auth:hover { background: var(--primary2); box-shadow: 0 6px 20px var(--p-glow); }
+
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+
+<div class="auth-wrapper">
+  <div class="auth-card">
+    {% if confirmation %}
+    <!-- Valid Link State -->
+    <div class="auth-icon">
+      <i class="fas fa-envelope"></i>
     </div>
+    <h3 class="auth-title">Confirm Your Email</h3>
+    <p class="auth-subtitle">
+      Please confirm your email address to complete sign up.
+    </p>
+    <form method="POST">
+      {% csrf_token %}
+      <button type="submit" class="btn-auth">
+        <i class="fas fa-check"></i> Confirm Email
+      </button>
+    </form>
+
+    {% else %}
+    <!-- Invalid/Expired Link State -->
+    <div class="auth-icon auth-icon-invalid">
+      <i class="fas fa-exclamation-triangle"></i>
+    </div>
+    <h3 class="auth-title">Link Expired</h3>
+    <p class="auth-subtitle">
+      This confirmation link is invalid or has expired. Please try logging in or requesting a new link.
+    </p>
+    <a href="{% url 'login' %}" class="btn-auth">
+      <i class="fas fa-arrow-left"></i> Back to Login
+    </a>
+    {% endif %}
   </div>
 </div>
 {% endblock %}

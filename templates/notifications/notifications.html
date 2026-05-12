@@ -1,80 +1,279 @@
-﻿{% extends 'base.html' %}
-{% load tz %}
+﻿{% extends "dashboard_base.html" %}
+{% load tz %} <!-- THIS MUST BE HERE IN THE CHILD TEMPLATE -->
+{% block breadcrumb_page_name %}Notifications{% endblock %}
 
-{% block content %}
-<div class="d-flex justify-content-between align-items-center mt-4 mb-4">
-    <h3 style="font-family: var(--font-display); font-weight: 800; letter-spacing: -0.5px;">
-        <i class="fas fa-bell me-2" style="color: var(--primary);"></i>Notifications
-    </h3>
+{% block dashboard_content %}
+<style>
+  /* ── NOTIFICATIONS PAGE STYLES ── */
+  .noti-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.75rem;
+  }
+  .noti-title {
+    font-family: var(--font-display);
+    font-size: 26px;
+    font-weight: 800;
+    color: var(--ink);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .noti-title i { color: var(--primary2); }
+
+  .btn-mark-all {
+    font-size: 12px;
+    color: var(--primary2);
+    background: none;
+    border: 1px solid var(--border2);
+    padding: 7px 14px;
+    border-radius: 8px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.18s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-body);
+  }
+  .btn-mark-all:hover { background: var(--p-soft); border-color: var(--primary); }
+
+  .noti-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 860px;
+  }
+
+  /* Notification Card Base */
+  .noti-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.15rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    transition: all 0.25s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  .noti-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 4px; height: 100%;
+    background: var(--primary);
+    opacity: 0;
+    transition: opacity 0.25s;
+  }
+  .noti-card:hover {
+    border-color: var(--border2);
+    background: var(--surface2);
+  }
+
+  /* Unread State */
+  .noti-card.is-unread {
+    background: var(--surface);
+    border-color: rgba(79,70,229,0.2);
+  }
+  .noti-card.is-unread::before { opacity: 1; }
+
+  /* Read State */
+  .noti-card.is-read { opacity: 0.55; background: var(--bg2); border-color: var(--border); }
+  .noti-card.is-read:hover { opacity: 0.75; }
+
+  .noti-left {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    flex: 1;
+    min-width: 0;
+  }
+  .noti-icon {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+    background: var(--p-soft);
+    color: var(--primary2);
+  }
+  .noti-icon.type-shortlisted { background: var(--yellow-soft); color: var(--yellow); }
+  .noti-icon.type-selected { background: var(--green-soft); color: var(--green); }
+  .noti-icon.type-rejected { background: var(--red-soft); color: var(--red); }
+
+  .noti-content { flex: 1; min-width: 0; }
+  .noti-top-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 5px;
+    flex-wrap: wrap;
+  }
+  .unread-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--primary2);
+    flex-shrink: 0;
+    box-shadow: 0 0 6px var(--p-glow);
+  }
+  .noti-badge {
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-family: var(--font-mono);
+  }
+  .badge-shortlisted { background: var(--yellow-soft); color: var(--yellow); }
+  .badge-selected { background: var(--green-soft); color: var(--green); }
+  .badge-rejected { background: var(--red-soft); color: var(--red); } <!-- FIXED TYPO HERE -->
+  .badge-general { background: rgba(255,255,255,0.05); color: var(--ink3); }
+
+  .noti-subject {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--ink);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .noti-msg {
+    font-size: 13px;
+    color: var(--ink2);
+    margin: 0;
+    line-height: 1.55;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .noti-time {
+    font-size: 11px;
+    color: var(--ink3);
+    font-family: var(--font-mono);
+    margin-top: 6px;
+    display: block;
+  }
+
+  .noti-right {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    padding-top: 4px;
+  }
+  .btn-read {
+    font-size: 11px;
+    color: var(--primary2);
+    text-decoration: none;
+    font-weight: 700;
+    white-space: nowrap;
+    padding: 6px 10px;
+    border-radius: 6px;
+    background: var(--p-soft);
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .btn-read:hover { background: var(--primary); color: #fff; }
+
+  /* Empty State */
+  .empty-state {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 4rem 2rem;
+    text-align: center;
+    max-width: 860px;
+  }
+  .empty-icon { font-size: 40px; color: var(--ink3); margin-bottom: 16px; display: block; }
+  .empty-title { font-family: var(--font-display); font-weight: 700; color: var(--ink); margin-bottom: 8px; font-size: 18px;}
+  .empty-text { color: var(--ink2); font-size: 14px; }
+
+  @media(max-width: 768px) {
+    .noti-header { flex-direction: column; align-items: flex-start; gap: 12px; }
+    .noti-top-row { flex-wrap: wrap; }
+  }
+</style>
+
+<div class="noti-header">
+  <h1 class="noti-title"><i class="fas fa-bell"></i> Notifications</h1>
+  
+  {% if notifications.exists %}
+  <form method="POST" action="{% url 'mark_all_read' %}">
+    {% csrf_token %}
+    <button type="submit" class="btn-mark-all">
+      <i class="fas fa-check-double"></i> Mark all as Read
+    </button>
+  </form>
+  {% endif %}
+</div>
+
+<div class="noti-list">
+  {% for notification in notifications %}
+  <div class="noti-card {% if not notification.is_read %}is-unread{% else %}is-read{% endif %}">
     
-    {% if notifications.exists %}
-        <form method="POST" action="{% url 'mark_all_read' %}" style="display:inline;">
-            {% csrf_token %}
-            <button type="submit" style="font-size: 12px; color: var(--primary2); background: none; border: 1px solid var(--border2); padding: 6px 14px; border-radius: 8px; font-weight: 600; cursor: pointer;">
-                <i class="fas fa-check-double me-1"></i> Mark all as Read
-            </button>
-        </form>
+    <div class="noti-left">
+      <div class="noti-icon {% if notification.notif_type == 'shortlisted' %}type-shortlisted{% elif notification.notif_type == 'selected' %}type-selected{% elif notification.notif_type == 'rejected' %}type-rejected{% endif %}">
+        {% if notification.notif_type == 'shortlisted' %}
+          <i class="fas fa-star"></i>
+        {% elif notification.notif_type == 'selected' %}
+          <i class="fas fa-trophy"></i>
+        {% elif notification.notif_type == 'rejected' %}
+          <i class="fas fa-circle-xmark"></i>
+        {% else %}
+          <i class="fas fa-bell"></i>
+        {% endif %}
+      </div>
+      
+      <div class="noti-content">
+        <div class="noti-top-row">
+          {% if not notification.is_read %}
+            <span class="unread-dot"></span>
+          {% endif %}
+          
+          {% if notification.notif_type == 'shortlisted' %}
+            <span class="noti-badge badge-shortlisted">Shortlisted</span>
+          {% elif notification.notif_type == 'selected' %}
+            <span class="noti-badge badge-selected">Selected</span>
+          {% elif notification.notif_type == 'rejected' %}
+            <span class="noti-badge badge-rejected">Rejected</span>
+          {% else %}
+            <span class="noti-badge badge-general">General</span>
+          {% endif %}
+          
+          <span class="noti-subject">{{ notification.title }}</span>
+        </div>
+        
+        <p class="noti-msg">{{ notification.message }}</p>
+        <small class="noti-time">{% localtime on %}{{ notification.created_at|timesince }} ago{% endlocaltime %}</small>
+      </div>
+    </div>
+    
+    {% if not notification.is_read %}
+    <div class="noti-right">
+      <a href="{% url 'mark_read' notification.pk %}" class="btn-read">
+        <i class="fas fa-check"></i> Read
+      </a>
+    </div>
     {% endif %}
+    
+  </div>
+  {% empty %}
+  <div class="empty-state">
+    <i class="fas fa-bell-slash empty-icon"></i>
+    <h3 class="empty-title">No notifications yet!</h3>
+    <p class="empty-text">When you apply for drives or get updates, they'll show up here.</p>
+  </div>
+  {% endfor %}
 </div>
 
-<div class="row">
-    <div class="col-md-8">
-        {% for notification in notifications %}
-        <div class="card p-4 mb-3" style="border-radius: var(--radius-lg); transition: all 0.2s; {% if not notification.is_read %}border-left: 3px solid var(--primary); background: var(--surface);{% else %}opacity: 0.7; background: var(--bg2);{% endif %}">
-            <div class="d-flex justify-content-between align-items-start">
-                <div style="display: flex; align-items: center; gap: 12px;">
-                    <!-- Icon based on type -->
-                    <div style="width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; background: var(--p-soft); color: var(--primary2);">
-                        {% if notification.notif_type == 'shortlisted' %}
-                            <i class="fas fa-star"></i>
-                        {% elif notification.notif_type == 'selected' %}
-                            <i class="fas fa-trophy"></i>
-                        {% elif notification.notif_type == 'rejected' %}
-                            <i class="fas fa-circle-xmark"></i>
-                        {% else %}
-                            <i class="fas fa-bell"></i>
-                        {% endif %}
-                    </div>
-                    <div>
-                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
-                            <!-- Unread Dot -->
-                            {% if not notification.is_read %}
-                                <span style="width: 8px; height: 8px; border-radius: 50%; background: var(--primary2); flex-shrink: 0;"></span>
-                            {% endif %}
-                            <!-- Styled Badges -->
-                            {% if notification.notif_type == 'shortlisted' %}
-                                <span class="badge" style="background: var(--yellow-soft); color: var(--yellow); font-size: 10px; font-weight: 700;">Shortlisted</span>
-                            {% elif notification.notif_type == 'selected' %}
-                                <span class="badge" style="background: var(--green-soft); color: var(--green); font-size: 10px; font-weight: 700;">Selected</span>
-                            {% elif notification.notif_type == 'rejected' %}
-                                <span class="badge" style="background: var(--red-soft); color: var(--red); font-size: 10px; font-weight: 700;">Rejected</span>
-                            {% else %}
-                                <span class="badge" style="background: rgba(255,255,255,0.05); color: var(--ink3); font-size: 10px; font-weight: 700;">General</span>
-                            {% endif %}
-                            <strong style="font-size: 14px; color: var(--ink);">{{ notification.title }}</strong>
-                        </div>
-                        <p style="font-size: 13px; color: var(--ink2); margin: 0; line-height: 1.6;">{{ notification.message }}</p>
-                        <small style="font-size: 11px; color: var(--ink3); font-family: var(--font-mono); margin-top: 4px; display: block;">
-                            {% localtime on %}{{ notification.created_at|timesince }} ago{% endlocaltime %}
-                        </small>
-                    </div>
-                </div>
-                
-                <!-- Mark as Read Button -->
-                {% if not notification.is_read %}
-                    <a href="{% url 'mark_read' notification.pk %}" style="font-size: 11px; color: var(--primary2); text-decoration: none; font-weight: 700; white-space: nowrap; padding: 6px 10px; border-radius: 6px; background: var(--p-soft);">
-                        <i class="fas fa-check me-1"></i> Read
-                    </a>
-                {% endif %}
-            </div>
-        </div>
-        {% empty %}
-        <div class="card p-5 text-center" style="border-radius: var(--radius-lg);">
-            <i class="fas fa-bell-slash fa-3x mb-3" style="color: var(--ink3);"></i>
-            <h5 style="color: var(--ink2);">No notifications yet!</h5>
-            <p style="color: var(--ink3); font-size: 13px;">When you apply for drives or get updates, they'll show up here.</p>
-        </div>
-        {% endfor %}
-    </div>
-</div>
 {% endblock %}

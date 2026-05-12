@@ -1,145 +1,278 @@
-﻿{% extends 'base.html' %}
+﻿{% extends "dashboard_base.html" %}
 {% load placement_tags %}
+{% block breadcrumb_page_name %}Applicants{% endblock %}
 
-{% block content %}
-<div class="d-flex justify-content-between align-items-center mt-4 mb-4">
-    <h3 style="font-family: var(--font-display); font-weight: 800; letter-spacing: -0.5px;">
-        <i class="fas fa-users me-2" style="color: var(--primary);"></i>Applicants
-    </h3>
+{% block dashboard_content %}
+<style>
+  /* ── APPLICANTS PAGE STYLES ── */
+  .ap-header {
+    margin-bottom: 1.75rem;
+  }
+  .ap-title {
+    font-family: var(--font-display); font-size: 26px; font-weight: 800;
+    color: var(--ink); margin: 0; display: flex; align-items: center; gap: 10px;
+  }
+  .ap-title i { color: var(--primary2); }
+
+  /* Filter Bar */
+  .filter-bar {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); padding: 1.25rem; margin-bottom: 1.75rem;
+  }
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-label { font-size: 12px; font-weight: 600; color: var(--ink3); text-transform: uppercase; letter-spacing: 0.5px; }
+  .form-select {
+    background: var(--bg2) !important; border: 1px solid var(--border2) !important;
+    color: var(--ink) !important; border-radius: 10px !important;
+    font-family: var(--font-body) !important; font-size: 14px !important;
+    padding: 0.6rem 0.85rem !important; transition: all 0.18s !important;
+  }
+  .form-select:focus {
+    border-color: var(--primary) !important; box-shadow: 0 0 0 3px var(--p-soft) !important;
+    background: var(--bg3) !important;
+  }
+
+  /* Drive Info Header */
+  .drive-info-bar {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 1rem; flex-wrap: wrap; gap: 8px;
+  }
+  .drive-info-title { font-family: var(--font-display); font-weight: 700; color: var(--ink2); font-size: 16px; margin: 0; }
+  .drive-info-count { font-size: 13px; color: var(--ink3); font-family: var(--font-mono); }
+
+  /* Applicant Cards */
+  .applicant-list { display: flex; flex-direction: column; gap: 14px; }
+
+  .applicant-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); padding: 1.25rem 1.5rem;
+    position: relative; overflow: hidden; transition: all 0.25s ease;
+  }
+  .applicant-card::before {
+    content: ''; position: absolute; top: 0; left: 0; width: 3px; height: 100%;
+    background: var(--primary); opacity: 0; transition: opacity 0.25s;
+  }
+  .applicant-card:hover { border-color: var(--border2); transform: translateY(-1px); }
+  .applicant-card:hover::before { opacity: 1; }
+
+  .applicant-inner {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    flex-wrap: wrap; gap: 16px;
+  }
+
+  /* Left Side: Info */
+  .applicant-left { display: flex; align-items: center; gap: 14px; flex: 1; min-width: 250px; }
+  .applicant-avatar {
+    width: 48px; height: 48px; border-radius: 50%;
+    background: var(--p-soft); color: var(--primary2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; font-weight: 800; flex-shrink: 0; overflow: hidden;
+    font-family: var(--font-display); border: 1px solid var(--border);
+  }
+  .applicant-avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .applicant-name { font-size: 15px; font-weight: 700; color: var(--ink); margin-bottom: 4px; }
+  .applicant-meta { font-size: 13px; color: var(--ink3); display: flex; gap: 12px; flex-wrap: wrap; }
+  .applicant-meta span { display: inline-flex; align-items: center; gap: 4px; }
+  .skill-stack { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 8px; }
+  .skill-tag {
+    padding: 3px 9px; border-radius: 6px; font-size: 11px; font-weight: 600;
+    background: var(--bg2); color: var(--ink2); border: 1px solid var(--border); font-family: var(--font-mono);
+  }
+
+  /* Right Side: Actions */
+  .applicant-right {
+    display: flex; flex-direction: column; align-items: flex-end; gap: 10px; flex-shrink: 0;
+  }
+  .form-select-sm {
+    background: var(--bg2) !important; border: 1px solid var(--border2) !important;
+    color: var(--ink) !important; border-radius: 8px !important;
+    font-family: var(--font-body) !important; font-size: 13px !important;
+    padding: 6px 10px !important; min-width: 160px; transition: all 0.18s !important;
+  }
+  .form-select-sm:focus {
+    border-color: var(--primary) !important; box-shadow: 0 0 0 3px var(--p-soft) !important;
+  }
+
+  .action-row { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+  .btn-action {
+    font-size: 12px; font-weight: 700; text-decoration: none; padding: 5px 12px;
+    border-radius: 8px; display: inline-flex; align-items: center; gap: 5px; transition: all 0.18s; border: none; cursor: pointer;
+  }
+  .btn-message { background: var(--primary); color: #fff; }
+  .btn-message:hover { background: var(--primary2); box-shadow: 0 4px 10px var(--p-glow); }
+  .btn-schedule { background: var(--green-soft); color: var(--green); border: 1px solid rgba(34,211,160,0.3); }
+  .btn-schedule:hover { background: var(--green); color: #fff; }
+  .btn-resume { background: none; color: var(--primary2); padding: 5px 0; font-weight: 600; }
+  .btn-resume:hover { color: var(--ink); }
+
+  /* Empty States */
+  .empty-state {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); padding: 4rem 2rem; text-align: center;
+  }
+  .empty-icon { font-size: 40px; color: var(--ink3); margin-bottom: 16px; display: block; }
+  .empty-title { font-family: var(--font-display); font-weight: 700; color: var(--ink); margin-bottom: 8px; font-size: 18px;}
+  .empty-text { color: var(--ink2); font-size: 14px; }
+
+  /* ── CONFIRMATION MODAL ── */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);
+    z-index: 9999; justify-content: center; align-items: center;
+  }
+  .modal-overlay.active { display: flex; }
+  .modal-card {
+    background: var(--surface); border: 1px solid var(--border2);
+    border-radius: var(--radius-lg); padding: 2.5rem 2rem;
+    max-width: 420px; width: 90%; text-align: center;
+    animation: fadeUp 0.3s ease both;
+  }
+  .modal-icon { font-size: 32px; margin-bottom: 16px; display: block; }
+  .modal-title { font-family: var(--font-display); font-weight: 800; color: var(--ink); font-size: 20px; margin-bottom: 10px; }
+  .modal-text { color: var(--ink2); font-size: 14px; line-height: 1.6; margin-bottom: 24px; }
+  .modal-text strong { color: var(--primary2); }
+  .modal-warn { color: var(--red); font-size: 12px; font-weight: 600; display: block; margin-top: 6px; }
+  .modal-actions { display: flex; gap: 10px; justify-content: center; }
+  .btn-modal-cancel {
+    padding: 10px 20px; border-radius: 10px; background: var(--surface2);
+    border: 1px solid var(--border2); color: var(--ink); font-weight: 600; cursor: pointer;
+    font-family: var(--font-body); font-size: 14px; transition: all 0.18s;
+  }
+  .btn-modal-cancel:hover { background: var(--bg3); border-color: var(--ink3); }
+  .btn-modal-confirm {
+    padding: 10px 20px; border-radius: 10px; background: var(--primary);
+    border: none; color: #fff; font-weight: 700; cursor: pointer;
+    font-family: var(--font-display); font-size: 14px; transition: all 0.18s;
+  }
+  .btn-modal-confirm:hover { background: var(--primary2); }
+
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+
+<div class="ap-header">
+  <h1 class="ap-title"><i class="fas fa-users"></i> Applicants</h1>
 </div>
 
 <!-- Drive Selection Dropdown -->
-<div class="card p-4 mb-4" style="border-radius: var(--radius-lg);">
-    <form method="GET" class="d-flex align-items-end gap-3">
-        <div style="flex: 1;">
-            <label class="form-label">Select a Drive to view applicants</label>
-            <select name="drive" class="form-select" onchange="this.form.submit()">
-                <option value="">-- Choose a Drive --</option>
-                {% for drive in drives %}
-                    <option value="{{ drive.pk }}" {% if selected_drive and selected_drive.pk == drive.pk %}selected{% endif %}>
-                        {{ drive.role }} at {{ drive.company }} ({{ drive.application_set.count }} applicants)
-                    </option>
-                {% endfor %}
-            </select>
-        </div>
-    </form>
+<div class="filter-bar">
+  <form method="GET">
+    <div class="form-group">
+      <label class="form-label">Select a Drive to view applicants</label>
+      <select name="drive" class="form-select" onchange="this.form.submit()">
+        <option value="">-- Choose a Drive --</option>
+        {% for drive in drives %}
+          <option value="{{ drive.pk }}" {% if selected_drive and selected_drive.pk == drive.pk %}selected{% endif %}>
+            {{ drive.role }} at {{ drive.company }} ({{ drive.application_set.count }} applicants)
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+  </form>
 </div>
 
 {% if selected_drive %}
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h5 style="font-family: var(--font-display); font-weight: 700; color: var(--ink2);">
-            {{ selected_drive.role }} - {{ selected_drive.company }}
-        </h5>
-        <span style="font-size: 13px; color: var(--ink3); font-family: var(--font-mono);">{{ applications|length }} total applicants</span>
-    </div>
+  <div class="drive-info-bar">
+    <h5 class="drive-info-title">{{ selected_drive.role }} - {{ selected_drive.company }}</h5>
+    <span class="drive-info-count">{{ applications|length }} total applicants</span>
+  </div>
 
-    {% if applications %}
-        <!-- Applicant Cards -->
-        <div style="display: flex; flex-direction: column; gap: 14px;">
-            {% for app in applications %}
-            <div class="card p-4" style="border-radius: var(--radius-lg); transition: all 0.2s;">
-                <div class="d-flex flex-column flex-md-row justify-content-between align-items-start gap-3">
-                    
-                    <!-- Left: Student Info -->
-                    <div style="display: flex; align-items: center; gap: 16px;">
-                        <!-- Student Avatar -->
-                        <div style="width: 48px; height: 48px; border-radius: 50%; background: var(--p-soft); color: var(--primary2); display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 800; flex-shrink: 0; overflow: hidden;">
-                            {% if app.student.studentprofile.profile_pic %}
-                                <img src="{{ app.student.studentprofile.profile_pic.url }}" style="width: 100%; height: 100%; object-fit: cover;">
-                            {% else %}
-                                {{ app.student.first_name|first|upper }}{{ app.student.last_name|first|upper }}
-                            {% endif %}
-                        </div>
-                        
-                        <div>
-                            <h5 style="font-family: var(--font-display); font-weight: 700; margin-bottom: 2px;">{{ app.student.get_full_name|default:app.student.username }}</h5>
-                            <div style="font-size: 13px; color: var(--ink3); display: flex; gap: 12px; flex-wrap: wrap;">
-                                <span><i class="fas fa-envelope me-1"></i> {{ app.student.email }}</span>
-                                {% if app.student.studentprofile.branch %}<span><i class="fas fa-code-branch me-1"></i> {{ app.student.studentprofile.branch }}</span>{% endif %}
-                                {% if app.student.studentprofile.cgpa %}<span><i class="fas fa-graduation-cap me-1"></i> CGPA: {{ app.student.studentprofile.cgpa }}</span>{% endif %}
-                            </div>
-                            {% if app.student.studentprofile.skills %}
-                            <div style="margin-top: 6px; display: flex; gap: 6px; flex-wrap: wrap;">
-                                {% for skill in app.student.studentprofile.skills|split:"," %}
-                                    <span style="padding: 2px 8px; border-radius: 12px; background: var(--bg2); border: 1px solid var(--border); color: var(--ink3); font-size: 11px;">{{ skill|trim }}</span>
-                                {% endfor %}
-                            </div>
-                            {% endif %}
-                        </div>
-                    </div>
-
-                    <!-- Right: Status & Actions -->
-                    <div class="d-flex flex-column align-items-md-end gap-2 flex-shrink-0">
-                        
-                        <!-- Status Dropdown Form -->
-                        <form method="POST" action="{% url 'update_application' app.pk %}" id="statusForm-{{ app.pk }}">
-                            {% csrf_token %}
-                            <select name="status" class="form-select form-select-sm" style="width: auto; min-width: 160px; border-radius: 8px;" onchange="confirmStatus(this, {{ app.pk }})">
-                                {% for value, label in status_choices %}
-                                    <option value="{{ value }}" {% if app.status == value %}selected{% endif %}>{{ label }}</option>
-                                {% endfor %}
-                            </select>
-                        </form>
-
-                        <!-- Action Buttons Row -->
-                        <div style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end;">
-
-                            <!-- ── CHAT / MESSAGE BUTTON ── -->
-                            {% if app.status == 'shortlisted' or app.status == 'selected' or app.status == 'placed' %}
-                            <a href="{% url 'start_chat' app.pk %}" style="font-size: 12px; font-weight: 700; color: #fff; text-decoration: none; padding: 5px 12px; border-radius: 7px; background: var(--primary); display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 2px 4px var(--p-glow);">
-                                <i class="fas fa-comment-dots"></i> Message
-                            </a>
-                            {% endif %}
-                            <!-- ── SCHEDULE INTERVIEW BUTTON ── -->
-                            {% if app.status == 'shortlisted' or app.status == 'selected' %}
-                            <a href="{% url 'schedule_interview' app.pk %}" style="font-size: 12px; font-weight: 600; color: var(--green); text-decoration: none; padding: 5px 12px; border-radius: 7px; background: var(--green-soft); border: 1px solid rgba(34,211,160,0.3); display: inline-flex; align-items: center; gap: 5px;">
-                                <i class="fas fa-calendar-plus"></i> Schedule
-                            </a>
-                            {% endif %}
-
-                            <!-- Resume Link -->
-                            {% if app.student.studentprofile.resume %}
-                            <a href="{{ app.student.studentprofile.resume.url }}" target="_blank" style="font-size: 12px; color: var(--primary2); text-decoration: none; font-weight: 600; padding: 5px 0; display: inline-flex; align-items: center; gap: 5px;">
-                                <i class="fas fa-file-pdf"></i> Resume
-                            </a>
-                            {% endif %}
-
-                        </div>
-                    </div>
-
-                </div>
+  {% if applications %}
+    <div class="applicant-list">
+      {% for app in applications %}
+      <div class="applicant-card">
+        <div class="applicant-inner">
+          
+          <!-- Left: Student Info -->
+          <div class="applicant-left">
+            <div class="applicant-avatar">
+              {% if app.student.studentprofile.profile_pic %}
+                <img src="{{ app.student.studentprofile.profile_pic.url }}" alt="">
+              {% else %}
+                {{ app.student.first_name|first|upper }}{{ app.student.last_name|first|upper }}
+              {% endif %}
             </div>
-            {% endfor %}
+            <div>
+              <div class="applicant-name">{{ app.student.get_full_name|default:app.student.username }}</div>
+              <div class="applicant-meta">
+                <span><i class="fas fa-envelope"></i> {{ app.student.email }}</span>
+                {% if app.student.studentprofile.branch %}<span><i class="fas fa-code-branch"></i> {{ app.student.studentprofile.branch }}</span>{% endif %}
+                {% if app.student.studentprofile.cgpa %}<span><i class="fas fa-graduation-cap"></i> CGPA: {{ app.student.studentprofile.cgpa }}</span>{% endif %}
+              </div>
+              {% if app.student.studentprofile.skills %}
+              <div class="skill-stack">
+                {% for skill in app.student.studentprofile.skills|split:"," %}
+                  <span class="skill-tag">{{ skill|trim }}</span>
+                {% endfor %}
+              </div>
+              {% endif %}
+            </div>
+          </div>
+
+          <!-- Right: Status & Actions -->
+          <div class="applicant-right">
+            <form method="POST" action="{% url 'update_application' app.pk %}" id="statusForm-{{ app.pk }}">
+              {% csrf_token %}
+              <select name="status" class="form-select-sm" onchange="confirmStatus(this, {{ app.pk }})">
+                {% for value, label in status_choices %}
+                  <option value="{{ value }}" {% if app.status == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </form>
+
+            <div class="action-row">
+              {% if app.status == 'shortlisted' or app.status == 'selected' or app.status == 'placed' %}
+              <a href="{% url 'start_chat' app.pk %}" class="btn-action btn-message">
+                <i class="fas fa-comment-dots"></i> Message
+              </a>
+              {% endif %}
+
+              {% if app.status == 'shortlisted' or app.status == 'selected' %}
+              <a href="{% url 'schedule_interview' app.pk %}" class="btn-action btn-schedule">
+                <i class="fas fa-calendar-plus"></i> Schedule
+              </a>
+              {% endif %}
+
+              {% if app.student.studentprofile.resume %}
+              <a href="{{ app.student.studentprofile.resume.url }}" target="_blank" class="btn-action btn-resume">
+                <i class="fas fa-file-pdf"></i> Resume
+              </a>
+              {% endif %}
+            </div>
+          </div>
+
         </div>
-    {% else %}
-        <div class="card p-5 text-center" style="border-radius: var(--radius-lg);">
-            <i class="fas fa-inbox fa-3x mb-3" style="color: var(--ink3);"></i>
-            <h5 style="color: var(--ink2);">No applicants yet</h5>
-            <p style="color: var(--ink3); font-size: 13px;">Students will appear here once they apply for this drive.</p>
-        </div>
-    {% endif %}
-{% else %}
-    <div class="card p-5 text-center" style="border-radius: var(--radius-lg);">
-        <i class="fas fa-hand-pointer fa-3x mb-3" style="color: var(--ink3);"></i>
-        <h5 style="color: var(--ink2);">Select a Drive</h5>
-        <p style="color: var(--ink3); font-size: 13px;">Choose one of your posted drives from the dropdown above to view its applicants.</p>
+      </div>
+      {% endfor %}
     </div>
+  {% else %}
+    <div class="empty-state">
+      <i class="fas fa-inbox empty-icon"></i>
+      <h3 class="empty-title">No applicants yet</h3>
+      <p class="empty-text">Students will appear here once they apply for this drive.</p>
+    </div>
+  {% endif %}
+{% else %}
+  <div class="empty-state">
+    <i class="fas fa-hand-pointer empty-icon"></i>
+    <h3 class="empty-title">Select a Drive</h3>
+    <p class="empty-text">Choose one of your posted drives from the dropdown above to view its applicants.</p>
+  </div>
 {% endif %}
 
 <!-- Confirmation Modal -->
-<div id="statusModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:9999; justify-content:center; align-items:center;">
-    <div class="card p-5 text-center" style="border-radius: var(--radius-lg); max-width: 420px; width: 90%; border: 2px solid var(--border2);">
-        <i id="modalIcon" class="fas fa-exclamation-triangle fa-2x mb-3" style="color: var(--yellow);"></i>
-        <h4 style="font-family: var(--font-display); font-weight: 800;">Confirm Status Change</h4>
-        <p style="color: var(--ink2); font-size: 14px; margin-top: 10px; line-height: 1.6;">
-            Are you sure you want to change the status to <strong id="modalStatus" style="color: var(--primary2);"></strong>? <br>
-            <span style="color: var(--red); font-size: 12px; font-weight: 600;">The student will be notified immediately.</span>
-        </p>
-        <div style="display: flex; gap: 10px; justify-content: center; margin-top: 20px;">
-            <button onclick="closeModal()" style="padding: 10px 20px; border-radius: 10px; background: var(--surface2); border: 1px solid var(--border2); color: var(--ink); font-weight: 600; cursor: pointer;">Cancel</button>
-            <button id="modalConfirmBtn" onclick="submitWithLoading(this, 'Updating...')" style="padding: 10px 20px; border-radius: 10px; background: var(--primary); border: none; color: #fff; font-weight: 700; cursor: pointer;">Yes, Update</button>
-        </div>
+<div id="statusModal" class="modal-overlay">
+  <div class="modal-card">
+    <i id="modalIcon" class="fas fa-exclamation-triangle modal-icon" style="color: var(--yellow);"></i>
+    <h3 class="modal-title">Confirm Status Change</h3>
+    <p class="modal-text">
+      Are you sure you want to change the status to <strong id="modalStatus"></strong>?
+      <span class="modal-warn">The student will be notified immediately.</span>
+    </p>
+    <div class="modal-actions">
+      <button onclick="closeModal()" class="btn-modal-cancel">Cancel</button>
+      <button id="modalConfirmBtn" class="btn-modal-confirm">Yes, Update</button>
     </div>
+  </div>
 </div>
 
 <script>
@@ -147,56 +280,56 @@ let currentSelect = null;
 let originalValue = null;
 
 function confirmStatus(selectElement, appId) {
-    currentSelect = selectElement;
-    originalValue = selectElement.dataset.original || selectElement.querySelector('option[selected]').value;
-    
-    // If they clicked back to the original status, do nothing
-    if (selectElement.value === originalValue) return;
+  currentSelect = selectElement;
+  originalValue = selectElement.dataset.original || selectElement.querySelector('option[selected]').value;
+  
+  // If they clicked back to the original status, do nothing
+  if (selectElement.value === originalValue) return;
 
-    const statusText = selectElement.options[selectElement.selectedIndex].text;
-    
-    // Update modal text
-    document.getElementById('modalStatus').innerText = statusText;
-    
-    // Change modal icon color based on status
-    const icon = document.getElementById('modalIcon');
-    if (selectElement.value === 'selected') {
-        icon.className = 'fas fa-check-circle fa-2x mb-3';
-        icon.style.color = 'var(--green)';
-    } else if (selectElement.value === 'placed') {
-        icon.className = 'fas fa-trophy fa-2x mb-3'; // ✨ TROPHY ICON FOR PLACED
-        icon.style.color = '#f59e0b'; // Gold color
-    } else if (selectElement.value === 'rejected') {
-        icon.className = 'fas fa-times-circle fa-2x mb-3';
-        icon.style.color = 'var(--red)';
-    } else if (selectElement.value === 'shortlisted') {
-        icon.className = 'fas fa-star fa-2x mb-3';
-        icon.style.color = 'var(--yellow)';
-    } else {
-        icon.className = 'fas fa-exclamation-triangle fa-2x mb-3';
-        icon.style.color = 'var(--primary2)';
-    }
+  const statusText = selectElement.options[selectElement.selectedIndex].text;
+  
+  // Update modal text
+  document.getElementById('modalStatus').innerText = statusText;
+  
+  // Change modal icon color based on status
+  const icon = document.getElementById('modalIcon');
+  if (selectElement.value === 'selected') {
+    icon.className = 'fas fa-check-circle modal-icon';
+    icon.style.color = 'var(--green)';
+  } else if (selectElement.value === 'placed') {
+    icon.className = 'fas fa-trophy modal-icon';
+    icon.style.color = '#f59e0b';
+  } else if (selectElement.value === 'rejected') {
+    icon.className = 'fas fa-times-circle modal-icon';
+    icon.style.color = 'var(--red)';
+  } else if (selectElement.value === 'shortlisted') {
+    icon.className = 'fas fa-star modal-icon';
+    icon.style.color = 'var(--yellow)';
+  } else {
+    icon.className = 'fas fa-exclamation-triangle modal-icon';
+    icon.style.color = 'var(--primary2)';
+  }
 
-    // Show modal
-    const modal = document.getElementById('statusModal');
-    modal.style.display = 'flex';
+  // Show modal
+  const modal = document.getElementById('statusModal');
+  modal.classList.add('active');
 
-    // Set up confirm button
-    const confirmBtn = document.getElementById('modalConfirmBtn');
-    confirmBtn.onclick = function() {
-        document.getElementById('statusForm-' + appId).submit();
-    };
+  // Set up confirm button
+  const confirmBtn = document.getElementById('modalConfirmBtn');
+  confirmBtn.onclick = function() {
+    submitWithLoading(this, 'Updating...');
+    document.getElementById('statusForm-' + appId).submit();
+  };
 }
 
 function closeModal() {
-    const modal = document.getElementById('statusModal');
-    modal.style.display = 'none';
-    
-    // Revert the dropdown back to original value if cancelled
-    if (currentSelect) {
-        currentSelect.value = originalValue;
-    }
+  const modal = document.getElementById('statusModal');
+  modal.classList.remove('active');
+  
+  // Revert the dropdown back to original value if cancelled
+  if (currentSelect) {
+    currentSelect.value = originalValue;
+  }
 }
 </script>
-
 {% endblock %}

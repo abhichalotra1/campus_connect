@@ -1,126 +1,241 @@
-{% extends 'base.html' %}
+{% extends "dashboard_base.html" %}
 {% load placement_tags %}
-{% block title %}{{ drive.role }} at {{ drive.company }} – Campus Connect{% endblock %}
+{% block breadcrumb_page_name %}{{ drive.role }}{% endblock %}
 
-{% block content %}
-<div style="max-width:900px;margin:0 auto;">
+{% block dashboard_content %}
+<style>
+  /* ── DRIVE DETAIL STYLES ── */
+  .dd-wrapper {
+    display: flex;
+    justify-content: center;
+    padding-bottom: 2rem;
+  }
+  .dd-container {
+    width: 100%;
+    max-width: 900px;
+  }
 
-<!-- Top Action Bar -->
-<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:1.5rem;">
-  <a href="{% url 'drive_list' %}" style="font-size:13px;font-weight:600;color:var(--ink2);text-decoration:none;display:flex;align-items:center;gap:6px;">
-    <i class="fas fa-arrow-left"></i> Back to Drives
-  </a>
-  
-  {% if user.role == 'student' %}
-  <div style="display:flex;gap:10px;">
-    <!-- Bookmark Toggle -->
-    {% if is_saved %}
-    <form method="POST" action="{% url 'unsave_drive' drive.pk %}">
-      {% csrf_token %}
-      <button type="submit" style="font-size:13px;font-weight:600;color:var(--primary2);background:var(--p-soft);border:1px solid rgba(79,70,229,0.3);padding:7px 16px;border-radius:8px;cursor:pointer;">
-        <i class="fas fa-bookmark me-1"></i>Saved
-      </button>
-    </form>
-    {% else %}
-    <form method="POST" action="{% url 'save_drive' drive.pk %}">
-      {% csrf_token %}
-      <button type="submit" style="font-size:13px;font-weight:600;color:var(--ink2);background:var(--surface);border:1px solid var(--border2);padding:7px 16px;border-radius:8px;cursor:pointer;">
-        <i class="far fa-bookmark me-1"></i>Save Job
-      </button>
-    </form>
-    {% endif %}
+  /* Action Bar */
+  .dd-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-bottom: 1.5rem;
+  }
+  .btn-bookmark {
+    font-size: 13px; font-weight: 600; padding: 7px 16px; border-radius: 8px; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 6px; transition: all 0.18s; border: none;
+  }
+  .btn-saved { color: var(--primary2); background: var(--p-soft); border: 1px solid rgba(79,70,229,0.3); }
+  .btn-saved:hover { background: var(--primary); color: #fff; border-color: var(--primary); }
+  .btn-unsaved { color: var(--ink2); background: var(--surface); border: 1px solid var(--border2); }
+  .btn-unsaved:hover { color: var(--primary2); border-color: var(--primary); }
+  .btn-applied-badge {
+    font-size: 13px; font-weight: 600; color: var(--green); background: var(--green-soft);
+    padding: 8px 16px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px;
+  }
+  .btn-apply {
+    font-size: 13px; font-weight: 700; color: #fff; background: var(--primary); border: none;
+    padding: 8px 18px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all 0.18s;
+  }
+  .btn-apply:hover { background: var(--primary2); box-shadow: 0 4px 12px var(--p-glow); }
 
-    <!-- Apply Button (FIXED) -->
-    {% if already_applied %}
-    <span style="font-size:13px;font-weight:600;color:var(--green);background:var(--green-soft);padding:8px 16px;border-radius:8px;display:inline-flex;align-items:center;">
-      <i class="fas fa-check me-1"></i>Applied
-    </span>
-    {% else %}
-    <form method="POST" action="{% url 'apply' drive.pk %}">
-      {% csrf_token %}
-      <button type="submit" style="font-size:13px;font-weight:700;color:#fff;padding:8px 18px;border-radius:8px;background:var(--primary);border:none;cursor:pointer;display:inline-flex;align-items:center;">
-        Apply Now
-      </button>
-    </form>
-    {% endif %}
-  </div>
-  {% endif %}
-</div>
-  <!-- Header Card -->
-  <div style="background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:2rem;margin-bottom:1.5rem;display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
-    {% if drive.company_logo %}
-    <img src="{{ drive.company_logo.url }}" alt="{{ drive.company }}" style="width:80px;height:80px;border-radius:14px;object-fit:cover;border:1px solid var(--border);">
-    {% else %}
-    <div style="width:80px;height:80px;border-radius:14px;background:var(--bg2);display:flex;align-items:center;justify-content:center;color:var(--ink3);font-size:32px;border:1px solid var(--border);">
-      <i class="fas fa-building"></i>
+  /* Header Card */
+  .dd-header {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); padding: 2rem; margin-bottom: 1.5rem;
+    display: flex; align-items: center; gap: 20px; flex-wrap: wrap;
+    transition: border-color 0.2s;
+  }
+  .dd-header:hover { border-color: var(--border2); }
+
+  .dd-logo {
+    width: 80px; height: 80px; border-radius: 14px; object-fit: cover;
+    border: 1px solid var(--border); flex-shrink: 0; background: var(--bg2);
+  }
+  .dd-logo-placeholder {
+    width: 80px; height: 80px; border-radius: 14px; background: var(--bg2);
+    display: flex; align-items: center; justify-content: center; color: var(--ink3);
+    font-size: 32px; border: 1px solid var(--border); flex-shrink: 0;
+  }
+  .dd-info { flex: 1; min-width: 200px; }
+  .dd-title {
+    font-family: var(--font-display); font-size: 28px; font-weight: 800;
+    color: var(--ink); margin: 0 0 4px;
+  }
+  .dd-company { font-size: 16px; color: var(--ink2); }
+  .dd-meta { display: flex; gap: 16px; margin-top: 10px; flex-wrap: wrap; }
+  .dd-meta-item {
+    font-size: 13px; color: var(--ink3); display: inline-flex; align-items: center; gap: 5px;
+  }
+
+  .dd-salary-block { text-align: right; flex-shrink: 0; }
+  .dd-salary {
+    font-family: var(--font-display); font-size: 24px; font-weight: 800; color: var(--green);
+  }
+  .dd-type-badge {
+    font-size: 12px; background: var(--p-soft); color: var(--primary2);
+    padding: 4px 12px; border-radius: 20px; font-weight: 600; display: inline-block; margin-top: 6px;
+  }
+
+  /* Content Grid */
+  .dd-grid {
+    display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 1.5rem;
+  }
+
+  /* Panels */
+  .panel {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); padding: 1.5rem; transition: border-color 0.2s;
+  }
+  .panel:hover { border-color: var(--border2); }
+  .panel-title {
+    font-family: var(--font-display); font-weight: 700; color: var(--ink);
+    margin: 0 0 1rem; font-size: 16px; display: flex; align-items: center; gap: 8px;
+  }
+
+  /* Description */
+  .dd-desc { color: var(--ink2); font-size: 14px; line-height: 1.7; white-space: pre-wrap; }
+
+  /* Skills */
+  .skill-stack { display: flex; flex-wrap: wrap; gap: 8px; }
+  .skill-tag {
+    font-size: 12px; background: var(--bg2); color: var(--primary2);
+    padding: 4px 12px; border-radius: 6px; font-weight: 500; border: 1px solid var(--border);
+  }
+
+  /* Info Rows */
+  .info-row {
+    display: flex; justify-content: space-between; padding-bottom: 10px;
+    border-bottom: 1px solid var(--border); margin-bottom: 10px;
+  }
+  .info-row:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+  .info-key { color: var(--ink2); font-size: 14px; }
+  .info-val { color: var(--ink); font-weight: 600; font-size: 14px; }
+  .info-val.active { color: var(--green); }
+  .info-val.closed { color: var(--red); }
+
+  .company-link {
+    color: var(--primary2); text-decoration: none; font-weight: 600; font-size: 14px;
+    display: inline-flex; align-items: center; gap: 5px; transition: color 0.15s;
+  }
+  .company-link:hover { color: var(--ink); }
+  .posted-date { color: var(--ink3); font-size: 13px; margin-top: 8px; }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .dd-header { flex-direction: column; text-align: center; }
+    .dd-info { text-align: center; }
+    .dd-meta { justify-content: center; }
+    .dd-salary-block { text-align: center; width: 100%; }
+    .dd-grid { grid-template-columns: 1fr; }
+    .dd-actions { justify-content: center; }
+  }
+</style>
+
+<div class="dd-wrapper">
+  <div class="dd-container">
+
+    <!-- Action Bar -->
+    {% if user.role == 'student' %}
+    <div class="dd-actions">
+      {% if is_saved %}
+      <form method="POST" action="{% url 'unsave_drive' drive.pk %}">
+        {% csrf_token %}
+        <button type="submit" class="btn-bookmark btn-saved"><i class="fas fa-bookmark"></i> Saved</button>
+      </form>
+      {% else %}
+      <form method="POST" action="{% url 'save_drive' drive.pk %}">
+        {% csrf_token %}
+        <button type="submit" class="btn-bookmark btn-unsaved"><i class="far fa-bookmark"></i> Save Job</button>
+      </form>
+      {% endif %}
+
+      {% if already_applied %}
+      <span class="btn-applied-badge"><i class="fas fa-check"></i> Applied</span>
+      {% else %}
+      <form method="POST" action="{% url 'apply' drive.pk %}">
+        {% csrf_token %}
+        <button type="submit" class="btn-apply">Apply Now</button>
+      </form>
+      {% endif %}
     </div>
     {% endif %}
-    <div style="flex:1;">
-      <h1 style="font-family:var(--font-display);font-size:28px;font-weight:800;color:var(--ink);margin:0;">{{ drive.role }}</h1>
-      <div style="font-size:16px;color:var(--ink2);margin-top:4px;">{{ drive.company }}</div>
-      <div style="display:flex;gap:12px;margin-top:10px;flex-wrap:wrap;">
-        <span style="font-size:13px;color:var(--ink3);display:flex;align-items:center;gap:5px;"><i class="fas fa-map-marker-alt"></i>{{ drive.location }}</span>
-        <span style="font-size:13px;color:var(--ink3);display:flex;align-items:center;gap:5px;"><i class="fas fa-clock"></i>Deadline: {{ drive.deadline|date:"d M Y" }}</span>
-      </div>
-    </div>
-    <div style="text-align:right;">
-      <div style="font-family:var(--font-display);font-size:24px;font-weight:800;color:var(--green);">{{ drive.formatted_salary }}</div>
-      <span style="font-size:12px;background:var(--p-soft);color:var(--primary2);padding:4px 12px;border-radius:20px;font-weight:600;">{{ drive.get_job_type_display }}</span>
-    </div>
-  </div>
 
-  <!-- Details Grid -->
-  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.5rem;">
-
-    <!-- Left: Description & Skills -->
-    <div style="display:grid;gap:1.5rem;">
-      <div style="background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:1.5rem;">
-        <h3 style="font-family:var(--font-display);font-weight:700;color:var(--ink);margin:0 0 1rem;font-size:16px;">Job Description</h3>
-        <div style="color:var(--ink2);font-size:14px;line-height:1.6;white-space:pre-wrap;">{{ drive.description }}</div>
-      </div>
-
-      <div style="background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:1.5rem;">
-        <h3 style="font-family:var(--font-display);font-weight:700;color:var(--ink);margin:0 0 1rem;font-size:16px;">Skills Required</h3>
-        <div style="display:flex;flex-wrap:wrap;gap:8px;">
-          {% for skill in drive.skills_required|split:"," %}
-            <span style="font-size:12px;background:var(--bg2);color:var(--primary2);padding:4px 12px;border-radius:6px;font-weight:500;border:1px solid var(--border);">{{ skill|trim }}</span>
-          {% endfor %}
+    <!-- Header Card -->
+    <div class="dd-header">
+      {% if drive.company_logo %}
+        <img src="{{ drive.company_logo.url }}" alt="{{ drive.company }}" class="dd-logo">
+      {% else %}
+        <div class="dd-logo-placeholder"><i class="fas fa-building"></i></div>
+      {% endif %}
+      
+      <div class="dd-info">
+        <h1 class="dd-title">{{ drive.role }}</h1>
+        <div class="dd-company">{{ drive.company }}</div>
+        <div class="dd-meta">
+          <span class="dd-meta-item"><i class="fas fa-map-marker-alt"></i> {{ drive.location }}</span>
+          <span class="dd-meta-item"><i class="fas fa-clock"></i> Deadline: {{ drive.deadline|date:"d M Y" }}</span>
         </div>
       </div>
+
+      <div class="dd-salary-block">
+        <div class="dd-salary">{{ drive.formatted_salary }}</div>
+        <span class="dd-type-badge">{{ drive.get_job_type_display }}</span>
+      </div>
     </div>
 
-    <!-- Right: Eligibility & Company -->
-    <div style="display:grid;gap:1.5rem;">
-      <div style="background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:1.5rem;">
-        <h3 style="font-family:var(--font-display);font-weight:700;color:var(--ink);margin:0 0 1rem;font-size:16px;">Eligibility Criteria</h3>
-        <div style="display:grid;gap:12px;">
-          <div style="display:flex;justify-content:space-between;padding-bottom:8px;border-bottom:1px solid var(--border);">
-            <span style="color:var(--ink2);font-size:14px;">Min. CGPA</span>
-            <span style="color:var(--ink);font-weight:600;font-size:14px;">{{ drive.min_cgpa }}</span>
+    <!-- Details Grid -->
+    <div class="dd-grid">
+
+      <!-- Left Column -->
+      <div style="display:grid; gap:1.5rem;">
+        <div class="panel">
+          <h3 class="panel-title"><i class="fas fa-align-left" style="color: var(--primary2);"></i> Job Description</h3>
+          <div class="dd-desc">{{ drive.description }}</div>
+        </div>
+
+        <div class="panel">
+          <h3 class="panel-title"><i class="fas fa-code" style="color: var(--yellow);"></i> Skills Required</h3>
+          <div class="skill-stack">
+            {% for skill in drive.skills_required|split:"," %}
+              <span class="skill-tag">{{ skill|trim }}</span>
+            {% endfor %}
           </div>
-          <div style="display:flex;justify-content:space-between;padding-bottom:8px;border-bottom:1px solid var(--border);">
-            <span style="color:var(--ink2);font-size:14px;">Eligible Branches</span>
-            <span style="color:var(--ink);font-weight:600;font-size:14px;">{{ drive.get_eligible_branch_display }}</span>
+        </div>
+      </div>
+
+      <!-- Right Column -->
+      <div style="display:grid; gap:1.5rem;">
+        <div class="panel">
+          <h3 class="panel-title"><i class="fas fa-clipboard-check" style="color: var(--green);"></i> Eligibility Criteria</h3>
+          <div class="info-row">
+            <span class="info-key">Min. CGPA</span>
+            <span class="info-val">{{ drive.min_cgpa }}</span>
           </div>
-          <div style="display:flex;justify-content:space-between;">
-            <span style="color:var(--ink2);font-size:14px;">Status</span>
-            <span style="font-size:13px;font-weight:600;color:{% if drive.status == 'active' %}var(--green){% else %}var(--red){% endif %};">
+          <div class="info-row">
+            <span class="info-key">Eligible Branches</span>
+            <span class="info-val">{{ drive.get_eligible_branch_display }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-key">Status</span>
+            <span class="info-val {% if drive.status == 'active' %}active{% else %}closed{% endif %}">
               {{ drive.get_status_display }}
             </span>
           </div>
         </div>
+
+        <div class="panel">
+          <h3 class="panel-title"><i class="fas fa-building" style="color: var(--primary2);"></i> Posted By</h3>
+          <a href="{% url 'company_profile' drive.posted_by.pk %}" class="company-link">
+            <i class="fas fa-external-link-alt"></i> View Company Profile
+          </a>
+          <div class="posted-date">Posted on {{ drive.created_at|date:"d M Y" }}</div>
+        </div>
       </div>
 
-      <div style="background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:1.5rem;">
-        <h3 style="font-family:var(--font-display);font-weight:700;color:var(--ink);margin:0 0 1rem;font-size:16px;">Posted By</h3>
-        <a href="{% url 'company_profile' drive.posted_by.pk %}" style="color:var(--primary2);text-decoration:none;font-weight:600;font-size:14px;">
-          <i class="fas fa-external-link-alt me-1"></i>View Company Profile
-        </a>
-        <div style="color:var(--ink3);font-size:13px;margin-top:6px;">Posted on {{ drive.created_at|date:"d M Y" }}</div>
-      </div>
     </div>
-
   </div>
 </div>
-
 {% endblock %}

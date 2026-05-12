@@ -1,63 +1,212 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="row justify-content-center mt-5">
-    <div class="col-md-5">
-        <div class="card p-5" style="border-radius: var(--radius-lg);">
-            <div class="text-center mb-4">
-                <div style="width: 50px; height: 50px; border-radius: 14px; background: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 22px; color: #fff; margin: 0 auto 16px; box-shadow: 0 0 0 4px var(--p-soft);">
-                    <i class="fas fa-graduation-cap"></i>
-                </div>
-                <h3 style="font-family: var(--font-display); font-weight: 800;">Welcome Back</h3>
-                <p style="color: var(--ink3); font-size: 14px;">Sign in to access your dashboard</p>
-            </div>
+<style>
+  /* ── AUTH PAGES LAYOUT ── */
+  .auth-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding-top: 3rem;
+    padding-bottom: 3rem;
+    min-height: 70vh;
+  }
+  .auth-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 2.5rem;
+    width: 100%;
+    max-width: 440px;
+    transition: border-color 0.2s;
+  }
+  .auth-card:hover { border-color: var(--border2); }
 
-            <!-- Social Logins -->
-            <div class="d-flex flex-column gap-2 mb-4">
-                <a href="{% url 'github_login' %}" style="padding: 12px; border-radius: 10px; background: var(--surface2); border: 1px solid var(--border2); color: var(--ink); text-decoration: none; font-weight: 600; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 10px; transition: all 0.2s;">
-                    <i class="fab fa-github" style="font-size: 18px;"></i> Continue with GitHub
-                </a>
-                <a href="{% url 'google_login' %}" style="padding: 12px; border-radius: 10px; background: var(--surface2); border: 1px solid var(--border2); color: var(--ink); text-decoration: none; font-weight: 600; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 10px; transition: all 0.2s;">
-                    <i class="fab fa-google" style="font-size: 16px; color: #4285F4;"></i> Continue with Google
-                </a>
-            </div>
+  .auth-header {
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+  .auth-icon {
+    width: 52px; height: 52px;
+    border-radius: 14px;
+    background: var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    color: #fff;
+    margin: 0 auto 16px;
+    box-shadow: 0 0 0 4px var(--p-soft);
+  }
+  .auth-title {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 22px;
+    color: var(--ink);
+    margin: 0 0 4px;
+  }
+  .auth-subtitle { color: var(--ink3); font-size: 14px; }
 
-            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
-                <div style="flex: 1; height: 1px; background: var(--border2);"></div>
-                <span style="font-size: 11px; color: var(--ink3); font-weight: 700; text-transform: uppercase;">or sign in with email</span>
-                <div style="flex: 1; height: 1px; background: var(--border2);"></div>
-            </div>
+  /* Social Buttons */
+  .social-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 1.5rem;
+  }
+  .social-btn {
+    padding: 12px;
+    border-radius: 10px;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    color: var(--ink);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: all 0.2s;
+  }
+  .social-btn:hover { background: var(--bg3); border-color: var(--ink3); }
+  .social-btn i { font-size: 18px; }
 
-            <!-- Email Login Form -->
-            <form method="POST">
-                {% csrf_token %}
-                {% if form.errors %}
-                    <div class="cc-alert error" style="margin-bottom: 16px;">
-                        <i class="fas fa-exclamation-circle me-2"></i> Invalid username or password.
-                    </div>
-                {% endif %}
-                
-                <div class="mb-3">
-                    <label class="form-label">Username</label>
-                    <input type="text" name="username" class="form-control" placeholder="Enter your username" required>
-                </div>
-                <div class="mb-4">
-                    <label class="form-label">Password</label>
-                    <input type="password" name="password" class="form-control" placeholder="Enter your password" required>
-                </div>
-                
-                <button type="submit" class="btn btn-primary w-100" style="font-weight: 700; padding: 12px; border-radius: 10px; font-size: 15px;" onclick="submitWithLoading(this, 'Signing In...')">
-    Sign In
-</button>
-            </form>
-            <div class="forgot-password-link">
-    <a href="{% url 'password_reset' %}">Forgot Password?</a>
-</div>
+  /* Divider */
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .divider-line { flex: 1; height: 1px; background: var(--border2); }
+  .divider-text {
+    font-size: 11px;
+    color: var(--ink3);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
 
-            <div class="text-center mt-4" style="font-size: 13px; color: var(--ink3);">
-                Don't have an account? <a href="{% url 'register' %}" style="color: var(--primary2); font-weight: 700; text-decoration: none;">Create one</a>
-            </div>
-        </div>
+  /* Forms */
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 18px;
+  }
+  .form-label { font-size: 13px; font-weight: 600; color: var(--ink2); }
+  .form-control {
+    background: var(--bg2) !important;
+    border: 1px solid var(--border2) !important;
+    color: var(--ink) !important;
+    border-radius: 10px !important;
+    font-family: var(--font-body) !important;
+    font-size: 14px !important;
+    padding: 0.65rem 0.85rem !important;
+    transition: all 0.18s !important;
+  }
+  .form-control:focus {
+    border-color: var(--primary) !important;
+    box-shadow: 0 0 0 3px var(--p-soft) !important;
+    background: var(--bg3) !important;
+  }
+  .form-control::placeholder { color: var(--ink3) !important; }
+
+  /* Alerts */
+  .cc-alert {
+    padding: 11px 16px;
+    border-radius: 10px;
+    font-size: 13.5px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .cc-alert.error { background: var(--red-soft); border: 1px solid rgba(244,63,94,0.3); color: var(--red); }
+
+  /* Submit */
+  .btn-auth {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 15px;
+    color: #fff;
+    background: var(--primary);
+    border: none;
+    padding: 12px;
+    border-radius: 10px;
+    cursor: pointer;
+    width: 100%;
+    transition: all 0.18s;
+  }
+  .btn-auth:hover { background: var(--primary2); box-shadow: 0 6px 20px var(--p-glow); }
+
+  /* Footer Links */
+  .auth-footer {
+    text-align: center;
+    margin-top: 20px;
+    font-size: 13px;
+    color: var(--ink3);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .auth-link { color: var(--primary2); font-weight: 700; text-decoration: none; transition: color 0.15s; }
+  .auth-link:hover { color: var(--ink); }
+</style>
+
+<div class="auth-wrapper">
+  <div class="auth-card">
+    <div class="auth-header">
+      <div class="auth-icon"><i class="fas fa-graduation-cap"></i></div>
+      <h3 class="auth-title">Welcome Back</h3>
+      <p class="auth-subtitle">Sign in to access your dashboard</p>
     </div>
+
+    <!-- Social Logins -->
+    <div class="social-stack">
+      <a href="{% url 'github_login' %}" class="social-btn">
+        <i class="fab fa-github"></i> Continue with GitHub
+      </a>
+      <a href="{% url 'google_login' %}" class="social-btn">
+        <i class="fab fa-google" style="color: #4285F4;"></i> Continue with Google
+      </a>
+    </div>
+
+    <div class="divider">
+      <div class="divider-line"></div>
+      <span class="divider-text">or sign in with email</span>
+      <div class="divider-line"></div>
+    </div>
+
+    <!-- Email Login Form -->
+    <form method="POST">
+      {% csrf_token %}
+      {% if form.errors %}
+        <div class="cc-alert error">
+          <i class="fas fa-exclamation-circle"></i> Invalid username or password.
+        </div>
+      {% endif %}
+      
+      <div class="form-group">
+        <label class="form-label">Username</label>
+        <input type="text" name="username" class="form-control" placeholder="Enter your username" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input type="password" name="password" class="form-control" placeholder="Enter your password" required>
+      </div>
+      
+      <button type="submit" class="btn-auth" onclick="submitWithLoading(this, 'Signing In...')">
+        Sign In
+      </button>
+    </form>
+
+    <div class="auth-footer">
+      <a href="{% url 'password_reset' %}" class="auth-link">Forgot Password?</a>
+      <div>Don't have an account? <a href="{% url 'register' %}" class="auth-link">Create one</a></div>
+    </div>
+  </div>
 </div>
 {% endblock %}

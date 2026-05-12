@@ -95,7 +95,7 @@ def fetch_messages_api(request, conversation_id):
             'message_type': msg.message_type,
             'content': msg.content,
             'template_action': msg.template_action,
-            'file_url': msg.file.url if msg.file else None,
+                        'file_url': f"/placements/chat/file/{msg.id}/download/" if msg.file else None,
             'file_category': msg.file_category,
             'time': msg.created_at.strftime('%I:%M %p'),
         }
@@ -127,6 +127,8 @@ def fetch_messages_api(request, conversation_id):
 
 
 # ── 3. SEND MESSAGE API ─────────────────────────────────────────────────
+# ... (keep all your other imports and views exactly the same) ...
+
 @require_POST
 @login_required
 def send_message_api(request, conversation_id):
@@ -136,7 +138,7 @@ def send_message_api(request, conversation_id):
     if request.user != conversation.student and request.user != conversation.recruiter and request.user.role != 'admin':
         return JsonResponse({'error': 'Unauthorized'}, status=403)
     
-    # Observer check (Admin viewing someone else's chat cannot send messages)
+    # Observer check
     is_observer = request.user.role == 'admin' and request.user != conversation.student and request.user != conversation.recruiter
     if is_observer:
         return JsonResponse({'error': 'Observers cannot send messages.'}, status=403)
@@ -147,7 +149,8 @@ def send_message_api(request, conversation_id):
     if sender_role == 'student':
         message_type = request.POST.get('message_type')
         
-        # If they want to send free text, we must check the timer!
+        # FIX: If they want to send free text, we must check the timer!
+        # But if they are sending a 'template' or 'file' via the query navigator, ALLOW IT even if locked.
         if message_type == 'text':
             is_currently_unlocked = False
             if conversation.student_chat_unlocked_until:
@@ -156,9 +159,11 @@ def send_message_api(request, conversation_id):
             
             if not is_currently_unlocked:
                 return JsonResponse({'error': 'Chat is locked. You can only use predefined queries.'}, status=403)
-
-    # ── CREATE THE MESSAGE ──
-    msg = ChatMessage.objects.create(
+    # ── FIX: CREATE THE MESSAGE PROPERLY WITH FILE ──
+    # We extract the file first, then create the object in one shot
+    uploaded_file = request.FILES.get('file')
+    
+    msg = ChatMessage(
         conversation=conversation,
         sender=sender_role,
         message_type=request.POST.get('message_type', 'text'),
@@ -166,14 +171,40 @@ def send_message_api(request, conversation_id):
         template_action=request.POST.get('template_action', ''),
         file_category=request.POST.get('file_category', ''),
     )
-
-    # Handle file upload if exists
-    if 'file' in request.FILES:
-        msg.file = request.FILES['file']
-        msg.save()
+    
+    # Assign file if it exists
+    if uploaded_file:
+        msg.file = uploaded_file
+        
+    msg.save()
 
     return JsonResponse({'status': 'success', 'message_id': msg.id})
 
+
+# ── NEW: SECURE FILE DOWNLOAD VIEW ──
+@login_required
+def download_chat_file(request, pk):
+    """Securely serve a chat file for download."""
+    message = get_object_or_404(ChatMessage, pk=pk)
+    
+    # Security: Only allow the student, recruiter, or an admin to download
+    conversation = message.conversation
+    if not (request.user == conversation.student or 
+            request.user == conversation.recruiter or 
+            request.user.role == 'admin'):
+        from django.http import Http404
+        raise Http404("Permission denied")
+        
+    if not message.file:
+        from django.http import Http404
+        raise Http404("File not found")
+        
+    # Force the browser to download the file instead of rendering it
+    from django.http import FileResponse
+    response = FileResponse(open(message.file.path, 'rb'))
+    response['Content-Type'] = 'application/octet-stream'
+    response['Content-Disposition'] = f'attachment; filename="{message.file.name.split("/")[-1]}"'
+    return response
 
 # ── 4. UNLOCK STUDENT CHAT ─────────────────────────────────────────────
 @require_POST

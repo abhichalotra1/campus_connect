@@ -1,98 +1,168 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="row justify-content-center mt-4">
-    <div class="col-md-6">
-        <div class="card p-5" style="border-radius: var(--radius-lg);">
-            <div class="text-center mb-4">
-                <h3 style="font-family: var(--font-display); font-weight: 800;">Create your account</h3>
-                <p style="color: var(--ink3); font-size: 14px;">Start your placement journey today</p>
-            </div>
+<style>
+  /* ── SHARED AUTH STYLES (Also in login.html for independence) ── */
+  .auth-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding-top: 3rem;
+    padding-bottom: 3rem;
+    min-height: 70vh;
+  }
+  .auth-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 2.5rem;
+    width: 100%;
+    max-width: 540px; /* Slightly wider for 2-col forms */
+    transition: border-color 0.2s;
+  }
+  .auth-card:hover { border-color: var(--border2); }
 
-            <!-- Social Signups -->
-            <div class="d-flex flex-column gap-2 mb-4">
-                <a href="{% url 'github_login' %}" style="padding: 12px; border-radius: 10px; background: var(--surface2); border: 1px solid var(--border2); color: var(--ink); text-decoration: none; font-weight: 600; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 10px; transition: all 0.2s;">
-                    <i class="fab fa-github" style="font-size: 18px;"></i> Sign up with GitHub
-                </a>
-                <a href="{% url 'google_login' %}" style="padding: 12px; border-radius: 10px; background: var(--surface2); border: 1px solid var(--border2); color: var(--ink); text-decoration: none; font-weight: 600; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 10px; transition: all 0.2s;">
-                    <i class="fab fa-google" style="font-size: 16px; color: #4285F4;"></i> Sign up with Google
-                </a>
-            </div>
+  .auth-header { text-align: center; margin-bottom: 2rem; }
+  .auth-title {
+    font-family: var(--font-display); font-weight: 800; font-size: 22px; color: var(--ink); margin: 0 0 4px;
+  }
+  .auth-subtitle { color: var(--ink3); font-size: 14px; }
 
-            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
-                <div style="flex: 1; height: 1px; background: var(--border2);"></div>
-                <span style="font-size: 11px; color: var(--ink3); font-weight: 700; text-transform: uppercase;">or register manually</span>
-                <div style="flex: 1; height: 1px; background: var(--border2);"></div>
-            </div>
+  .social-stack { display: flex; flex-direction: column; gap: 10px; margin-bottom: 1.5rem; }
+  .social-btn {
+    padding: 12px; border-radius: 10px; background: var(--surface2); border: 1px solid var(--border2);
+    color: var(--ink); text-decoration: none; font-weight: 600; font-size: 14px;
+    display: flex; align-items: center; justify-content: center; gap: 10px; transition: all 0.2s;
+  }
+  .social-btn:hover { background: var(--bg3); border-color: var(--ink3); }
+  .social-btn i { font-size: 18px; }
 
-            <!-- Manual Registration Form -->
-            <form method="POST">
-                {% csrf_token %}
-                
-                {% if messages %}
-                    {% for message in messages %}
-                    <div class="cc-alert {{ message.tags }}" style="margin-bottom: 16px;">
-                        <i class="fa-solid fa-circle-exclamation"></i> {{ message }}
-                    </div>
-                    {% endfor %}
-                {% endif %}
+  .divider { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+  .divider-line { flex: 1; height: 1px; background: var(--border2); }
+  .divider-text { font-size: 11px; color: var(--ink3); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
 
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">First Name</label>
-                        <input type="text" name="first_name" class="form-control" placeholder="John" required>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">Last Name</label>
-                        <input type="text" name="last_name" class="form-control" placeholder="Doe">
-                    </div>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Username</label>
-                    <input type="text" name="username" class="form-control" placeholder="Choose a username" required>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Email Address</label>
-                    <input type="email" name="email" class="form-control" placeholder="you@example.com" required>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Phone Number</label>
-                    <input type="text" name="phone" class="form-control" placeholder="+91 98765 43210">
-                </div>
-                
-                <!-- Role Selection -->
-                <div class="mb-3">
-                    <label class="form-label">I am a...</label>
-                    <select name="role" class="form-select" required>
-                        <option value="student">Student</option>
-                        <option value="recruiter">Recruiter</option>
-                    </select>
-                </div>
-                
+  .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 18px; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .form-label { font-size: 13px; font-weight: 600; color: var(--ink2); }
+  .form-control, .form-select {
+    background: var(--bg2) !important; border: 1px solid var(--border2) !important; color: var(--ink) !important;
+    border-radius: 10px !important; font-family: var(--font-body) !important; font-size: 14px !important;
+    padding: 0.65rem 0.85rem !important; transition: all 0.18s !important;
+  }
+  .form-control:focus, .form-select:focus {
+    border-color: var(--primary) !important; box-shadow: 0 0 0 3px var(--p-soft) !important; background: var(--bg3) !important;
+  }
+  .form-control::placeholder { color: var(--ink3) !important; }
 
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">Password</label>
-                        <input type="password" name="password1" class="form-control" placeholder="Min 8 characters" required>
-                    </div>
-                    <div class="col-md-6 mb-4">
-                        <label class="form-label">Confirm Password</label>
-                        <input type="password" name="password2" class="form-control" placeholder="Re-enter password" required>
-                    </div>
-                </div>
+  .cc-alert {
+    padding: 11px 16px; border-radius: 10px; font-size: 13.5px; font-weight: 500;
+    display: flex; align-items: center; gap: 10px; margin-bottom: 16px;
+  }
+  .cc-alert.error { background: var(--red-soft); border: 1px solid rgba(244,63,94,0.3); color: var(--red); }
+  .cc-alert.success { background: var(--green-soft); border: 1px solid rgba(34,211,160,0.3); color: var(--green); }
 
-                <button type="submit" class="btn btn-primary w-100" style="font-weight: 700; padding: 12px; border-radius: 10px; font-size: 15px;" onclick="submitWithLoading(this, 'Creating...')">
-    Create Account
-</button>
-            </form>
-            <div class="forgot-password-link">
-    <a href="{% url 'password_reset' %}">Forgot Password?</a>
-</div>
+  .btn-auth {
+    font-family: var(--font-display); font-weight: 800; font-size: 15px; color: #fff; background: var(--primary);
+    border: none; padding: 12px; border-radius: 10px; cursor: pointer; width: 100%; transition: all 0.18s;
+  }
+  .btn-auth:hover { background: var(--primary2); box-shadow: 0 6px 20px var(--p-glow); }
 
-            <div class="text-center mt-4" style="font-size: 13px; color: var(--ink3);">
-                Already have an account? <a href="{% url 'login' %}" style="color: var(--primary2); font-weight: 700; text-decoration: none;">Sign in</a>
-            </div>
-        </div>
+  .auth-footer { text-align: center; margin-top: 20px; font-size: 13px; color: var(--ink3); }
+  .auth-link { color: var(--primary2); font-weight: 700; text-decoration: none; transition: color 0.15s; }
+  .auth-link:hover { color: var(--ink); }
+
+  @media(max-width: 480px) { .form-row { grid-template-columns: 1fr; } }
+</style>
+
+<div class="auth-wrapper">
+  <div class="auth-card">
+    <div class="auth-header">
+      <h3 class="auth-title">Create your account</h3>
+      <p class="auth-subtitle">Start your placement journey today</p>
     </div>
+
+    <!-- Social Signups -->
+    <div class="social-stack">
+      <a href="{% url 'github_login' %}" class="social-btn">
+        <i class="fab fa-github"></i> Sign up with GitHub
+      </a>
+      <a href="{% url 'google_login' %}" class="social-btn">
+        <i class="fab fa-google" style="color: #4285F4;"></i> Sign up with Google
+      </a>
+    </div>
+
+    <div class="divider">
+      <div class="divider-line"></div>
+      <span class="divider-text">or register manually</span>
+      <div class="divider-line"></div>
+    </div>
+
+    <!-- Manual Registration Form -->
+    <form method="POST">
+      {% csrf_token %}
+      
+      {% if messages %}
+        {% for message in messages %}
+        <div class="cc-alert {{ message.tags }}">
+          <i class="fa-solid fa-circle-exclamation"></i> {{ message }}
+        </div>
+        {% endfor %}
+      {% endif %}
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">First Name</label>
+          <input type="text" name="first_name" class="form-control" placeholder="John" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Last Name</label>
+          <input type="text" name="last_name" class="form-control" placeholder="Doe">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Username</label>
+        <input type="text" name="username" class="form-control" placeholder="Choose a username" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Email Address</label>
+        <input type="email" name="email" class="form-control" placeholder="you@example.com" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Phone Number</label>
+        <input type="text" name="phone" class="form-control" placeholder="+91 98765 43210">
+      </div>
+      
+      <!-- Role Selection -->
+      <div class="form-group">
+        <label class="form-label">I am a...</label>
+        <select name="role" class="form-select" required>
+          <option value="student">Student</option>
+          <option value="recruiter">Recruiter</option>
+        </select>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input type="password" name="password1" class="form-control" placeholder="Min 8 characters" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Confirm Password</label>
+          <input type="password" name="password2" class="form-control" placeholder="Re-enter password" required>
+        </div>
+      </div>
+
+      <button type="submit" class="btn-auth" onclick="submitWithLoading(this, 'Creating...')">
+        Create Account
+      </button>
+    </form>
+
+    <div class="auth-footer">
+      Already have an account? <a href="{% url 'login' %}" class="auth-link">Sign in</a>
+    </div>
+  </div>
 </div>
 {% endblock %}

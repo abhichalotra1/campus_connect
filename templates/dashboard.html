@@ -1,588 +1,312 @@
+{% extends "dashboard_base.html" %}
 {% load tz %}
-<!DOCTYPE html>
-<html lang="en" data-theme="dark">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dashboard — Campus Connect</title>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
-<style>
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-:root { --font-display: 'Bricolage Grotesque', sans-serif; --font-body: 'Plus Jakarta Sans', sans-serif; --font-mono: 'DM Mono', monospace; --bg: #0d0f14; --bg2: #12141c; --bg3: #181b26; --surface: #1a1d2a; --surface2: #1e2230; --border: rgba(255,255,255,0.07); --border2: rgba(255,255,255,0.13); --ink: #eef0ff; --ink2: #8b92b8; --ink3: #454a6b; --primary: #4f46e5; --primary2: #6c63ff; --p-glow: rgba(79,70,229,0.28); --p-soft: rgba(79,70,229,0.10); --green: #22d3a0; --green-soft: rgba(34,211,160,0.10); --red: #f43f5e; --red-soft: rgba(244,63,94,0.10); --yellow: #f5c842; --yellow-soft: rgba(245,200,66,0.10); --sidebar-w: 240px; --radius: 12px; --radius-lg: 18px; }
-[data-theme="light"] { --bg:#f8fafc; --bg2:#f1f4fb; --bg3:#e8ecf5; --surface:#ffffff; --surface2:#f4f6fc; --border:rgba(0,0,0,0.07); --border2:rgba(0,0,0,0.12); --ink:#0d0f14; --ink2:#4a5080; --ink3:#9298b8; }
-html { scroll-behavior: smooth; }
-body { font-family: var(--font-body); background: var(--bg); color: var(--ink); min-height: 100vh; display: flex; overflow-x: hidden; transition: background 0.3s, color 0.3s; }
-.sidebar { width: var(--sidebar-w); flex-shrink: 0; background: var(--bg2); border-right: 1px solid var(--border); display: flex; flex-direction: column; position: fixed; top: 0; left: 0; height: 100vh; z-index: 50; overflow-y: auto; transition: transform 0.3s, background 0.3s; }
-.sidebar-logo { padding: 20px 18px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; text-decoration: none; flex-shrink: 0; }
-.logo-icon { width: 31px; height: 31px; border-radius: 9px; background: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 13px; color: #fff; box-shadow: 0 0 0 3px var(--p-soft); flex-shrink: 0; }
-.logo-text { font-family: var(--font-display); font-size: 16px; font-weight: 800; color: var(--ink); letter-spacing: -0.3px; }
-.nav-section { padding: 14px 10px 6px; }
-.nav-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 700; color: var(--ink3); padding: 0 8px; margin-bottom: 5px; font-family: var(--font-mono); }
-.nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 10px; margin-bottom: 2px; text-decoration: none; color: var(--ink2); font-size: 13.5px; font-weight: 500; transition: all 0.15s; cursor: pointer; border: 1px solid transparent; }
-.nav-item:hover { background: var(--surface); color: var(--ink); }
-.nav-item.active { background: var(--p-soft); color: var(--ink); border-color: rgba(79,70,229,0.18); }
-.nav-icon { width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0; background: var(--bg3); color: var(--ink3); transition: all 0.15s; }
-.nav-item.active .nav-icon { background: var(--primary); color: #fff; }
-.nav-item:hover .nav-icon { color: var(--ink2); }
-.nav-badge { margin-left: auto; padding: 2px 7px; border-radius: 20px; font-size: 10.5px; font-weight: 700; font-family: var(--font-mono); background: var(--p-soft); color: var(--primary2); }
-.sidebar-footer { margin-top: auto; padding: 14px; border-top: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
-.user-avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--p-soft); color: var(--primary2); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; overflow: hidden; }
-.user-avatar img { width: 100%; height: 100%; object-fit: cover; }
-.user-name { font-size: 13px; font-weight: 700; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.user-role { font-size: 11px; color: var(--ink3); font-family: var(--font-mono); }
-.logout-btn { width: 28px; height: 28px; border-radius: 7px; background: none; border: 1px solid var(--border); color: var(--ink3); cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: center; transition: all 0.15s; text-decoration: none; flex-shrink: 0; }
-.logout-btn:hover { background: var(--red-soft); color: var(--red); border-color: rgba(244,63,94,0.3); }
-.main-content { margin-left: var(--sidebar-w); flex: 1; display: flex; flex-direction: column; min-height: 100vh; position: relative; }
-.topbar { padding: 16px 28px; border-bottom: 1px solid var(--border); background: var(--bg2); backdrop-filter: blur(20px); display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 20; transition: background 0.3s; }
-[data-theme="light"] .topbar { background: rgba(248,250,252,0.9); }
-.topbar-title { font-family: var(--font-display); font-size: 19px; font-weight: 800; letter-spacing: -0.4px; }
-.topbar-sub { font-size: 13px; color: var(--ink2); margin-top: 2px; }
-.topbar-right { display: flex; align-items: center; gap: 8px; }
-.icon-btn { width: 36px; height: 36px; border-radius: 9px; background: var(--surface); border: 1px solid var(--border2); display: flex; align-items: center; justify-content: center; color: var(--ink2); font-size: 14px; cursor: pointer; text-decoration: none; transition: all 0.15s; position: relative; }
-.icon-btn:hover { color: var(--ink); border-color: var(--primary); }
-.notif-dot { position: absolute; top: 7px; right: 7px; width: 7px; height: 7px; border-radius: 50%; background: var(--red); border: 2px solid var(--bg2); }
-.hamburger { display: none; background: none; border: 1px solid var(--border2); border-radius: 8px; padding: 6px 10px; cursor: pointer; color: var(--ink2); }
-.content { padding: 28px; flex: 1; }
-.stats-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; margin-bottom: 24px; }
-.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 20px 22px; position: relative; overflow: hidden; transition: all 0.2s; }
-.stat-card:hover { border-color: var(--border2); transform: translateY(-2px); }
-.stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; }
-.stat-card.c-p::before { background: var(--primary); } .stat-card.c-g::before { background: var(--green); } .stat-card.c-y::before { background: var(--yellow); } .stat-card.c-r::before { background: var(--red); }
-.stat-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
-.stat-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; font-weight: 700; color: var(--ink3); font-family: var(--font-mono); }
-.stat-icon { width: 32px; height: 32px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
-.stat-num { font-family: var(--font-display); font-size: 30px; font-weight: 800; letter-spacing: -1.2px; line-height: 1; margin-bottom: 5px; }
-.stat-hint { font-size: 12px; color: var(--ink3); display: flex; align-items: center; gap: 4px; }
-.stat-hint.up { color: var(--green); }
-.dash-grid { display: grid; grid-template-columns: 1fr 320px; gap: 18px; }
-.panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
-.panel-head { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
-.panel-title { font-family: var(--font-display); font-size: 15px; font-weight: 700; letter-spacing: -0.2px; }
-.panel-link { font-size: 12.5px; color: var(--primary2); text-decoration: none; font-weight: 600; display: flex; align-items: center; gap: 5px; transition: color 0.15s; }
-.panel-link:hover { color: var(--ink); }
-.drive-row { padding: 14px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; transition: background 0.15s; }
-.drive-row:last-child { border-bottom: none; } .drive-row:hover { background: var(--bg3); }
-.co-logo { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 17px; flex-shrink: 0; background: var(--bg2); border: 1px solid var(--border); }
-.drive-title { font-size: 14px; font-weight: 700; margin-bottom: 3px; }
-.drive-meta { font-size: 12px; color: var(--ink3); display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.drive-meta span { display: flex; align-items: center; gap: 4px; }
-.tag { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; font-family: var(--font-mono); }
-.tag-applied { background: rgba(255,255,255,0.05); color: var(--ink3); } .tag-shortlisted { background: var(--green-soft); color: var(--green); } .tag-selected { background: var(--green-soft); color: var(--green); border: 1px solid rgba(34,211,160,0.3); } .tag-rejected { background: var(--red-soft); color: var(--red); } .tag-placed { background: rgba(245,158,11,0.15); color: #f59e0b; border: 1px solid rgba(245,158,11,0.3); }
-.view-btn { padding: 6px 13px; border-radius: 8px; border: none; background: var(--primary); color: #fff; font-family: var(--font-display); font-size: 12px; font-weight: 700; cursor: pointer; text-decoration: none; transition: all 0.18s; white-space: nowrap; }
-.view-btn:hover { background: var(--primary2); transform: translateY(-1px); }
-.empty-state { padding: 36px 20px; text-align: center; }
-.empty-icon { font-size: 28px; margin-bottom: 10px; opacity: 0.35; }
-.empty-text { font-size: 13px; color: var(--ink3); }
-.side-stack { display: flex; flex-direction: column; gap: 16px; }
-.completion-wrap { padding: 20px; }
-.comp-head { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
-.comp-avatar { width: 44px; height: 44px; border-radius: 50%; background: var(--p-soft); color: var(--primary2); display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 700; overflow: hidden; flex-shrink: 0; }
-.comp-avatar img { width: 100%; height: 100%; object-fit: cover; }
-.comp-name { font-size: 14px; font-weight: 700; } .comp-sub { font-size: 11.5px; color: var(--ink3); font-family: var(--font-mono); }
-.comp-bar-label { display: flex; justify-content: space-between; margin-bottom: 7px; font-size: 12.5px; }
-.comp-bar-label span:first-child { color: var(--ink2); font-weight: 600; } .comp-bar-label span:last-child { color: var(--primary2); font-weight: 700; font-family: var(--font-mono); }
-.progress-track { height: 5px; background: var(--bg3); border-radius: 99px; overflow: hidden; }
-.progress-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--primary), var(--primary2)); transition: width 1s ease; }
-.comp-tips { margin-top: 14px; display: flex; flex-direction: column; gap: 7px; }
-.tip { display: flex; align-items: center; gap: 9px; font-size: 12.5px; color: var(--ink2); padding: 7px 10px; border-radius: 8px; background: var(--bg3); }
-.tip.done { color: var(--ink3); text-decoration: line-through; } .tip i { font-size: 11px; flex-shrink: 0; } .tip.done i { color: var(--green); } .tip:not(.done) i { color: var(--ink3); }
-.interview-wrap { padding: 14px 18px; border-bottom: 1px solid var(--border); } .interview-wrap:last-child { border-bottom: none; }
-.int-co { font-size: 13.5px; font-weight: 700; margin-bottom: 7px; }
-.int-row { font-size: 12px; color: var(--ink2); display: flex; align-items: center; gap: 7px; margin-bottom: 4px; } .int-row i { color: var(--primary2); font-size: 11px; width: 13px; }
-.join-btn { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; color: var(--primary2); text-decoration: none; margin-top: 9px; padding: 6px 12px; border-radius: 8px; background: var(--p-soft); transition: all 0.15s; }
-.join-btn:hover { background: var(--primary); color: #fff; }
-.notif-row { padding: 13px 18px; border-bottom: 1px solid var(--border); display: flex; gap: 10px; align-items: flex-start; transition: background 0.15s; } .notif-row:hover { background: var(--bg3); } .notif-row:last-child { border-bottom: none; }
-.notif-ico { width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0; background: var(--p-soft); color: var(--primary2); }
-.notif-msg { font-size: 13px; line-height: 1.5; color: var(--ink2); } .notif-msg strong { color: var(--ink); font-weight: 600; } .notif-time { font-size: 11px; color: var(--ink3); margin-top: 3px; font-family: var(--font-mono); }
-.qa-btn { display: block; text-align: center; padding: 10px; border-radius: 9px; font-size: 13px; font-weight: 700; font-family: var(--font-display); text-decoration: none; margin-bottom: 8px; transition: all 0.18s; cursor: pointer; } .qa-btn:last-child { margin-bottom: 0; } .qa-btn.primary { background: var(--primary); color: #fff; border: none; } .qa-btn.primary:hover { background: var(--primary2); box-shadow: 0 4px 14px var(--p-glow); } .qa-btn.secondary { background: transparent; color: var(--ink2); border: 1px solid var(--border2); } .qa-btn.secondary:hover { background: var(--surface2); color: var(--ink); }
-.info-row { display: flex; align-items: center; justify-content: space-between; padding: 9px 0; border-bottom: 1px solid var(--border); } .info-row:last-child { border-bottom: none; } .info-row-label { font-size: 13px; color: var(--ink2); } .info-row-val { font-size: 14px; font-weight: 700; font-family: var(--font-mono); }
-.sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 40; }
-@keyframes fadeUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
-.anim { animation: fadeUp 0.45s ease both; } .d1{animation-delay:0.05s} .d2{animation-delay:0.1s} .d3{animation-delay:0.15s} .d4{animation-delay:0.2s}
-.cc-alert { padding: 11px 16px; border-radius: 10px; font-size: 13.5px; font-weight: 500; display: flex; align-items: center; gap: 10px; margin-bottom: 10px; animation: fadeUp 0.25s ease; }
-.cc-alert.success { background: var(--green-soft); border: 1px solid rgba(34,211,160,0.3); color: var(--green); }
-.cc-alert.error, .cc-alert.danger { background: var(--red-soft); border: 1px solid rgba(244,63,94,0.3); color: var(--red); }
-.cc-alert.info, .cc-alert.warning { background: var(--p-soft); border: 1px solid rgba(79,70,229,0.3); color: var(--primary2); }
-@media(max-width:1100px) { .dash-grid { grid-template-columns: 1fr; } }
-@media(max-width:768px) { .sidebar { transform: translateX(-100%); } .sidebar.open { transform: translateX(0); } .sidebar-overlay.open { display: block; } .main-content { margin-left: 0; } .hamburger { display: flex; } .stats-row { grid-template-columns: repeat(2,1fr); } .content { padding: 18px; } .topbar { padding: 13px 18px; } }
-@media(max-width:480px) { .stats-row { grid-template-columns: 1fr; } }
-</style>
-</head>
-<body>
 
-<!-- ── SIDEBAR ── -->
-<aside class="sidebar" id="sidebar">
-  <a class="sidebar-logo" href="{% url 'landing' %}">
-    <div class="logo-icon"><i class="fa-solid fa-graduation-cap"></i></div>
-    <span class="logo-text">Campus Connect</span>
-  </a>
-
-  <div class="nav-section">
-    <div class="nav-label">Main</div>
-    <a class="nav-item active" href="{% url 'dashboard' %}">
-      <div class="nav-icon"><i class="fa-solid fa-house"></i></div>
-      Dashboard
-    </a>
-    <a class="nav-item" href="{% url 'drive_list' %}">
-      <div class="nav-icon"><i class="fa-solid fa-briefcase"></i></div>
-      Job Drives
-      {% if open_drives_count %}<span class="nav-badge">{{ open_drives_count }}</span>{% endif %}
-    </a>
-
-{% if user.role == "student" %}
-    <a class="nav-item" href="{% url 'my_applications' %}">
-      <div class="nav-icon"><i class="fa-solid fa-file-lines"></i></div>
-      My Applications
-    </a>
-    <a class="nav-item" href="{% url 'saved_jobs' %}">
-      <div class="nav-icon"><i class="fa-solid fa-bookmark"></i></div>
-      Saved Jobs
-    </a>
-    <a class="nav-item" href="{% url 'my_interviews' %}">
-      <div class="nav-icon"><i class="fa-solid fa-calendar-days"></i></div>
-      Interviews
-    </a>
+{% block dashboard_content %}
+<!-- ✨ PLACED CELEBRATION BANNER ✨ -->
+{% if user.role == 'student' and placed_applications|length > 0 %}
+<div class="anim" style="background: linear-gradient(90deg, #059669, #10b981); border-radius: 16px; padding: 28px; margin-bottom: 24px; color: white; box-shadow: 0 10px 30px rgba(16,185,129,0.3); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+  <div>
+    <h2 style="font-family: var(--font-display); font-weight: 800; font-size: 24px; margin-bottom: 8px; color: white;">
+      🎉 Congratulations, {{ user.first_name|default:"Student" }}!
+    </h2>
+    <p style="font-size: 16px; opacity: 0.95; margin: 0;">
+      You have been officially placed! Your hard work paid off.
+    </p>
+    <div style="margin-top: 16px; display: flex; gap: 12px; flex-wrap: wrap;">
+      {% for app in placed_applications %}
+      <span style="background: rgba(255,255,255,0.2); padding: 8px 16px; border-radius: 8px; font-weight: 700; font-family: var(--font-display); font-size: 14px;">
+        🏆 {{ app.drive.company }} - {{ app.drive.role }}
+      </span>
+      {% endfor %}
+    </div>
+  </div>
+  <div style="font-size: 48px; opacity: 0.8;">🎓</div>
+</div>
 {% endif %}
 
-    {% if user.role == "recruiter" or user.role == "admin" %}
-    <a class="nav-item" href="{% url 'recruiter_applicants' %}">
-      <div class="nav-icon"><i class="fa-solid fa-users"></i></div>
-      Applicants
-    </a>
-    {% endif %}
-
-    <a class="nav-item" href="{% url 'notifications' %}">
-      <div class="nav-icon"><i class="fa-solid fa-bell"></i></div>
-      Notifications
-      {% if unread_count %}<span class="nav-badge">{{ unread_count }}</span>{% endif %}
-    </a>
+<!-- STATS -->
+<div class="stats-row">
+  <div class="stat-card c-p anim d1">
+    <div class="stat-top">
+      <span class="stat-label">Open Drives</span>
+      <div class="stat-icon" style="background:var(--p-soft);color:var(--primary2);"><i class="fa-solid fa-briefcase"></i></div>
+    </div>
+    <div class="stat-num" style="color:var(--primary2);">{{ open_drives_count|default:"0" }}</div>
+    <div class="stat-hint"><i class="fa-solid fa-clock"></i> Active this season</div>
   </div>
 
-  <div class="nav-section">
-    <div class="nav-label">Account</div>
-    <a class="nav-item" href="{% url 'profile' %}">
-      <div class="nav-icon"><i class="fa-solid fa-user"></i></div>
-      My Profile
-    </a>
-    <a class="nav-item" href="{% url 'edit_profile' %}">
-      <div class="nav-icon"><i class="fa-solid fa-pen"></i></div>
-      Edit Profile
-    </a>
-    {% if user.role == 'admin' %}
-    <a class="nav-item" href="{% url 'admin_dashboard' %}">
-      <div class="nav-icon"><i class="fa-solid fa-gauge-high"></i></div>
-      Admin Panel
-    </a>
-    {% endif %}
-    {% if user.role == 'recruiter' %}
-    <a class="nav-item" href="{% url 'post_drive' %}">
-      <div class="nav-icon"><i class="fa-solid fa-plus"></i></div>
-      Post a Drive
-    </a>
-    {% endif %}
+  <div class="stat-card c-g anim d2">
+    <div class="stat-top">
+      <span class="stat-label">
+        {% if user.role == 'recruiter' %}Total Applicants
+        {% elif user.role == 'admin' %}Applications
+        {% else %}My Applications{% endif %}
+      </span>
+      <div class="stat-icon" style="background:var(--green-soft);color:var(--green);"><i class="fa-solid fa-file-lines"></i></div>
+    </div>
+    <div class="stat-num" style="color:var(--green);">{{ applications_count|default:"0" }}</div>
+    <div class="stat-hint"><i class="fa-solid fa-layer-group"></i> Total submitted</div>
   </div>
 
-  <div class="sidebar-footer">
-    <div class="user-avatar">
-      {% if user.role == 'student' and request.user.studentprofile.profile_pic %}
-        <img src="{{ request.user.studentprofile.profile_pic.url }}" alt="">
-      {% else %}
-        {{ user.first_name|first|upper }}{{ user.last_name|first|upper }}
-      {% endif %}
+  <div class="stat-card c-y anim d3">
+    <div class="stat-top">
+      <span class="stat-label">Shortlisted</span>
+      <div class="stat-icon" style="background:var(--yellow-soft);color:var(--yellow);"><i class="fa-solid fa-star"></i></div>
     </div>
-    <div style="flex:1;min-width:0;">
-      <div class="user-name">{{ user.get_full_name|default:user.username }}</div>
-      <div class="user-role">{{ user.role|capfirst }}</div>
-    </div>
-    <a class="logout-btn" href="{% url 'logout' %}" title="Sign out">
-      <i class="fa-solid fa-arrow-right-from-bracket"></i>
-    </a>
-  </div>
-</aside>
-<div class="sidebar-overlay" id="overlay" onclick="closeSidebar()"></div>
-
-<!-- ── MAIN ── -->
-<div class="main-content">
-
-  <!-- topbar -->
-  <div class="topbar">
-    <div>
-      <div class="topbar-title">
-        Good {% now "G" as hour %}{% if hour < 12 %}Morning{% elif hour < 17 %}Afternoon{% else %}Evening{% endif %}, {{ user.first_name|default:user.username }} 👋
-      </div>
-      <div class="topbar-sub">
-        {% if user.role == 'student' %}Here's your placement overview for today{% endif %}
-        {% if user.role == 'recruiter' %}Manage your drives and applicants{% endif %}
-        {% if user.role == 'admin' %}Platform overview and administration{% endif %}
-      </div>
-    </div>
-    <div class="topbar-right">
-      <button class="hamburger" onclick="openSidebar()"><i class="fa-solid fa-bars"></i></button>
-      <button class="icon-btn" onclick="toggleTheme()" title="Toggle theme">
-        <i class="fa-solid fa-moon" id="themeIcon"></i>
-      </button>
-      <a class="icon-btn" href="{% url 'notifications' %}" title="Notifications">
-        <i class="fa-solid fa-bell"></i>
-        {% if unread_count %}<span class="notif-dot"></span>{% endif %}
-      </a>
-      <a class="icon-btn" href="{% url 'profile' %}" title="Profile">
-        <i class="fa-solid fa-user"></i>
-      </a>
+    <div class="stat-num" style="color:var(--yellow);">{{ shortlisted_count|default:"0" }}</div>
+    <div class="stat-hint up"><i class="fa-solid fa-arrow-up"></i>
+      {% if user.role == 'student' %}Keep it up!{% else %}Candidates{% endif %}
     </div>
   </div>
 
-  <!-- content -->
-  <div class="content">
-
-    <!-- Django Messages -->
-    {% if messages %}
-      {% for message in messages %}
-      <div class="cc-alert {{ message.tags }}">
-        <i class="fa-solid {% if 'error' in message.tags or 'danger' in message.tags %}fa-circle-exclamation{% elif 'success' in message.tags %}fa-circle-check{% else %}fa-circle-info{% endif %}"></i>
-        {{ message }}
-      </div>
-      {% endfor %}
-    {% endif %}
-
-    <!-- ✨ PLACED CELEBRATION BANNER ✨ -->
-    {% if user.role == 'student' and placed_applications|length > 0 %}
-    <div class="anim" style="background: linear-gradient(90deg, #059669, #10b981); border-radius: 16px; padding: 28px; margin-bottom: 24px; color: white; box-shadow: 0 10px 30px rgba(16,185,129,0.3); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
-      <div>
-        <h2 style="font-family: var(--font-display); font-weight: 800; font-size: 24px; margin-bottom: 8px; color: white;">
-          🎉 Congratulations, {{ user.first_name|default:"Student" }}!
-        </h2>
-        <p style="font-size: 16px; opacity: 0.95; margin: 0;">
-          You have been officially placed! Your hard work paid off.
-        </p>
-        <div style="margin-top: 16px; display: flex; gap: 12px; flex-wrap: wrap;">
-          {% for app in placed_applications %}
-          <span style="background: rgba(255,255,255,0.2); padding: 8px 16px; border-radius: 8px; font-weight: 700; font-family: var(--font-display); font-size: 14px;">
-            🏆 {{ app.drive.company }} - {{ app.drive.role }}
-          </span>
-          {% endfor %}
-        </div>
-      </div>
-      <div style="font-size: 48px; opacity: 0.8;">🎓</div>
+  <div class="stat-card c-r anim d4">
+    <div class="stat-top">
+      <span class="stat-label">
+        {% if user.role == 'admin' %}Total Students
+        {% else %}Interviews{% endif %}
+      </span>
+      <div class="stat-icon" style="background:var(--red-soft);color:var(--red);"><i class="fa-solid fa-calendar"></i></div>
     </div>
-    {% endif %}
-
-    <!-- STATS -->
-    <div class="stats-row">
-      <div class="stat-card c-p anim d1">
-        <div class="stat-top">
-          <span class="stat-label">Open Drives</span>
-          <div class="stat-icon" style="background:var(--p-soft);color:var(--primary2);"><i class="fa-solid fa-briefcase"></i></div>
-        </div>
-        <div class="stat-num" style="color:var(--primary2);">{{ open_drives_count|default:"0" }}</div>
-        <div class="stat-hint"><i class="fa-solid fa-clock"></i> Active this season</div>
-      </div>
-
-      <div class="stat-card c-g anim d2">
-        <div class="stat-top">
-          <span class="stat-label">
-            {% if user.role == 'recruiter' %}Total Applicants
-            {% elif user.role == 'admin' %}Applications
-            {% else %}My Applications{% endif %}
-          </span>
-          <div class="stat-icon" style="background:var(--green-soft);color:var(--green);"><i class="fa-solid fa-file-lines"></i></div>
-        </div>
-        <div class="stat-num" style="color:var(--green);">{{ applications_count|default:"0" }}</div>
-        <div class="stat-hint"><i class="fa-solid fa-layer-group"></i> Total submitted</div>
-      </div>
-
-      <div class="stat-card c-y anim d3">
-        <div class="stat-top">
-          <span class="stat-label">Shortlisted</span>
-          <div class="stat-icon" style="background:var(--yellow-soft);color:var(--yellow);"><i class="fa-solid fa-star"></i></div>
-        </div>
-        <div class="stat-num" style="color:var(--yellow);">{{ shortlisted_count|default:"0" }}</div>
-        <div class="stat-hint up"><i class="fa-solid fa-arrow-up"></i>
-          {% if user.role == 'student' %}Keep it up!{% else %}Candidates{% endif %}
-        </div>
-      </div>
-
-      <div class="stat-card c-r anim d4">
-        <div class="stat-top">
-          <span class="stat-label">
-            {% if user.role == 'admin' %}Total Students
-            {% else %}Interviews{% endif %}
-          </span>
-          <div class="stat-icon" style="background:var(--red-soft);color:var(--red);"><i class="fa-solid fa-calendar"></i></div>
-        </div>
-        <div class="stat-num" style="color:var(--red);">
-          {% if user.role == 'admin' %}{{ total_students|default:"0" }}{% else %}{{ interviews_count|default:"0" }}{% endif %}
-        </div>
-        <div class="stat-hint"><i class="fa-solid fa-clock"></i>
-          {% if user.role == 'admin' %}Registered{% else %}Upcoming{% endif %}
-        </div>
-      </div>
+    <div class="stat-num" style="color:var(--red);">
+      {% if user.role == 'admin' %}{{ total_students|default:"0" }}{% else %}{{ interviews_count|default:"0" }}{% endif %}
     </div>
-
-    <!-- MAIN GRID -->
-    <div class="dash-grid">
-
-      <!-- Left -->
-      <div style="display:flex;flex-direction:column;gap:16px;">
-
-        <!-- Latest Drives -->
-        <div class="panel anim">
-          <div class="panel-head">
-            <span class="panel-title">Latest Placement Drives</span>
-            <a class="panel-link" href="{% url 'drive_list' %}">View all <i class="fa-solid fa-arrow-right" style="font-size:10px;"></i></a>
-          </div>
-          {% if recent_drives %}
-            {% for drive in recent_drives %}
-            <div class="drive-row">
-              <div class="co-logo">🏢</div>
-              <div style="flex:1;min-width:0;">
-                <div class="drive-title">{{ drive.role }}</div>
-                <div class="drive-meta">
-                  <span><i class="fa-solid fa-building" style="font-size:10px;"></i> {{ drive.company }}</span>
-                  <span><i class="fa-solid fa-indian-rupee-sign" style="font-size:10px;"></i> {{ drive.formatted_salary }}</span>
-                  <span><i class="fa-solid fa-clock" style="font-size:10px;"></i> Closes {{ drive.deadline|date:"M d, Y" }}</span>
-                </div>
-              </div>
-              <a class="view-btn" href="{% url 'drive_detail' drive.pk %}">View →</a>
-            </div>
-            {% endfor %}
-          {% else %}
-            <div class="empty-state">
-              <div class="empty-icon"><i class="fa-solid fa-briefcase"></i></div>
-              <div class="empty-text">No drives posted yet. Check back soon!</div>
-            </div>
-          {% endif %}
-        </div>
-
-        <!-- Student: My Applications -->
-        {% if user.role == 'student' %}
-        <div class="panel anim">
-          <div class="panel-head">
-            <span class="panel-title">My Applications</span>
-            <a class="panel-link" href="{% url 'my_applications' %}">View all <i class="fa-solid fa-arrow-right" style="font-size:10px;"></i></a>
-          </div>
-          {% if my_applications %}
-            {% for app in my_applications %}
-            <div class="drive-row">
-              <div class="co-logo">📋</div>
-              <div style="flex:1;min-width:0;">
-                <div class="drive-title">{{ app.drive.role }}</div>
-                <div class="drive-meta">
-                  <span><i class="fa-solid fa-building" style="font-size:10px;"></i> {{ app.drive.company }}</span>
-                  <span><i class="fa-solid fa-clock" style="font-size:10px;"></i> {{ app.applied_at|date:"d M Y" }}</span>
-                </div>
-              </div>
-              <span class="tag tag-{{ app.status|lower }}">{{ app.status }}</span>
-            </div>
-            {% endfor %}
-          {% else %}
-            <div class="empty-state">
-              <div class="empty-icon"><i class="fa-solid fa-file-lines"></i></div>
-              <div class="empty-text">You haven't applied to any drives yet.</div>
-            </div>
-          {% endif %}
-        </div>
-        {% endif %}
-
-        <!-- Recruiter: My Posted Drives -->
-        {% if user.role == 'recruiter' %}
-        <div class="panel anim">
-          <div class="panel-head">
-            <span class="panel-title">My Posted Drives</span>
-            <a class="panel-link" href="{% url 'post_drive' %}">+ Post New</a>
-          </div>
-          {% if my_drives %}
-            {% for drive in my_drives %}
-            <div class="drive-row">
-              <div class="co-logo">🏢</div>
-              <div style="flex:1;min-width:0;">
-                <div class="drive-title">{{ drive.role }}</div>
-                <div class="drive-meta">
-                  <span><i class="fa-solid fa-users" style="font-size:10px;"></i> {{ drive.application_set.count }} applicants</span>
-                  <span><i class="fa-solid fa-clock" style="font-size:10px;"></i> Closes {{ drive.deadline|date:"M d, Y" }}</span>
-                </div>
-              </div>
-              <a class="view-btn" href="{% url 'drive_detail' drive.pk %}">View →</a>
-            </div>
-            {% endfor %}
-          {% else %}
-            <div class="empty-state">
-              <div class="empty-icon"><i class="fa-solid fa-briefcase"></i></div>
-              <div class="empty-text">You haven't posted any drives yet.</div>
-            </div>
-          {% endif %}
-        </div>
-        {% endif %}
-
-        <!-- Admin: Platform Overview -->
-        {% if user.role == 'admin' %}
-        <div class="panel anim">
-          <div class="panel-head">
-            <span class="panel-title">Platform Overview</span>
-            <a class="panel-link" href="{% url 'admin_dashboard' %}">Admin Panel <i class="fa-solid fa-arrow-right" style="font-size:10px;"></i></a>
-          </div>
-          <div style="padding:18px 20px;">
-            <div class="info-row"><span class="info-row-label">Total Students</span><span class="info-row-val">{{ total_students|default:"0" }}</span></div>
-            <div class="info-row"><span class="info-row-label">Total Recruiters</span><span class="info-row-val">{{ total_recruiters|default:"0" }}</span></div>
-            <div class="info-row"><span class="info-row-label">Total Applications</span><span class="info-row-val">{{ applications_count|default:"0" }}</span></div>
-            <div class="info-row"><span class="info-row-label">Shortlisted</span><span class="info-row-val">{{ shortlisted_count|default:"0" }}</span></div>
-          </div>
-        </div>
-        {% endif %}
-
-      </div>
-
-      <!-- Right -->
-      <div class="side-stack">
-
-        <!-- Profile completion: students -->
-        {% if user.role == 'student' %}
-        <div class="panel anim">
-          <div class="completion-wrap">
-            <div class="comp-head">
-              <div class="comp-avatar">
-                {% if request.user.studentprofile.profile_pic %}
-                  <img src="{{ request.user.studentprofile.profile_pic.url }}" alt="">
-                {% else %}
-                  {{ user.first_name|first|upper }}{{ user.last_name|first|upper }}
-                {% endif %}
-              </div>
-              <div>
-                <div class="comp-name">{{ user.get_full_name|default:user.username }}</div>
-                <div class="comp-sub">{{ request.user.studentprofile.branch|default:"Branch not set" }}</div>
-              </div>
-            </div>
-            <div class="comp-bar-label">
-              <span>Profile completion</span>
-              <span>{{ profile_completion|default:"0" }}%</span>
-            </div>
-            <div class="progress-track">
-              <div class="progress-fill" style="width:{{ profile_completion|default:'0' }}%;"></div>
-            </div>
-            <div class="comp-tips">
-              <div class="tip {% if request.user.phone %}done{% endif %}">
-                <i class="fa-solid {% if request.user.phone %}fa-check{% else %}fa-circle{% endif %}"></i> Add phone number
-              </div>
-              <div class="tip {% if request.user.studentprofile.resume %}done{% endif %}">
-                <i class="fa-solid {% if request.user.studentprofile.resume %}fa-check{% else %}fa-circle{% endif %}"></i> Upload resume
-              </div>
-              <div class="tip {% if request.user.studentprofile.skills %}done{% endif %}">
-                <i class="fa-solid {% if request.user.studentprofile.skills %}fa-check{% else %}fa-circle{% endif %}"></i> Add skills
-              </div>
-              <div class="tip {% if request.user.studentprofile.linkedin %}done{% endif %}">
-                <i class="fa-solid {% if request.user.studentprofile.linkedin %}fa-check{% else %}fa-circle{% endif %}"></i> Add LinkedIn
-              </div>
-            </div>
-          </div>
-        </div>
-        {% endif %}
-
-        <!-- Upcoming interviews: students -->
-        {% if user.role == 'student' %}
-        <div class="panel anim">
-          <div class="panel-head">
-            <span class="panel-title">Upcoming Interviews</span>
-            <a class="panel-link" href="{% url 'my_interviews' %}">All <i class="fa-solid fa-arrow-right" style="font-size:10px;"></i></a>
-          </div>
-          {% if upcoming_interviews %}
-            {% for iv in upcoming_interviews %}
-            <div class="interview-wrap">
-              <div class="int-co">{{ iv.application.drive.company }}</div>
-              <div class="int-row"><i class="fa-solid fa-briefcase"></i> {{ iv.application.drive.role }}</div>
-              <div class="int-row"><i class="fa-solid fa-calendar"></i> {{ iv.scheduled_at|date:"M d, Y" }}</div>
-              <div class="int-row"><i class="fa-solid fa-clock"></i> {{ iv.scheduled_at|date:"h:i A" }}</div>
-              {% if iv.location %}<div class="int-row"><i class="fa-solid fa-location-dot"></i> {{ iv.location }}</div>{% endif %}
-              {% if iv.meeting_link %}
-              <a class="join-btn" href="{{ iv.meeting_link }}" target="_blank">
-                <i class="fa-solid fa-video"></i> Join Meeting
-              </a>
-              {% endif %}
-            </div>
-            {% endfor %}
-          {% else %}
-            <div class="empty-state">
-              <div class="empty-icon"><i class="fa-solid fa-calendar"></i></div>
-              <div class="empty-text">No interviews scheduled yet.</div>
-            </div>
-          {% endif %}
-        </div>
-        {% endif %}
-
-        <!-- Quick actions: recruiters -->
-        {% if user.role == 'recruiter' %}
-        <div class="panel anim" style="padding:18px;">
-          <div class="nav-label" style="margin-bottom:12px;">Quick Actions</div>
-          <a href="{% url 'post_drive' %}" class="qa-btn primary">+ Post a New Drive</a>
-          <a href="{% url 'recruiter_applicants' %}" class="qa-btn secondary">View My Applicants</a>
-        </div>
-        {% endif %}
-
-        <!-- Quick actions: admin -->
-        {% if user.role == 'admin' %}
-        <div class="panel anim" style="padding:18px;">
-          <div class="nav-label" style="margin-bottom:12px;">Quick Actions</div>
-          <a href="{% url 'admin_dashboard' %}" class="qa-btn primary">Admin Dashboard</a>
-          <a href="{% url 'stats' %}" class="qa-btn secondary">View Statistics</a>
-        </div>
-        {% endif %}
-
-        <!-- Notifications: all roles -->
-        <div class="panel anim">
-          <div class="panel-head">
-            <span class="panel-title">Notifications</span>
-            <a class="panel-link" href="{% url 'notifications' %}">All <i class="fa-solid fa-arrow-right" style="font-size:10px;"></i></a>
-          </div>
-          {% if notifications %}
-            {% for notif in notifications %}
-            <div class="notif-row">
-              <div class="notif-ico"><i class="fa-solid fa-bell"></i></div>
-              <div>
-                <div class="notif-msg">{{ notif.message }}</div>
-                <div class="notif-time">{% localtime on %}{{ notif.created_at|timesince }} ago{% endlocaltime %}</div>
-              </div>
-            </div>
-            {% endfor %}
-          {% else %}
-            <div class="empty-state">
-              <div class="empty-icon"><i class="fa-solid fa-bell-slash"></i></div>
-              <div class="empty-text">No notifications yet.</div>
-            </div>
-          {% endif %}
-        </div>
-
-      </div>
+    <div class="stat-hint"><i class="fa-solid fa-clock"></i>
+      {% if user.role == 'admin' %}Registered{% else %}Upcoming{% endif %}
     </div>
   </div>
 </div>
 
-<script>
-// ── THEME ──
-const _h = document.documentElement;
-const _t = localStorage.getItem('cc-theme') || 'dark';
-_h.setAttribute('data-theme', _t);
-_si(_t);
+<!-- MAIN GRID -->
+<div class="dash-grid">
+  <!-- Left Column -->
+  <div style="display:flex;flex-direction:column;gap:16px;">
+    
+    <!-- Latest Drives -->
+    <div class="panel anim">
+      <div class="panel-head">
+        <span class="panel-title">Latest Placement Drives</span>
+        <a class="panel-link" href="{% url 'drive_list' %}">View all <i class="fa-solid fa-arrow-right" style="font-size:10px;"></i></a>
+      </div>
+      {% if recent_drives %}
+        {% for drive in recent_drives %}
+        <div class="drive-row">
+          <div class="co-logo">🏢</div>
+          <div style="flex:1;min-width:0;">
+            <div class="drive-title">{{ drive.role }}</div>
+            <div class="drive-meta">
+              <span><i class="fa-solid fa-building" style="font-size:10px;"></i> {{ drive.company }}</span>
+              <span><i class="fa-solid fa-indian-rupee-sign" style="font-size:10px;"></i> {{ drive.formatted_salary }}</span>
+              <span><i class="fa-solid fa-clock" style="font-size:10px;"></i> Closes {{ drive.deadline|date:"M d, Y" }}</span>
+            </div>
+          </div>
+          <a class="view-btn" href="{% url 'drive_detail' drive.pk %}">View →</a>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="empty-state">
+          <div class="empty-icon"><i class="fa-solid fa-briefcase"></i></div>
+          <div class="empty-text">No drives posted yet. Check back soon!</div>
+        </div>
+      {% endif %}
+    </div>
 
-function toggleTheme() {
-  const cur = _h.getAttribute('data-theme');
-  const nxt = cur === 'dark' ? 'light' : 'dark';
-  _h.setAttribute('data-theme', nxt);
-  localStorage.setItem('cc-theme', nxt);
-  _si(nxt);
-}
-function _si(t) {
-  const i = document.getElementById('themeIcon');
-  if (i) i.className = t === 'dark' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
-}
+    <!-- Student: My Applications -->
+    {% if user.role == 'student' %}
+    <div class="panel anim">
+      <div class="panel-head">
+        <span class="panel-title">My Applications</span>
+        <a class="panel-link" href="{% url 'my_applications' %}">View all <i class="fa-solid fa-arrow-right" style="font-size:10px;"></i></a>
+      </div>
+      {% if my_applications %}
+        {% for app in my_applications %}
+        <div class="drive-row">
+          <div class="co-logo">📋</div>
+          <div style="flex:1;min-width:0;">
+            <div class="drive-title">{{ app.drive.role }}</div>
+            <div class="drive-meta">
+              <span><i class="fa-solid fa-building" style="font-size:10px;"></i> {{ app.drive.company }}</span>
+              <span><i class="fa-solid fa-clock" style="font-size:10px;"></i> {{ app.applied_at|date:"d M Y" }}</span>
+            </div>
+          </div>
+          <span class="tag tag-{{ app.status|lower }}">{{ app.status }}</span>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="empty-state">
+          <div class="empty-icon"><i class="fa-solid fa-file-lines"></i></div>
+          <div class="empty-text">You haven't applied to any drives yet.</div>
+        </div>
+      {% endif %}
+    </div>
+    {% endif %}
 
-// ── SIDEBAR ──
-function openSidebar() {
-  document.getElementById('sidebar').classList.add('open');
-  document.getElementById('overlay').classList.add('open');
-}
-function closeSidebar() {
-  document.getElementById('sidebar').classList.remove('open');
-  document.getElementById('overlay').classList.remove('open');
-}
-</script>
-</body>
-</html>
+    <!-- Recruiter: My Posted Drives -->
+    {% if user.role == 'recruiter' %}
+    <div class="panel anim">
+      <div class="panel-head">
+        <span class="panel-title">My Posted Drives</span>
+        <a class="panel-link" href="{% url 'post_drive' %}">+ Post New</a>
+      </div>
+      {% if my_drives %}
+        {% for drive in my_drives %}
+        <div class="drive-row">
+          <div class="co-logo">🏢</div>
+          <div style="flex:1;min-width:0;">
+            <div class="drive-title">{{ drive.role }}</div>
+            <div class="drive-meta">
+              <span><i class="fa-solid fa-users" style="font-size:10px;"></i> {{ drive.application_set.count }} applicants</span>
+              <span><i class="fa-solid fa-clock" style="font-size:10px;"></i> Closes {{ drive.deadline|date:"M d, Y" }}</span>
+            </div>
+          </div>
+          <a class="view-btn" href="{% url 'drive_detail' drive.pk %}">View →</a>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="empty-state">
+          <div class="empty-icon"><i class="fa-solid fa-briefcase"></i></div>
+          <div class="empty-text">You haven't posted any drives yet.</div>
+        </div>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Admin: Platform Overview -->
+    {% if user.role == 'admin' %}
+    <div class="panel anim">
+      <div class="panel-head">
+        <span class="panel-title">Platform Overview</span>
+        <a class="panel-link" href="{% url 'admin_dashboard' %}">Admin Panel <i class="fa-solid fa-arrow-right" style="font-size:10px;"></i></a>
+      </div>
+      <div style="padding:18px 20px;">
+        <div class="info-row"><span class="info-row-label">Total Students</span><span class="info-row-val">{{ total_students|default:"0" }}</span></div>
+        <div class="info-row"><span class="info-row-label">Total Recruiters</span><span class="info-row-val">{{ total_recruiters|default:"0" }}</span></div>
+        <div class="info-row"><span class="info-row-label">Total Applications</span><span class="info-row-val">{{ applications_count|default:"0" }}</span></div>
+        <div class="info-row"><span class="info-row-label">Shortlisted</span><span class="info-row-val">{{ shortlisted_count|default:"0" }}</span></div>
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+
+  <!-- Right Column -->
+  <div class="side-stack">
+
+    <!-- Profile completion: students -->
+    {% if user.role == 'student' %}
+    <div class="panel anim">
+      <div class="completion-wrap">
+        <div class="comp-head">
+          <div class="comp-avatar">
+            {% if request.user.studentprofile.profile_pic %}
+              <img src="{{ request.user.studentprofile.profile_pic.url }}" alt="">
+            {% else %}
+              {{ user.first_name|first|upper }}{{ user.last_name|first|upper }}
+            {% endif %}
+          </div>
+          <div>
+            <div class="comp-name">{{ user.get_full_name|default:user.username }}</div>
+            <div class="comp-sub">{{ request.user.studentprofile.branch|default:"Branch not set" }}</div>
+          </div>
+        </div>
+        <div class="comp-bar-label">
+          <span>Profile completion</span>
+          <span>{{ profile_completion|default:"0" }}%</span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill" style="width:{{ profile_completion|default:'0' }}%;"></div>
+        </div>
+        <div class="comp-tips">
+          <div class="tip {% if request.user.phone %}done{% endif %}">
+            <i class="fa-solid {% if request.user.phone %}fa-check{% else %}fa-circle{% endif %}"></i> Add phone number
+          </div>
+          <div class="tip {% if request.user.studentprofile.resume %}done{% endif %}">
+            <i class="fa-solid {% if request.user.studentprofile.resume %}fa-check{% else %}fa-circle{% endif %}"></i> Upload resume
+          </div>
+          <div class="tip {% if request.user.studentprofile.skills %}done{% endif %}">
+            <i class="fa-solid {% if request.user.studentprofile.skills %}fa-check{% else %}fa-circle{% endif %}"></i> Add skills
+          </div>
+          <div class="tip {% if request.user.studentprofile.linkedin %}done{% endif %}">
+            <i class="fa-solid {% if request.user.studentprofile.linkedin %}fa-check{% else %}fa-circle{% endif %}"></i> Add LinkedIn
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Upcoming interviews: students -->
+    {% if user.role == 'student' %}
+    <div class="panel anim">
+      <div class="panel-head">
+        <span class="panel-title">Upcoming Interviews</span>
+        <a class="panel-link" href="{% url 'my_interviews' %}">All <i class="fa-solid fa-arrow-right" style="font-size:10px;"></i></a>
+      </div>
+      {% if upcoming_interviews %}
+        {% for iv in upcoming_interviews %}
+        <div class="interview-wrap">
+          <div class="int-co">{{ iv.application.drive.company }}</div>
+          <div class="int-row"><i class="fa-solid fa-briefcase"></i> {{ iv.application.drive.role }}</div>
+          <div class="int-row"><i class="fa-solid fa-calendar"></i> {{ iv.scheduled_at|date:"M d, Y" }}</div>
+          <div class="int-row"><i class="fa-solid fa-clock"></i> {{ iv.scheduled_at|date:"h:i A" }}</div>
+          {% if iv.location %}<div class="int-row"><i class="fa-solid fa-location-dot"></i> {{ iv.location }}</div>{% endif %}
+          {% if iv.meeting_link %}
+          <a class="join-btn" href="{{ iv.meeting_link }}" target="_blank">
+            <i class="fa-solid fa-video"></i> Join Meeting
+          </a>
+          {% endif %}
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="empty-state">
+          <div class="empty-icon"><i class="fa-solid fa-calendar"></i></div>
+          <div class="empty-text">No interviews scheduled yet.</div>
+        </div>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Quick actions: recruiters -->
+    {% if user.role == 'recruiter' %}
+    <div class="panel anim" style="padding:18px;">
+      <div class="nav-label" style="margin-bottom:12px;">Quick Actions</div>
+      <a href="{% url 'post_drive' %}" class="qa-btn primary">+ Post a New Drive</a>
+      <a href="{% url 'recruiter_applicants' %}" class="qa-btn secondary">View My Applicants</a>
+    </div>
+    {% endif %}
+
+    <!-- Quick actions: admin -->
+    {% if user.role == 'admin' %}
+    <div class="panel anim" style="padding:18px;">
+      <div class="nav-label" style="margin-bottom:12px;">Quick Actions</div>
+      <a href="{% url 'admin_dashboard' %}" class="qa-btn primary">Admin Dashboard</a>
+      <a href="{% url 'stats' %}" class="qa-btn secondary">View Statistics</a>
+    </div>
+    {% endif %}
+
+    <!-- Notifications: all roles -->
+    <div class="panel anim">
+      <div class="panel-head">
+        <span class="panel-title">Notifications</span>
+        <a class="panel-link" href="{% url 'notifications' %}">All <i class="fa-solid fa-arrow-right" style="font-size:10px;"></i></a>
+      </div>
+      {% if notifications %}
+        {% for notif in notifications %}
+        <div class="notif-row">
+          <div class="notif-ico"><i class="fa-solid fa-bell"></i></div>
+          <div>
+            <div class="notif-msg">{{ notif.message }}</div>
+            <div class="notif-time">{% localtime on %}{{ notif.created_at|timesince }} ago{% endlocaltime %}</div>
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="empty-state">
+          <div class="empty-icon"><i class="fa-solid fa-bell-slash"></i></div>
+          <div class="empty-text">No notifications yet.</div>
+        </div>
+      {% endif %}
+    </div>
+
+  </div>
+</div>
+
+{% endblock %}

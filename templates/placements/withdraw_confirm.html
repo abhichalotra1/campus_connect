@@ -1,28 +1,109 @@
-{% extends 'base.html' %}
+{% extends "dashboard_base.html" %}
+{% block breadcrumb_page_name %}Withdraw Application{% endblock %}
 
-{% block content %}
-<div class="row justify-content-center mt-5">
-    <div class="col-md-6">
-        <div class="card p-5 text-center" style="border-radius: var(--radius-lg); border: 2px solid var(--red);">
-            <i class="fas fa-exclamation-triangle fa-3x mb-3" style="color: var(--red);"></i>
-            <h3 style="font-family: var(--font-display); font-weight: 800;">Withdraw Application?</h3>
-            <p style="color: var(--ink2); margin-top: 12px; line-height: 1.7;">
-                Are you sure you want to withdraw your application for <strong style="color: var(--ink);">{{ application.drive.role }}</strong> at <strong style="color: var(--ink);">{{ application.drive.company }}</strong>? <br>
-                <span style="color: var(--red); font-weight: 600;">This action cannot be undone. You will have to re-apply if you change your mind.</span>
-            </p>
-            
-            <div style="margin-top: 24px; display: flex; justify-content: center; gap: 12px;">
-                <form method="POST">
-                    {% csrf_token %}
-                    <button type="submit" class="btn" style="background: var(--red); color: #fff; font-weight: 700; padding: 10px 24px; border-radius: 12px; border: none;" onclick="submitWithLoading(this, 'Withdrawing...')">
-    <i class="fas fa-trash me-2"></i>Yes, Withdraw
-</button>
-                </form>
-                <a href="{% url 'my_applications' %}" class="btn" style="background: var(--surface2); color: var(--ink); border: 1px solid var(--border2); padding: 10px 24px; border-radius: 10px; text-decoration: none; font-weight: 600;">
-                    Cancel
-                </a>
-            </div>
-        </div>
+{% block dashboard_content %}
+<style>
+  /* ── WITHDRAW CONFIRMATION STYLES ── */
+  .wc-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+    min-height: 60vh;
+  }
+  .wc-card {
+    background: var(--surface);
+    border: 1px solid rgba(244,63,94,0.25);
+    border-radius: var(--radius-lg);
+    padding: 2.5rem 2rem;
+    width: 100%;
+    max-width: 500px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    animation: fadeUp 0.4s ease both;
+  }
+  /* Top accent line */
+  .wc-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--red);
+  }
+
+  .wc-icon {
+    width: 64px; height: 64px;
+    border-radius: 50%;
+    background: var(--red-soft);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 26px; margin: 0 auto 20px; color: var(--red);
+  }
+  .wc-title {
+    font-family: var(--font-display); font-weight: 800;
+    font-size: 22px; color: var(--ink); margin: 0 0 12px;
+  }
+  .wc-msg { 
+    color: var(--ink2); font-size: 14px; line-height: 1.7; margin: 0 0 28px; 
+  }
+  .wc-msg strong { color: var(--ink); }
+  .wc-warn { 
+    color: var(--red); font-weight: 600; font-size: 13px; 
+    display: block; margin-top: 8px; 
+  }
+
+  /* Action Buttons */
+  .wc-actions { 
+    display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; 
+  }
+  .btn-withdraw {
+    font-family: var(--font-display); font-weight: 800; font-size: 14px;
+    color: #fff; background: var(--red); border: none; padding: 10px 24px;
+    border-radius: 12px; cursor: pointer; transition: all 0.18s;
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .btn-withdraw:hover { 
+    background: #e11d48; box-shadow: 0 6px 20px rgba(244,63,94,0.3); 
+  }
+
+  .btn-cancel {
+    font-family: var(--font-body); font-weight: 600; font-size: 14px;
+    color: var(--ink); background: var(--surface2); 
+    border: 1px solid var(--border2); padding: 10px 24px;
+    border-radius: 10px; cursor: pointer; text-decoration: none; 
+    transition: all 0.18s; display: inline-flex; align-items: center; gap: 8px;
+  }
+  .btn-cancel:hover { background: var(--bg3); border-color: var(--ink3); }
+
+  @keyframes fadeUp { 
+    from { opacity: 0; transform: translateY(14px); } 
+    to { opacity: 1; transform: translateY(0); } 
+  }
+</style>
+
+<div class="wc-wrapper">
+  <div class="wc-card">
+    <div class="wc-icon">
+      <i class="fas fa-exclamation-triangle"></i>
     </div>
+    <h3 class="wc-title">Withdraw Application?</h3>
+    <p class="wc-msg">
+      Are you sure you want to withdraw your application for <strong>{{ application.drive.role }}</strong> at <strong>{{ application.drive.company }}</strong>?<br>
+      <span class="wc-warn">This action cannot be undone. You will have to re-apply if you change your mind.</span>
+    </p>
+    
+    <div class="wc-actions">
+      <form method="POST">
+        {% csrf_token %}
+        <button type="submit" class="btn-withdraw" onclick="submitWithLoading(this, 'Withdrawing...')">
+          <i class="fas fa-trash"></i> Yes, Withdraw
+        </button>
+      </form>
+      <a href="{% url 'my_applications' %}" class="btn-cancel">
+        Cancel
+      </a>
+    </div>
+  </div>
 </div>
 {% endblock %}

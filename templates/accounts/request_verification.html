@@ -1,42 +1,114 @@
-{% extends 'base.html' %}
-{% block title %}Request Verification – Campus Connect{% endblock %}
+{% extends "dashboard_base.html" %}
+{% block breadcrumb_page_name %}Request Verification{% endblock %}
 
-{% block content %}
-<div style="max-width:580px; margin:0 auto; padding:2rem 0;">
+{% block dashboard_content %}
+<style>
+  /* ── VERIFICATION FORM STYLES ── */
+  .rv-wrapper {
+    display: flex;
+    justify-content: center;
+    padding-top: 1rem;
+    padding-bottom: 2rem;
+  }
+  .rv-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 2rem;
+    width: 100%;
+    max-width: 600px;
+    transition: border-color 0.2s;
+  }
+  .rv-card:hover { border-color: var(--border2); }
 
-  <!-- Header -->
-  <div style="margin-bottom:1.75rem;">
-    <a href="{% url 'verification_status' %}" style="font-size:13px;color:var(--ink3);text-decoration:none;display:inline-flex;align-items:center;gap:6px;margin-bottom:1rem;">
-      <i class="fas fa-arrow-left"></i> Back
-    </a>
-    <h1 style="font-family:var(--font-display);font-size:26px;font-weight:800;color:var(--ink);margin-bottom:6px;">Recruiter Verification</h1>
-    <p style="color:var(--ink2);font-size:15px;margin:0;">Fill in your company details. Our admin team will review and respond within 24–48 hours.</p>
-  </div>
+  .rv-header { margin-bottom: 1.75rem; }
+  .rv-title {
+    font-family: var(--font-display);
+    font-size: 26px;
+    font-weight: 800;
+    color: var(--ink);
+    margin: 0 0 6px;
+  }
+  .rv-subtitle { color: var(--ink2); font-size: 15px; margin: 0; }
 
-  <!-- Form Card -->
-  <div style="background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:2rem;">
+  /* Forms */
+  .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 20px; }
+  .form-label { font-size: 13px; font-weight: 600; color: var(--ink2); }
+  .required { color: var(--red); }
+  .form-control, .form-select {
+    background: var(--bg2) !important; border: 1px solid var(--border2) !important;
+    color: var(--ink) !important; border-radius: 10px !important;
+    font-family: var(--font-body) !important; font-size: 14px !important;
+    padding: 0.65rem 0.85rem !important; transition: all 0.18s !important;
+  }
+  .form-control:focus, .form-select:focus {
+    border-color: var(--primary) !important; box-shadow: 0 0 0 3px var(--p-soft) !important;
+    background: var(--bg3) !important;
+  }
+  .form-control::placeholder { color: var(--ink3) !important; }
+  textarea.form-control { resize: vertical; min-height: 90px; }
+  .form-hint { font-size: 12px; color: var(--ink3); margin-top: 4px; }
+
+  /* Info Box */
+  .info-box {
+    background: var(--p-soft);
+    border: 1px solid rgba(79,70,229,0.2);
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 1.5rem;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+  .info-icon { color: var(--primary2); margin-top: 2px; flex-shrink: 0; font-size: 15px; }
+  .info-text { font-size: 13px; color: var(--ink2); margin: 0; line-height: 1.6; }
+
+  /* Submit */
+  .btn-submit {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 15px;
+    color: #fff;
+    background: var(--primary);
+    border: none;
+    padding: 12px;
+    border-radius: 10px;
+    cursor: pointer;
+    width: 100%;
+    transition: all 0.18s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .btn-submit:hover { background: var(--primary2); box-shadow: 0 6px 20px var(--p-glow); }
+</style>
+
+<div class="rv-wrapper">
+  <div class="rv-card">
+    <div class="rv-header">
+      <h1 class="rv-title">Recruiter Verification</h1>
+      <p class="rv-subtitle">Fill in your company details. Our admin team will review and respond within 24–48 hours.</p>
+    </div>
+
     <form method="POST">
       {% csrf_token %}
 
       <!-- Company Name -->
-      <div class="mb-3">
-        <label class="form-label">Company Name <span style="color:var(--red);">*</span></label>
-        <input type="text" name="company_name" class="form-control"
-               placeholder="e.g. Infosys, TCS, Google India"
-               value="{{ profile.company_name }}" required>
+      <div class="form-group">
+        <label class="form-label">Company Name <span class="required">*</span></label>
+        <input type="text" name="company_name" class="form-control" placeholder="e.g. Infosys, TCS, Google India" value="{{ profile.company_name }}" required>
       </div>
 
       <!-- Designation -->
-      <div class="mb-3">
-        <label class="form-label">Your Designation <span style="color:var(--red);">*</span></label>
-        <input type="text" name="designation" class="form-control"
-               placeholder="e.g. HR Manager, Talent Acquisition Lead"
-               value="{{ profile.designation }}" required>
+      <div class="form-group">
+        <label class="form-label">Your Designation <span class="required">*</span></label>
+        <input type="text" name="designation" class="form-control" placeholder="e.g. HR Manager, Talent Acquisition Lead" value="{{ profile.designation }}" required>
       </div>
 
       <!-- Industry -->
-      <div class="mb-3">
-        <label class="form-label">Industry <span style="color:var(--red);">*</span></label>
+      <div class="form-group">
+        <label class="form-label">Industry <span class="required">*</span></label>
         <select name="industry" class="form-select" required>
           <option value="">— Select Industry —</option>
           {% for val, label in profile.INDUSTRY_CHOICES %}
@@ -46,35 +118,29 @@
       </div>
 
       <!-- Company Website -->
-      <div class="mb-3">
+      <div class="form-group">
         <label class="form-label">Company Website</label>
-        <input type="url" name="company_website" class="form-control"
-               placeholder="https://yourcompany.com"
-               value="{{ profile.company_website }}">
+        <input type="url" name="company_website" class="form-control" placeholder="https://yourcompany.com" value="{{ profile.company_website }}">
       </div>
 
       <!-- Note to Admin -->
-      <div class="mb-4">
+      <div class="form-group">
         <label class="form-label">Note to Admin</label>
-        <textarea name="verification_note" class="form-control" rows="3"
-                  placeholder="Briefly describe your company and hiring intent...">{{ profile.verification_note }}</textarea>
-        <div style="font-size:12px;color:var(--ink3);margin-top:5px;">Optional — helps admin verify faster.</div>
+        <textarea name="verification_note" class="form-control" placeholder="Briefly describe your company and hiring intent...">{{ profile.verification_note }}</textarea>
+        <div class="form-hint">Optional — helps admin verify faster.</div>
       </div>
 
-      <!-- Info box -->
-      <div style="background:var(--p-soft);border:1px solid rgba(79,70,229,0.2);border-radius:var(--radius);padding:12px 16px;margin-bottom:1.5rem;display:flex;gap:12px;align-items:flex-start;">
-        <i class="fas fa-circle-info" style="color:var(--primary2);margin-top:2px;flex-shrink:0;"></i>
-        <p style="font-size:13px;color:var(--ink2);margin:0;line-height:1.6;">Once approved, you'll receive a notification and can immediately start posting placement drives.</p>
+      <!-- Info Box -->
+      <div class="info-box">
+        <i class="fas fa-circle-info info-icon"></i>
+        <p class="info-text">Once approved, you'll receive a notification and can immediately start posting placement drives.</p>
       </div>
 
-      <button type="submit"
-              onclick="submitWithLoading(this, 'Submitting...')"
-              class="btn btn-primary w-100 py-2"
-              style="border-radius:10px;font-size:15px;font-weight:700;">
+      <button type="submit" class="btn-submit" onclick="submitWithLoading(this, 'Submitting...')">
         Submit Verification Request
       </button>
     </form>
   </div>
-
 </div>
+
 {% endblock %}

@@ -1,94 +1,229 @@
-{% extends 'base.html' %}
-{% block content %}
-<div class="row mt-4 justify-content-center">
-    <div class="col-md-8">
-        <h3 style="font-family: var(--font-display); font-weight: 800; margin-bottom: 20px;">
-            <i class="fas fa-plus me-2" style="color: var(--primary2);"></i>Post a New Drive
-        </h3>
-        <div class="card p-4" style="border-radius: var(--radius-lg);">
-            
-            <!-- IMPORTANT: enctype="multipart/form-data" is required for image uploads! -->
-            <form method="POST" enctype="multipart/form-data">
-                {% csrf_token %}
+{% extends "dashboard_base.html" %}
+{% block breadcrumb_page_name %}Post a New Drive{% endblock %}
 
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">Company Name</label>
-                        <input type="text" name="company" class="form-control" required>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">Company Logo (Compulsary)</label>
-                        <input type="file" name="company_logo" class="form-control" accept="image/*" required>
-                    </div>
-                </div>
+{% block dashboard_content %}
+<style>
+  /* ── POST DRIVE FORM STYLES ── */
+  .pd-wrapper {
+    display: flex;
+    justify-content: center;
+    padding-top: 1rem;
+    padding-bottom: 2rem;
+  }
+  .pd-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 2rem;
+    width: 100%;
+    max-width: 860px;
+    transition: border-color 0.2s;
+  }
+  .pd-card:hover { border-color: var(--border2); }
 
-                <div class="mb-3">
-                    <label class="form-label">Role / Job Title</label>
-                    <input type="text" name="role" class="form-control" required>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Description</label>
-                    <textarea name="description" class="form-control" rows="4" required></textarea>
-                </div>
-                
-                <div class="row">
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label">Location</label>
-                        <input type="text" name="location" class="form-control" required>
-                    </div>
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label">Salary Amount</label>
-                        <input type="number" step="0.1" name="salary_amount" class="form-control" placeholder="e.g., 12.5" required>
-                    </div>
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label">Salary Type</label>
-                        <select name="salary_type" class="form-select" required>
-                            <option value="lpa">LPA</option>
-                            <option value="ctc">CTC</option>
-                            <option value="stipend">Stipend</option>
-                            <option value="not_disclosed">Not Disclosed</option>
-                        </select>
-                    </div>
-                </div>
+  .pd-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 1.75rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .pd-icon {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    background: var(--p-soft);
+    color: var(--primary2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; flex-shrink: 0;
+  }
+  .pd-title {
+    font-family: var(--font-display);
+    font-weight: 800; font-size: 20px;
+    color: var(--ink); margin: 0;
+  }
 
-                <div class="row">
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label">Job Type</label>
-                        <select name="job_type" class="form-select">
-                            <option value="full_time">Full Time</option>
-                            <option value="internship">Internship</option>
-                            <option value="part_time">Part Time</option>
-                        </select>
-                    </div>
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label">Eligible Branch</label>
-                        <select name="eligible_branch" class="form-select">
-                            <option value="ALL">All Branches</option>
-                            <option value="CSE">CSE</option>
-                            <option value="ECE">ECE</option>
-                            <option value="IT">IT</option>
-                            <option value="ME">ME</option>
-                            <option value="CE">CE</option>
-                            <option value="EE">EE</option>
-                        </select>
-                    </div>
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label">Min CGPA</label>
-                        <input type="number" step="0.1" name="min_cgpa" class="form-control" value="0.0" required>
-                    </div>
-                </div>
+  /* Section Labels */
+  .section-label {
+    font-size: 11px; color: var(--ink3); font-weight: 700;
+    text-transform: uppercase; letter-spacing: 1px;
+    margin-bottom: 16px; margin-top: 8px; font-family: var(--font-mono);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .section-label::after {
+    content: ''; flex: 1; height: 1px; background: var(--border);
+  }
 
-                <div class="mb-3">
-                    <label class="form-label">Skills Required</label>
-                    <input type="text" name="skills_required" class="form-control" placeholder="e.g., Python, SQL, React">
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Deadline</label>
-                    <input type="date" name="deadline" class="form-control" required>
-                </div>
+  /* Forms */
+  .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 18px; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+  .form-label { font-size: 13px; font-weight: 600; color: var(--ink2); }
+  .required { color: var(--red); font-size: 12px; }
+  
+  .form-control, .form-select {
+    background: var(--bg2) !important; border: 1px solid var(--border2) !important;
+    color: var(--ink) !important; border-radius: 10px !important;
+    font-family: var(--font-body) !important; font-size: 14px !important;
+    padding: 0.65rem 0.85rem !important; transition: all 0.18s !important;
+  }
+  .form-control:focus, .form-select:focus {
+    border-color: var(--primary) !important; box-shadow: 0 0 0 3px var(--p-soft) !important;
+    background: var(--bg3) !important;
+  }
+  .form-control::placeholder { color: var(--ink3) !important; }
+  textarea.form-control { resize: vertical; min-height: 100px; }
+  
+  /* File Input Custom Style */
+  input[type="file"].form-control {
+    padding: 0.5rem 0.85rem !important; cursor: pointer;
+  }
+  input[type="file"].form-control::file-selector-button {
+    background: var(--primary); color: #fff; border: none;
+    padding: 5px 12px; border-radius: 6px; font-family: var(--font-display);
+    font-weight: 700; font-size: 12px; margin-right: 12px; cursor: pointer;
+    transition: background 0.15s;
+  }
+  input[type="file"].form-control::file-selector-button:hover { background: var(--primary2); }
 
-<button type="submit" class="btn btn-primary w-100" style="font-weight: 700; padding: 12px;" onclick="submitWithLoading(this, 'Posting Drive...')">Post Drive</button>            </form>
-        </div>
+  /* ═══════════════════════════════════════════════════
+     FIX: Highly Visible Date/Calendar Picker Icon
+     ═══════════════════════════════════════════════════ */
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    /* Filter makes the native black icon bright white/indigo for dark mode visibility */
+    filter: invert(60%) sepia(60%) saturate(600%) hue-rotate(205deg) brightness(110%) contrast(95%);
+    transition: filter 0.2s, transform 0.2s;
+  }
+  input[type="date"]::-webkit-calendar-picker-indicator:hover {
+    transform: scale(1.15);
+    filter: invert(50%) sepia(80%) saturate(800%) hue-rotate(210deg) brightness(120%) contrast(100%);
+  }
+
+  /* Light Mode specific override (assuming your base uses [data-theme="light"]) */
+  [data-theme="light"] input[type="date"]::-webkit-calendar-picker-indicator {
+    /* In light mode, we want a deep indigo instead of blinding white */
+    filter: invert(25%) sepia(80%) saturate(1500%) hue-rotate(225deg) brightness(85%) contrast(110%);
+  }
+  [data-theme="light"] input[type="date"]::-webkit-calendar-picker-indicator:hover {
+    filter: invert(30%) sepia(90%) saturate(1800%) hue-rotate(230deg) brightness(95%) contrast(110%);
+  }
+
+  .form-hint { font-size: 12px; color: var(--ink3); margin-top: 4px; }
+
+  /* Submit */
+  .btn-post {
+    font-family: var(--font-display); font-weight: 800; font-size: 15px; color: #fff;
+    background: var(--primary); border: none; padding: 12px; border-radius: 10px;
+    cursor: pointer; width: 100%; transition: all 0.18s; margin-top: 8px;
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .btn-post:hover { background: var(--primary2); box-shadow: 0 6px 20px var(--p-glow); }
+
+  @media(max-width: 768px) {
+    .form-row, .form-row-3 { grid-template-columns: 1fr; }
+  }
+</style>
+
+<div class="pd-wrapper">
+  <div class="pd-card">
+    <div class="pd-header">
+      <div class="pd-icon"><i class="fas fa-plus"></i></div>
+      <h3 class="pd-title">Post a New Drive</h3>
     </div>
+
+    <form method="POST" enctype="multipart/form-data">
+      {% csrf_token %}
+
+      <!-- Company Info -->
+      <div class="section-label">Company Information</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Company Name <span class="required">*</span></label>
+          <input type="text" name="company" class="form-control" placeholder="e.g., Google India" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Company Logo <span class="required">*</span></label>
+          <input type="file" name="company_logo" class="form-control" accept="image/*" required>
+          <div class="form-hint">Compulsory. Square images work best.</div>
+        </div>
+      </div>
+
+      <!-- Role Info -->
+      <div class="section-label" style="margin-top: 24px;">Role Details</div>
+      <div class="form-group">
+        <label class="form-label">Role / Job Title <span class="required">*</span></label>
+        <input type="text" name="role" class="form-control" placeholder="e.g., Software Engineer" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description <span class="required">*</span></label>
+        <textarea name="description" class="form-control" rows="4" placeholder="Describe the role, responsibilities, and perks..." required></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Skills Required</label>
+        <input type="text" name="skills_required" class="form-control" placeholder="e.g., Python, SQL, React (comma separated)">
+      </div>
+
+      <!-- Compensation & Location -->
+      <div class="section-label" style="margin-top: 24px;">Compensation & Location</div>
+      <div class="form-row-3">
+        <div class="form-group">
+          <label class="form-label">Location <span class="required">*</span></label>
+          <input type="text" name="location" class="form-control" placeholder="e.g., Bangalore" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Salary Amount <span class="required">*</span></label>
+          <input type="number" step="0.1" name="salary_amount" class="form-control" placeholder="e.g., 12.5" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Salary Type</label>
+          <select name="salary_type" class="form-select" required>
+            <option value="lpa">LPA</option>
+            <option value="ctc">CTC</option>
+            <option value="stipend">Stipend</option>
+            <option value="not_disclosed">Not Disclosed</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Eligibility -->
+      <div class="section-label" style="margin-top: 24px;">Eligibility & Timeline</div>
+      <div class="form-row-3">
+        <div class="form-group">
+          <label class="form-label">Job Type</label>
+          <select name="job_type" class="form-select">
+            <option value="full_time">Full Time</option>
+            <option value="internship">Internship</option>
+            <option value="part_time">Part Time</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Eligible Branch</label>
+          <select name="eligible_branch" class="form-select">
+            <option value="ALL">All Branches</option>
+            <option value="CSE">CSE</option>
+            <option value="ECE">ECE</option>
+            <option value="IT">IT</option>
+            <option value="ME">ME</option>
+            <option value="CE">CE</option>
+            <option value="EE">EE</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Min CGPA</label>
+          <input type="number" step="0.1" name="min_cgpa" class="form-control" value="0.0" required>
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">Application Deadline <span class="required">*</span></label>
+        <input type="date" name="deadline" class="form-control" required>
+      </div>
+
+      <button type="submit" class="btn-post" onclick="submitWithLoading(this, 'Posting Drive...')">
+        <i class="fas fa-rocket"></i> Post Drive
+      </button>
+    </form>
+  </div>
 </div>
 {% endblock %}
