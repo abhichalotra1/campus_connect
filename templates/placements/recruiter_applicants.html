@@ -85,12 +85,11 @@
                         <div style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end;">
 
                             <!-- ── CHAT / MESSAGE BUTTON ── -->
-                            {% if app.status == 'shortlisted' or app.status == 'selected' %}
+                            {% if app.status == 'shortlisted' or app.status == 'selected' or app.status == 'placed' %}
                             <a href="{% url 'start_chat' app.pk %}" style="font-size: 12px; font-weight: 700; color: #fff; text-decoration: none; padding: 5px 12px; border-radius: 7px; background: var(--primary); display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 2px 4px var(--p-glow);">
                                 <i class="fas fa-comment-dots"></i> Message
                             </a>
                             {% endif %}
-
                             <!-- ── SCHEDULE INTERVIEW BUTTON ── -->
                             {% if app.status == 'shortlisted' or app.status == 'selected' %}
                             <a href="{% url 'schedule_interview' app.pk %}" style="font-size: 12px; font-weight: 600; color: var(--green); text-decoration: none; padding: 5px 12px; border-radius: 7px; background: var(--green-soft); border: 1px solid rgba(34,211,160,0.3); display: inline-flex; align-items: center; gap: 5px;">
@@ -164,6 +163,9 @@ function confirmStatus(selectElement, appId) {
     if (selectElement.value === 'selected') {
         icon.className = 'fas fa-check-circle fa-2x mb-3';
         icon.style.color = 'var(--green)';
+    } else if (selectElement.value === 'placed') {
+        icon.className = 'fas fa-trophy fa-2x mb-3'; // ✨ TROPHY ICON FOR PLACED
+        icon.style.color = '#f59e0b'; // Gold color
     } else if (selectElement.value === 'rejected') {
         icon.className = 'fas fa-times-circle fa-2x mb-3';
         icon.style.color = 'var(--red)';

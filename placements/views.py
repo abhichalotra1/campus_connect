@@ -401,10 +401,24 @@ def post_drive_view(request):
 
 @login_required
 def my_interviews_view(request):
-    interviews = Interview.objects.filter(application__student=request.user).order_by('scheduled_at')
+    now = timezone.now()
+    
+    # 1. Upcoming interviews: scheduled_at is greater than or equal to right now
+    upcoming_interviews = Interview.objects.filter(
+        application__student=request.user, 
+        scheduled_at__gte=now
+    ).order_by('scheduled_at')
+
+    # 2. Past interviews: scheduled_at is less than right now
+    past_interviews = Interview.objects.filter(
+        application__student=request.user, 
+        scheduled_at__lt=now
+    ).order_by('-scheduled_at')
+
     return render(request, 'placements/my_interviews.html', {
-        'interviews': interviews
-    })
+        'upcoming_interviews': upcoming_interviews,
+        'past_interviews': past_interviews
+    })    
 
 
 @login_required

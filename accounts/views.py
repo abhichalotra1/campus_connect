@@ -109,6 +109,7 @@ def dashboard_view(request):
         context['applications_count'] = apps.count()
         context['shortlisted_count'] = apps.filter(status='shortlisted').count()
         context['my_applications'] = apps.order_by('-applied_at')[:4]
+        context['placed_applications'] = apps.filter(status='placed')
 
         interviews = Interview.objects.filter(
             application__student=user,
@@ -188,7 +189,8 @@ def update_application_status(request, pk):
     if request.method == 'POST':
         status = request.POST.get('status')
 
-        if status in ['applied', 'shortlisted', 'rejected', 'selected']:
+        # ✨ 'placed' is now included in this single check
+        if status in ['applied', 'shortlisted', 'rejected', 'selected', 'placed']:
             app.status = status
             app.save()
 
@@ -220,7 +222,7 @@ def update_application_status(request, pk):
                 user=app.student,
                 title=f'Application Update - {app.drive.company}',
                 message=f'Your application for {app.drive.role} at {app.drive.company} has been {status}!',
-                notif_type=status if status in ['shortlisted', 'rejected', 'selected'] else 'general'
+                notif_type=status if status in ['shortlisted', 'rejected', 'selected', 'placed'] else 'general'
             )
 
             send_status_update_email(app.student, app.drive, status)
@@ -229,7 +231,7 @@ def update_application_status(request, pk):
     if request.user.role == 'recruiter':
         return redirect('recruiter_applicants')
     else:
-        return redirect('admin_dashboard')
+        return redirect('admin_dashboard')        
 
 
 @login_required

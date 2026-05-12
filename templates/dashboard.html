@@ -8,7 +8,6 @@
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
 <style>
-/* [YOUR EXISTING DASHBOARD CSS GOES HERE - DO NOT DELETE IT] */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root { --font-display: 'Bricolage Grotesque', sans-serif; --font-body: 'Plus Jakarta Sans', sans-serif; --font-mono: 'DM Mono', monospace; --bg: #0d0f14; --bg2: #12141c; --bg3: #181b26; --surface: #1a1d2a; --surface2: #1e2230; --border: rgba(255,255,255,0.07); --border2: rgba(255,255,255,0.13); --ink: #eef0ff; --ink2: #8b92b8; --ink3: #454a6b; --primary: #4f46e5; --primary2: #6c63ff; --p-glow: rgba(79,70,229,0.28); --p-soft: rgba(79,70,229,0.10); --green: #22d3a0; --green-soft: rgba(34,211,160,0.10); --red: #f43f5e; --red-soft: rgba(244,63,94,0.10); --yellow: #f5c842; --yellow-soft: rgba(245,200,66,0.10); --sidebar-w: 240px; --radius: 12px; --radius-lg: 18px; }
 [data-theme="light"] { --bg:#f8fafc; --bg2:#f1f4fb; --bg3:#e8ecf5; --surface:#ffffff; --surface2:#f4f6fc; --border:rgba(0,0,0,0.07); --border2:rgba(0,0,0,0.12); --ink:#0d0f14; --ink2:#4a5080; --ink3:#9298b8; }
@@ -69,7 +68,7 @@ body { font-family: var(--font-body); background: var(--bg); color: var(--ink); 
 .drive-meta { font-size: 12px; color: var(--ink3); display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .drive-meta span { display: flex; align-items: center; gap: 4px; }
 .tag { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; font-family: var(--font-mono); }
-.tag-applied { background: rgba(255,255,255,0.05); color: var(--ink3); } .tag-shortlisted { background: var(--green-soft); color: var(--green); } .tag-selected { background: var(--green-soft); color: var(--green); border: 1px solid rgba(34,211,160,0.3); } .tag-rejected { background: var(--red-soft); color: var(--red); }
+.tag-applied { background: rgba(255,255,255,0.05); color: var(--ink3); } .tag-shortlisted { background: var(--green-soft); color: var(--green); } .tag-selected { background: var(--green-soft); color: var(--green); border: 1px solid rgba(34,211,160,0.3); } .tag-rejected { background: var(--red-soft); color: var(--red); } .tag-placed { background: rgba(245,158,11,0.15); color: #f59e0b; border: 1px solid rgba(245,158,11,0.3); }
 .view-btn { padding: 6px 13px; border-radius: 8px; border: none; background: var(--primary); color: #fff; font-family: var(--font-display); font-size: 12px; font-weight: 700; cursor: pointer; text-decoration: none; transition: all 0.18s; white-space: nowrap; }
 .view-btn:hover { background: var(--primary2); transform: translateY(-1px); }
 .empty-state { padding: 36px 20px; text-align: center; }
@@ -236,7 +235,7 @@ body { font-family: var(--font-body); background: var(--bg); color: var(--ink); 
   <!-- content -->
   <div class="content">
 
-    <!-- FIX: Added Django Messages container -->
+    <!-- Django Messages -->
     {% if messages %}
       {% for message in messages %}
       <div class="cc-alert {{ message.tags }}">
@@ -244,6 +243,28 @@ body { font-family: var(--font-body); background: var(--bg); color: var(--ink); 
         {{ message }}
       </div>
       {% endfor %}
+    {% endif %}
+
+    <!-- ✨ PLACED CELEBRATION BANNER ✨ -->
+    {% if user.role == 'student' and placed_applications|length > 0 %}
+    <div class="anim" style="background: linear-gradient(90deg, #059669, #10b981); border-radius: 16px; padding: 28px; margin-bottom: 24px; color: white; box-shadow: 0 10px 30px rgba(16,185,129,0.3); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+      <div>
+        <h2 style="font-family: var(--font-display); font-weight: 800; font-size: 24px; margin-bottom: 8px; color: white;">
+          🎉 Congratulations, {{ user.first_name|default:"Student" }}!
+        </h2>
+        <p style="font-size: 16px; opacity: 0.95; margin: 0;">
+          You have been officially placed! Your hard work paid off.
+        </p>
+        <div style="margin-top: 16px; display: flex; gap: 12px; flex-wrap: wrap;">
+          {% for app in placed_applications %}
+          <span style="background: rgba(255,255,255,0.2); padding: 8px 16px; border-radius: 8px; font-weight: 700; font-family: var(--font-display); font-size: 14px;">
+            🏆 {{ app.drive.company }} - {{ app.drive.role }}
+          </span>
+          {% endfor %}
+        </div>
+      </div>
+      <div style="font-size: 48px; opacity: 0.8;">🎓</div>
+    </div>
     {% endif %}
 
     <!-- STATS -->
@@ -319,7 +340,6 @@ body { font-family: var(--font-body); background: var(--bg); color: var(--ink); 
                 <div class="drive-meta">
                   <span><i class="fa-solid fa-building" style="font-size:10px;"></i> {{ drive.company }}</span>
                   <span><i class="fa-solid fa-indian-rupee-sign" style="font-size:10px;"></i> {{ drive.formatted_salary }}</span>
-                  <!-- DATA BUG FIX: Changed drive.last_date to drive.deadline -->
                   <span><i class="fa-solid fa-clock" style="font-size:10px;"></i> Closes {{ drive.deadline|date:"M d, Y" }}</span>
                 </div>
               </div>
@@ -469,7 +489,6 @@ body { font-family: var(--font-body); background: var(--bg); color: var(--ink); 
             <div class="interview-wrap">
               <div class="int-co">{{ iv.application.drive.company }}</div>
               <div class="int-row"><i class="fa-solid fa-briefcase"></i> {{ iv.application.drive.role }}</div>
-              <!-- DATA BUG FIX: Changed iv.date and iv.time to iv.scheduled_at|date -->
               <div class="int-row"><i class="fa-solid fa-calendar"></i> {{ iv.scheduled_at|date:"M d, Y" }}</div>
               <div class="int-row"><i class="fa-solid fa-clock"></i> {{ iv.scheduled_at|date:"h:i A" }}</div>
               {% if iv.location %}<div class="int-row"><i class="fa-solid fa-location-dot"></i> {{ iv.location }}</div>{% endif %}

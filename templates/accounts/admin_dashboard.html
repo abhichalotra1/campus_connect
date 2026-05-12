@@ -197,23 +197,23 @@
           <td style="color:var(--ink2);">{{ app.drive.company }}</td>
           <td style="color:var(--ink2);">{{ app.drive.role }}</td>
           <td style="color:var(--ink3);">{{ app.applied_at|date:"d M Y" }}</td>
-          <td>
-            {% if app.status == 'applied' %}<span style="font-size:12px;background:var(--p-soft);color:var(--primary2);padding:3px 10px;border-radius:20px;font-weight:600;">Applied</span>
-            {% elif app.status == 'shortlisted' %}<span style="font-size:12px;background:rgba(245,158,11,0.12);color:#f59e0b;padding:3px 10px;border-radius:20px;font-weight:600;">Shortlisted</span>
-            {% elif app.status == 'selected' %}<span style="font-size:12px;background:var(--green-soft);color:var(--green);padding:3px 10px;border-radius:20px;font-weight:600;">Selected</span>
-            {% elif app.status == 'rejected' %}<span style="font-size:12px;background:var(--red-soft);color:var(--red);padding:3px 10px;border-radius:20px;font-weight:600;">Rejected</span>{% endif %}
-          </td>
-          <td>
+<td>
+    {% if app.status == 'applied' %}<span style="font-size:12px;background:var(--p-soft);color:var(--primary2);padding:3px 10px;border-radius:20px;font-weight:600;">Applied</span>
+    {% elif app.status == 'shortlisted' %}<span style="font-size:12px;background:rgba(245,158,11,0.12);color:#f59e0b;padding:3px 10px;border-radius:20px;font-weight:600;">Shortlisted</span>
+    {% elif app.status == 'selected' %}<span style="font-size:12px;background:var(--success-soft);color:var(--success);padding:3px 10px;border-radius:20px;font-weight:600;">Selected</span>
+    {% elif app.status == 'placed' %}<span style="font-size:12px;background:rgba(245,158,11,0.15);color:#f59e0b;padding:3px 10px;border-radius:20px;font-weight:600;">🏆 Placed</span> <!-- NEW -->
+    {% elif app.status == 'rejected' %}<span style="font-size:12px;background:var(--red-soft);color:var(--red);padding:3px 10px;border-radius:20px;font-weight:600;">Rejected</span>{% endif %}
+</td>          <td>
             <form method="POST" action="{% url 'update_application' app.pk %}">
               {% csrf_token %}
               <div style="display:flex;gap:6px;">
-                <select name="status" class="form-select form-select-sm" style="font-size:13px;min-width:110px;">
-                  <option value="applied"      {% if app.status == 'applied' %}selected{% endif %}>Applied</option>
-                  <option value="shortlisted"  {% if app.status == 'shortlisted' %}selected{% endif %}>Shortlisted</option>
-                  <option value="selected"     {% if app.status == 'selected' %}selected{% endif %}>Selected</option>
-                  <option value="rejected"     {% if app.status == 'rejected' %}selected{% endif %}>Rejected</option>
-                </select>
-                <button type="submit" class="btn btn-primary btn-sm" style="font-size:13px;white-space:nowrap;">Update</button>
+<select name="status" class="form-select form-select-sm" style="font-size:13px;min-width:110px;">
+    <option value="applied" {% if app.status == 'applied' %}selected{% endif %}>Applied</option>
+    <option value="shortlisted" {% if app.status == 'shortlisted' %}selected{% endif %}>Shortlisted</option>
+    <option value="selected" {% if app.status == 'selected' %}selected{% endif %}>Selected</option>
+    <option value="placed" {% if app.status == 'placed' %}selected{% endif %}>Placed ✅</option> <!-- NEW -->
+    <option value="rejected" {% if app.status == 'rejected' %}selected{% endif %}>Rejected</option>
+</select>                <button type="submit" class="btn btn-primary btn-sm" style="font-size:13px;white-space:nowrap;">Update</button>
               </div>
             </form>
             

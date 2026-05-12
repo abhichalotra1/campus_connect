@@ -73,6 +73,7 @@ class Application(models.Model):
         ('shortlisted', 'Shortlisted'),
         ('rejected',    'Rejected'),
         ('selected',    'Selected'),
+        ('placed',      'Placed'),   # <-- ADD THIS LINE
     )
 
     student    = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -86,7 +87,6 @@ class Application(models.Model):
 
     def __str__(self):
         return f"{self.student.username} → {self.drive.company}"
-
 
 class Interview(models.Model):
     STATUS_CHOICES = (
