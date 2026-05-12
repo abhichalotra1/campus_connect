@@ -1,981 +1,873 @@
+{% load static %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Campus Connect — Placement Portal</title>
-<link href="https://fonts.googleapis.com/css2?family=Clash+Display:wght@400;500;600;700&family=Cabinet+Grotesk:wght@300;400;500;700;800&display=swap" rel="stylesheet">
-<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<!-- Phosphor Icons -->
+<script src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
+
 <style>
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
+/* ════════════════════════════════════════════════════════
+   MIDNIGHT INDIGO — SEMANTIC COLOR SYSTEM
+   ════════════════════════════════════════════════════════ */
 :root {
-  --bg:       #08090d;
-  --bg2:      #0e1018;
-  --bg3:      #13151f;
-  --surface:  #181b26;
-  --surface2: #1e2130;
-  --border:   rgba(255,255,255,0.06);
-  --border2:  rgba(255,255,255,0.11);
-
-  --ink:      #eef0ff;
-  --ink2:     #9298b8;
-  --ink3:     #4e5370;
-
-  --a:        #5b6cff;
-  --a2:       #7d8bff;
-  --a-glow:   rgba(91,108,255,0.22);
-  --a-soft:   rgba(91,108,255,0.10);
-
-  --g:        #1ed98a;
-  --g-soft:   rgba(30,217,138,0.10);
-  --y:        #f5c842;
-  --y-soft:   rgba(245,200,66,0.10);
-  --r:        #ff5470;
-  --r-soft:   rgba(255,84,112,0.10);
-
-  --radius:   14px;
-  --radius-lg:20px;
+  --font-display:'Plus Jakarta Sans',sans-serif;
+  --font-body:'Inter',sans-serif;
+  --bg-base:#0B0F19;--bg-surface:#131825;--bg-muted:#1E2433;--bg-hover:#252B3B;
+  --border:rgba(255,255,255,0.08);--border-strong:rgba(255,255,255,0.13);
+  --text-primary:#F1F5F9;--text-secondary:#94A3B8;--text-muted:#64748B;
+  --accent:#6366F1;--accent-hover:#818CF8;--accent-soft:rgba(99,102,241,0.15);--accent-glow:rgba(99,102,241,0.25);
+  --success:#10B981;--success-soft:rgba(16,185,129,0.15);
+  --danger:#EF4444;--danger-soft:rgba(239,68,68,0.15);
+  --warning:#F59E0B;--warning-soft:rgba(245,158,11,0.15);
+  --purple:#A855F7;--purple-soft:rgba(168,85,247,0.15);
+  --shadow-sm:0 2px 8px rgba(0,0,0,0.3);--shadow-md:0 4px 20px rgba(0,0,0,0.4);
+  --shadow-lg:0 8px 40px rgba(0,0,0,0.5);--shadow-accent:0 4px 30px rgba(99,102,241,0.2);
+  --nav-bg:rgba(11,15,25,0.75);
+}
+[data-theme="light"]{
+  --bg-base:#F8FAFC;--bg-surface:#FFFFFF;--bg-muted:#F1F5F9;--bg-hover:#E2E8F0;
+  --border:rgba(0,0,0,0.08);--border-strong:rgba(0,0,0,0.12);
+  --text-primary:#0F172A;--text-secondary:#475569;--text-muted:#94A3B8;
+  --accent:#4F46E5;--accent-hover:#6366F1;--accent-soft:rgba(79,70,229,0.1);--accent-glow:rgba(79,70,229,0.15);
+  --success:#059669;--success-soft:rgba(5,150,105,0.1);
+  --danger:#DC2626;--danger-soft:rgba(220,38,38,0.1);
+  --warning:#D97706;--warning-soft:rgba(217,119,6,0.1);
+  --purple:#9333EA;--purple-soft:rgba(147,51,234,0.1);
+  --shadow-sm:0 2px 8px rgba(0,0,0,0.06);--shadow-md:0 4px 20px rgba(0,0,0,0.08);
+  --shadow-lg:0 8px 40px rgba(0,0,0,0.1);--shadow-accent:0 4px 30px rgba(79,70,229,0.15);
+  --nav-bg:rgba(248,250,252,0.8);
 }
 
-html { scroll-behavior: smooth; }
+/* ═══ RESET ═══ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:var(--font-body);background:var(--bg-base);color:var(--text-primary);overflow-x:hidden;transition:background .4s,color .4s;line-height:1.6}
+h1,h2,h3,h4,h5,h6{font-family:var(--font-display);line-height:1.15}
+a{text-decoration:none;color:inherit}
+img{max-width:100%;display:block}
+::selection{background:var(--accent-soft);color:var(--accent)}
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:var(--bg-muted)}
+::-webkit-scrollbar-thumb{background:var(--bg-hover);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--accent)}
 
-body {
-  font-family: 'Cabinet Grotesk', sans-serif;
-  background: var(--bg);
-  color: var(--ink);
-  line-height: 1.6;
-  overflow-x: hidden;
-}
+/* ═══ NAVBAR — FLOATING PILL ═══ */
+.nav{position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:1000;width:calc(100% - 40px);max-width:1120px;height:56px;display:flex;align-items:center;gap:14px;padding:0 20px;background:var(--nav-bg);backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);border-radius:16px;border:1px solid var(--border-strong);box-shadow:0 4px 30px rgba(0,0,0,0.2);transition:all .3s}
+.nav.scrolled{box-shadow:0 8px 40px rgba(0,0,0,0.35)}
+.nav-logo{font-family:var(--font-display);font-weight:800;font-size:16px;color:var(--text-primary);display:flex;align-items:center;gap:9px;flex-shrink:0}
+.nav-logo-icon{width:30px;height:30px;border-radius:8px;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff;box-shadow:0 0 0 3px var(--accent-soft)}
+.nav-links{display:flex;align-items:center;gap:2px;list-style:none;flex:1;justify-content:center}
+.nav-links a{font-size:13px;font-weight:500;color:var(--text-secondary);padding:6px 12px;border-radius:8px;transition:all .15s;white-space:nowrap}
+.nav-links a:hover{color:var(--text-primary);background:var(--border)}
+.nav-right{display:flex;align-items:center;gap:8px;list-style:none;flex-shrink:0}
+.theme-btn{width:34px;height:34px;border-radius:8px;background:var(--bg-muted);border:1px solid var(--border);color:var(--text-secondary);cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;transition:all .18s}
+.theme-btn:hover{color:var(--accent);border-color:var(--accent);background:var(--accent-soft)}
+.nav-signin{font-size:12.5px;font-weight:600;color:var(--text-secondary);padding:6px 14px;border-radius:8px;border:1px solid var(--border);transition:all .15s}
+.nav-signin:hover{color:var(--text-primary);border-color:var(--text-muted);background:var(--bg-muted)}
+.nav-cta{font-size:12.5px;font-weight:700;color:#fff!important;padding:6px 16px;border-radius:8px;background:var(--accent);transition:all .18s;white-space:nowrap}
+.nav-cta:hover{background:var(--accent-hover);box-shadow:var(--shadow-accent);transform:translateY(-1px)}
+.nav-hamburger{display:none;margin-left:auto;background:none;border:1px solid var(--border);border-radius:8px;padding:6px 8px;cursor:pointer;color:var(--text-secondary);font-size:15px}
 
-/* ─── NOISE OVERLAY ─── */
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
-  pointer-events: none;
-  z-index: 0;
-  opacity: 0.6;
-}
+/* Mobile nav floating dropdown */
+.nav-open .nav-links,.nav-open .nav-right{display:flex!important;flex-direction:column;position:absolute;top:calc(100% + 8px);left:0;right:0;background:var(--bg-surface);border:1px solid var(--border-strong);border-radius:14px;padding:14px 16px;gap:4px;z-index:999;box-shadow:var(--shadow-lg)}
+.nav-open .nav-right{top:unset;position:static;padding:0;border:none;flex-direction:row;box-shadow:none;border-radius:0}
+/* ═══ BUTTONS ═══ */
+.btn-primary{display:inline-flex;align-items:center;gap:8px;padding:14px 30px;border-radius:12px;background:var(--accent);color:#fff;font-family:var(--font-body);font-weight:600;font-size:15px;border:none;cursor:pointer;transition:all .2s;position:relative;overflow:hidden}
+.btn-primary::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.15) 0%,transparent 55%)}
+.btn-primary:hover{background:var(--accent-hover);transform:translateY(-2px);box-shadow:var(--shadow-accent)}
+.btn-primary:active{transform:translateY(0)}
+.btn-ghost{display:inline-flex;align-items:center;gap:8px;padding:14px 30px;border-radius:12px;background:transparent;color:var(--text-primary);font-family:var(--font-body);font-weight:500;font-size:15px;border:1px solid var(--border-strong);cursor:pointer;transition:all .2s}
+.btn-ghost:hover{background:var(--bg-muted);border-color:var(--accent)}
+.btn-secondary{display:inline-flex;align-items:center;gap:8px;padding:14px 30px;border-radius:12px;background:var(--accent-soft);color:var(--accent);font-family:var(--font-body);font-weight:600;font-size:15px;border:1px solid transparent;cursor:pointer;transition:all .2s}
+.btn-secondary:hover{background:var(--accent-glow);border-color:var(--accent)}
 
-/* ─── NAVBAR ─── */
-nav {
-  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-  padding: 18px 5%;
-  display: flex; align-items: center; justify-content: space-between;
-  transition: background 0.3s, border-color 0.3s, backdrop-filter 0.3s;
-}
-nav.scrolled {
-  background: rgba(8,9,13,0.82);
-  backdrop-filter: blur(20px);
-  border-bottom: 1px solid var(--border);
-}
-.nav-logo {
-  font-family: 'Clash Display', sans-serif;
-  font-size: 20px; font-weight: 700;
-  color: var(--ink);
-  text-decoration: none;
-  display: flex; align-items: center; gap: 9px;
-  letter-spacing: -0.3px;
-}
-.nav-logo .logo-mark {
-  width: 32px; height: 32px; border-radius: 9px;
-  background: var(--a);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 14px; color: #fff;
-  position: relative;
-}
-.nav-logo .logo-mark::after {
-  content: '';
-  position: absolute; inset: -3px;
-  border-radius: 12px;
-  border: 1px solid rgba(91,108,255,0.35);
-}
-.nav-links {
-  display: flex; align-items: center; gap: 32px;
-  list-style: none;
-}
-.nav-links a {
-  font-size: 14px; font-weight: 500; color: var(--ink2);
-  text-decoration: none;
-  transition: color 0.18s;
-}
-.nav-links a:hover { color: var(--ink); }
-.nav-actions { display: flex; align-items: center; gap: 10px; }
-.btn-ghost {
-  padding: 8px 18px; border-radius: 9px;
-  background: transparent; border: 1px solid var(--border2);
-  color: var(--ink2); font-family: 'Cabinet Grotesk', sans-serif;
-  font-size: 14px; font-weight: 500; cursor: pointer;
-  text-decoration: none; transition: all 0.18s;
-}
-.btn-ghost:hover { color: var(--ink); border-color: var(--border2); background: var(--surface); }
-.btn-cta {
-  padding: 9px 20px; border-radius: 9px;
-  background: var(--a); border: none;
-  color: #fff; font-family: 'Cabinet Grotesk', sans-serif;
-  font-size: 14px; font-weight: 700; cursor: pointer;
-  text-decoration: none; transition: all 0.2s;
-  position: relative; overflow: hidden;
-}
-.btn-cta::before {
-  content: '';
-  position: absolute; inset: 0;
-  background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, transparent 60%);
-}
-.btn-cta:hover { background: var(--a2); transform: translateY(-1px); box-shadow: 0 6px 20px var(--a-glow); }
+/* ═══ BADGES ═══ */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;letter-spacing:.2px}
+.badge-accent{background:var(--accent-soft);color:var(--accent)}
+.badge-success{background:var(--success-soft);color:var(--success)}
+.badge-danger{background:var(--danger-soft);color:var(--danger)}
+.badge-warning{background:var(--warning-soft);color:var(--warning)}
+.badge-purple{background:var(--purple-soft);color:var(--purple)}
 
-/* ─── HERO ─── */
-.hero {
-  min-height: 100vh;
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  text-align: center;
-  padding: 120px 5% 80px;
-  position: relative; z-index: 1;
-}
+/* ═══ CARD ═══ */
+.card{background:var(--bg-surface);border:1px solid var(--border);border-radius:16px;transition:all .3s ease}
+.card:hover{border-color:var(--border-strong);box-shadow:var(--shadow-md);transform:translateY(-2px)}
+.card-static{background:var(--bg-surface);border:1px solid var(--border);border-radius:16px;transition:background .4s,border-color .4s}
 
-/* radial glow behind hero */
-.hero::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 50%; transform: translateX(-50%);
-  width: 900px; height: 600px;
-  background: radial-gradient(ellipse at 50% 0%, rgba(91,108,255,0.15) 0%, transparent 65%);
-  pointer-events: none;
-}
-/* grid lines */
-.hero::after {
-  content: '';
-  position: absolute; inset: 0;
-  background-image:
-    linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
-  background-size: 60px 60px;
-  mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 30%, transparent 100%);
-  pointer-events: none;
-}
+/* ═══ SECTION HELPERS ═══ */
+.section-pad{padding:100px 5%}
+.accent-line{width:48px;height:4px;border-radius:2px;background:var(--accent)}
+.section-tag{display:inline-flex;align-items:center;gap:7px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--accent-hover);margin-bottom:14px}
+.section-tag::before{content:'';width:18px;height:2px;background:var(--accent);border-radius:2px}
 
-.hero-eyebrow {
-  display: inline-flex; align-items: center; gap: 8px;
-  padding: 6px 14px 6px 8px;
-  border-radius: 50px;
-  border: 1px solid rgba(91,108,255,0.3);
-  background: rgba(91,108,255,0.08);
-  font-size: 12.5px; font-weight: 700; color: var(--a2);
-  letter-spacing: 0.3px; text-transform: uppercase;
-  margin-bottom: 28px;
-  animation: fadeUp 0.7s ease both;
-}
-.hero-eyebrow .live-dot {
-  width: 7px; height: 7px; border-radius: 50%;
-  background: var(--g);
-  box-shadow: 0 0 0 3px var(--g-soft);
-  animation: blink 2s ease infinite;
-}
-@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+/* ═══ ANIMATIONS ═══ */
+/* ── SVG Illustration Animations ── */
+@keyframes svgRise1{from{transform:scaleY(0);transform-origin:bottom}to{transform:scaleY(1);transform-origin:bottom}}
+@keyframes svgRise2{from{transform:scaleY(0);transform-origin:bottom}to{transform:scaleY(1);transform-origin:bottom}}
+@keyframes svgRise3{from{transform:scaleY(0);transform-origin:bottom}to{transform:scaleY(1);transform-origin:bottom}}
+@keyframes svgLine{from{opacity:0}to{opacity:1}}
+@keyframes svgArrow{0%{opacity:0;transform:translate(290px,200px)}50%{opacity:1}100%{opacity:1;transform:translate(290px,180px)}}
+@keyframes svgPerson{0%{opacity:0;transform:translate(340px,280px)}100%{opacity:1;transform:translate(340px,240px)}}
+@keyframes svgSpinSlow{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+@keyframes svgBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
 
-.hero-title {
-  font-family: 'Clash Display', sans-serif;
-  font-size: clamp(48px, 8.5vw, 96px);
-  font-weight: 700;
-  line-height: 1.0;
-  letter-spacing: -3px;
-  margin-bottom: 22px;
-  animation: fadeUp 0.7s 0.1s ease both;
-}
-.hero-title .line2 {
-  display: block;
-  background: linear-gradient(135deg, var(--a2) 0%, #b3a8ff 50%, var(--g) 100%);
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
+.svg-rise-1{animation:svgRise1 .8s ease-out .3s both}
+.svg-rise-2{animation:svgRise2 .8s ease-out .6s both}
+.svg-rise-3{animation:svgRise3 .8s ease-out .9s both}
+.svg-line{animation:svgLine 1s ease 1.2s both}
+.svg-arrow{animation:svgArrow .6s ease 1.5s both}
+.svg-person{animation:svgPerson .6s ease 1.7s both}
+.svg-star-1{animation:svgBounce 3s ease-in-out infinite 2s}
+.svg-star-2{animation:svgBounce 3.5s ease-in-out infinite 2.5s}
+.svg-star-3{animation:svgBounce 4s ease-in-out infinite 1.5s}
+.svg-ring{animation:svgSpinSlow 40s linear infinite;transform-origin:250px 250px}
+.svg-ring-2{animation:svgSpinSlow 60s linear infinite reverse;transform-origin:250px 250px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:translateY(0)}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+@keyframes pulseGlow{0%,100%{box-shadow:0 0 0 0 var(--accent-soft)}50%{box-shadow:0 0 0 10px transparent}}
+@keyframes scribble{from{stroke-dashoffset:300}to{stroke-dashoffset:0}}
+@keyframes marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+@keyframes countIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.anim-fade-up{animation:fadeUp .7s ease both}
+.d1{animation-delay:.1s}.d2{animation-delay:.2s}.d3{animation-delay:.3s}.d4{animation-delay:.4s}.d5{animation-delay:.5s}
 
-.hero-sub {
-  font-size: clamp(15px, 2vw, 18px); font-weight: 400;
-  color: var(--ink2); max-width: 540px;
-  margin: 0 auto 40px;
-  line-height: 1.75;
-  animation: fadeUp 0.7s 0.2s ease both;
-}
+/* Reveal on scroll */
+.reveal{opacity:0;transform:translateY(28px);transition:opacity .7s cubic-bezier(.22,1,.36,1),transform .7s cubic-bezier(.22,1,.36,1)}
+.reveal.visible{opacity:1;transform:translateY(0)}
+.rd1{transition-delay:.1s}.rd2{transition-delay:.2s}.rd3{transition-delay:.3s}
 
-.hero-buttons {
-  display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;
-  animation: fadeUp 0.7s 0.3s ease both;
-  margin-bottom: 64px;
-}
-.btn-hero-primary {
-  padding: 14px 30px; border-radius: var(--radius);
-  background: var(--a); border: none;
-  color: #fff; font-family: 'Cabinet Grotesk', sans-serif;
-  font-size: 15px; font-weight: 700; cursor: pointer;
-  text-decoration: none;
-  display: inline-flex; align-items: center; gap: 9px;
-  transition: all 0.22s; position: relative; overflow: hidden;
-}
-.btn-hero-primary::before {
-  content:'';position:absolute;inset:0;
-  background:linear-gradient(135deg,rgba(255,255,255,0.18) 0%,transparent 55%);
-}
-.btn-hero-primary:hover { background: var(--a2); transform: translateY(-2px); box-shadow: 0 12px 32px var(--a-glow); }
-.btn-hero-secondary {
-  padding: 14px 30px; border-radius: var(--radius);
-  background: var(--surface); border: 1px solid var(--border2);
-  color: var(--ink); font-family: 'Cabinet Grotesk', sans-serif;
-  font-size: 15px; font-weight: 500; cursor: pointer;
-  text-decoration: none;
-  display: inline-flex; align-items: center; gap: 9px;
-  transition: all 0.22s;
-}
-.btn-hero-secondary:hover { background: var(--surface2); border-color: rgba(255,255,255,0.18); }
+/* ══════════════════════════════════════════════════════════
+   HERO
+   ══════════════════════════════════════════════════════════ */
+.hero{min-height:100vh;display:flex;align-items:center;padding:90px 5% 80px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-100px;left:50%;transform:translateX(-50%);width:900px;height:600px;background:radial-gradient(ellipse at 50% 0%,rgba(99,102,241,.14) 0%,transparent 65%);pointer-events:none}
+.hero::after{content:'';position:absolute;inset:0;background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);background-size:60px 60px;mask-image:radial-gradient(ellipse 70% 55% at 50% 40%,black 20%,transparent 70%);-webkit-mask-image:radial-gradient(ellipse 70% 55% at 50% 40%,black 20%,transparent 70%);pointer-events:none}
 
-/* ─── HERO STATS ─── */
-.hero-stats {
-  display: flex; gap: 0; flex-wrap: wrap; justify-content: center;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  background: var(--surface);
-  overflow: hidden;
-  max-width: 720px; width: 100%;
-  animation: fadeUp 0.7s 0.4s ease both;
-}
-.stat-block {
-  flex: 1; min-width: 140px;
-  padding: 24px 28px;
-  border-right: 1px solid var(--border);
-  text-align: center;
-  position: relative;
-}
-.stat-block:last-child { border-right: none; }
-.stat-block::before {
-  content: '';
-  position: absolute; top: 0; left: 50%; transform: translateX(-50%);
-  width: 40%; height: 2px;
-  border-radius: 0 0 4px 4px;
-}
-.stat-block:nth-child(1)::before { background: var(--a); }
-.stat-block:nth-child(2)::before { background: var(--g); }
-.stat-block:nth-child(3)::before { background: var(--y); }
-.stat-block:nth-child(4)::before { background: var(--r); }
-.stat-num {
-  font-family: 'Clash Display', sans-serif;
-  font-size: 30px; font-weight: 700;
-  letter-spacing: -1px; line-height: 1;
-  margin-bottom: 5px;
-}
-.stat-label { font-size: 12px; color: var(--ink3); font-weight: 500; text-transform: uppercase; letter-spacing: 0.8px; }
+.hero-grid{display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center;width:100%;max-width:1200px;margin:0 auto;position:relative;z-index:1}
+.hero-copy{position:relative;z-index:2}
 
-@keyframes fadeUp {
-  from { opacity:0; transform:translateY(24px); }
-  to   { opacity:1; transform:translateY(0); }
-}
+.hero-eyebrow{display:inline-flex;align-items:center;gap:8px;padding:6px 14px 6px 8px;border-radius:50px;border:1px solid rgba(99,102,241,.3);background:var(--accent-soft);font-size:12.5px;font-weight:700;color:var(--accent-hover);letter-spacing:.3px;text-transform:uppercase;margin-bottom:28px;animation:fadeUp .7s ease both}
+.hero-eyebrow .live-dot{width:7px;height:7px;border-radius:50%;background:var(--success);box-shadow:0 0 0 3px var(--success-soft);animation:pulseGlow 2s infinite}
 
-/* ─── SECTION COMMON ─── */
-section { padding: 100px 5%; position: relative; z-index: 1; }
-.section-tag {
-  display: inline-flex; align-items: center; gap: 7px;
-  font-size: 11px; font-weight: 700; text-transform: uppercase;
-  letter-spacing: 1.5px; color: var(--a2); margin-bottom: 14px;
-}
-.section-tag::before { content:''; width:18px; height:2px; background:var(--a); border-radius:2px; }
-.section-heading {
-  font-family: 'Clash Display', sans-serif;
-  font-size: clamp(28px, 4.5vw, 48px);
-  font-weight: 700; letter-spacing: -1.5px;
-  line-height: 1.1; margin-bottom: 16px;
-}
-.section-sub { font-size: 16px; color: var(--ink2); max-width: 520px; line-height: 1.7; }
+.hero-title{font-size:clamp(2.5rem,5.5vw,4.2rem);font-weight:800;letter-spacing:-2px;margin-bottom:22px;animation:fadeUp .7s .1s ease both;line-height:1.05}
+.scribble-word{position:relative;display:inline-block}
+.scribble-word svg{position:absolute;bottom:-8px;left:-6px;width:calc(100% + 12px);height:16px;pointer-events:none}
+.scribble-word svg path{stroke:var(--accent);stroke-width:3;fill:none;stroke-dasharray:300;stroke-dashoffset:300;stroke-linecap:round;animation:scribble 1s ease forwards 1s}
 
-/* ─── MARQUEE STRIP ─── */
-.marquee-section {
-  padding: 28px 0; overflow: hidden;
-  border-top: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
-  background: var(--bg2);
-}
-.marquee-track {
-  display: flex; gap: 0;
-  animation: marquee 28s linear infinite;
-  width: max-content;
-}
-.marquee-item {
-  padding: 0 48px;
-  font-family: 'Clash Display', sans-serif;
-  font-size: 14px; font-weight: 600;
-  color: var(--ink3); letter-spacing: 0.5px;
-  display: flex; align-items: center; gap: 14px;
-  white-space: nowrap;
-}
-.marquee-item .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--a); flex-shrink: 0; }
-@keyframes marquee { from {transform:translateX(0)} to {transform:translateX(-50%)} }
+.hero-sub{font-size:clamp(15px,1.8vw,18px);color:var(--text-secondary);max-width:520px;margin-bottom:36px;line-height:1.75;animation:fadeUp .7s .2s ease both}
+.hero-buttons{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:48px;animation:fadeUp .7s .3s ease both}
+.hero-proof{display:flex;align-items:center;gap:14px;animation:fadeUp .7s .4s ease both}
+.hero-proof-avatars{display:flex}
+.hero-proof-avatars img{width:34px;height:34px;border-radius:50%;border:2px solid var(--bg-base);margin-left:-8px}
+.hero-proof-avatars img:first-child{margin-left:0}
+.hero-proof-extra{width:34px;height:34px;border-radius:50%;border:2px solid var(--bg-base);background:var(--accent-soft);color:var(--accent);font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-left:-8px}
 
-/* ─── HOW IT WORKS ─── */
-.how-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 56px 80px;
-  align-items: center;
-  max-width: 1100px; margin: 0 auto;
-}
-.how-visual {
-  position: relative;
-}
-.how-mockup {
-  background: var(--surface);
-  border: 1px solid var(--border2);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-}
-.mockup-header {
-  background: var(--bg3);
-  border-bottom: 1px solid var(--border);
-  padding: 12px 16px;
-  display: flex; align-items: center; gap: 8px;
-}
-.mockup-dot { width: 10px; height: 10px; border-radius: 50%; }
-.mockup-content { padding: 20px; }
-.mockup-row {
-  display: flex; align-items: center; gap: 12px;
-  padding: 12px 14px;
-  border-radius: 10px;
-  margin-bottom: 8px;
-  border: 1px solid var(--border);
-  transition: all 0.2s;
-}
-.mockup-row.highlight { background: var(--a-soft); border-color: rgba(91,108,255,0.25); }
-.mockup-row .company-icon {
-  width: 36px; height: 36px; border-radius: 8px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 16px; flex-shrink: 0;
-}
-.mockup-row .info { flex: 1; }
-.mockup-row .title { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
-.mockup-row .meta { font-size: 11px; color: var(--ink3); }
-.mockup-row .pill {
-  padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 600;
-}
-.floating-badge {
-  position: absolute;
-  background: var(--surface);
-  border: 1px solid var(--border2);
-  border-radius: var(--radius);
-  padding: 10px 14px;
-  display: flex; align-items: center; gap: 8px;
-  font-size: 12px; font-weight: 600;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
-  animation: float 4s ease-in-out infinite;
-}
-.floating-badge:nth-child(2) { animation-delay: -2s; }
-@keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
-.badge-a { top: -18px; right: -20px; }
-.badge-b { bottom: -18px; left: -20px; }
+/* Hero illustration area */
+.hero-visual{display:flex;align-items:center;justify-content:center;position:relative;animation:fadeUp .7s .3s ease both}
+.hero-visual lottie-player{width:100%;max-width:520px;height:auto}
 
-.steps-list { display: flex; flex-direction: column; gap: 32px; }
-.step {
-  display: flex; gap: 18px; align-items: flex-start;
-  opacity: 0; transform: translateX(30px);
-  transition: all 0.5s ease;
-}
-.step.visible { opacity: 1; transform: translateX(0); }
-.step-num {
-  width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0;
-  display: flex; align-items: center; justify-content: center;
-  font-family: 'Clash Display', sans-serif; font-size: 15px; font-weight: 700;
-  border: 1.5px solid var(--border2); color: var(--ink2);
-  position: relative;
-}
-.step-num.active {
-  background: var(--a); border-color: var(--a); color: #fff;
-  box-shadow: 0 0 0 6px var(--a-soft);
-}
-.step-body h4 { font-family:'Clash Display',sans-serif; font-size:17px; font-weight:600; margin-bottom:5px; letter-spacing:-0.3px; }
-.step-body p { font-size:14px; color:var(--ink2); line-height:1.7; }
+/* Floating cards around illustration */
+.hero-float{position:absolute;background:var(--bg-surface);border:1px solid var(--border-strong);border-radius:12px;padding:10px 14px;display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;box-shadow:var(--shadow-lg);animation:float 5s ease-in-out infinite;white-space:nowrap;z-index:3}
+.hero-float.f2{animation-delay:-2.5s}
+.hero-float-icon{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
 
-/* ─── FEATURES ─── */
-.features-section { background: var(--bg2); }
-.features-header {
-  display: flex; justify-content: space-between; align-items: flex-end;
-  gap: 24px; flex-wrap: wrap;
-  margin-bottom: 52px;
-  max-width: 1100px; margin-left: auto; margin-right: auto;
-}
-.features-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-  max-width: 1100px; margin: 0 auto;
-}
-.feat-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: 30px;
-  position: relative; overflow: hidden;
-  transition: all 0.25s;
-}
-.feat-card::before {
-  content: '';
-  position: absolute; top: 0; left: 0; right: 0; height: 1px;
-  opacity: 0; transition: opacity 0.25s;
-}
-.feat-card:hover { border-color: var(--border2); transform: translateY(-3px); }
-.feat-card:hover::before { opacity: 1; }
-.feat-card.accent-a::before { background: linear-gradient(90deg, transparent, var(--a), transparent); }
-.feat-card.accent-g::before { background: linear-gradient(90deg, transparent, var(--g), transparent); }
-.feat-card.accent-y::before { background: linear-gradient(90deg, transparent, var(--y), transparent); }
-.feat-card.span2 { grid-column: span 2; }
-.feat-icon {
-  width: 46px; height: 46px; border-radius: 12px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 20px; margin-bottom: 20px;
-}
-.feat-card h3 {
-  font-family: 'Clash Display', sans-serif;
-  font-size: 18px; font-weight: 600; margin-bottom: 8px; letter-spacing: -0.3px;
-}
-.feat-card p { font-size: 14px; color: var(--ink2); line-height: 1.7; }
-.feat-tag-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
-.feat-tag {
-  padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 500;
-  background: var(--bg3); border: 1px solid var(--border); color: var(--ink2);
-}
+/* ══════════════════════════════════════════════════════════
+   MARQUEE
+   ══════════════════════════════════════════════════════════ */
+.marquee-section{padding:28px 0;overflow:hidden;border-top:1px solid var(--border);border-bottom:1px solid var(--border);background:var(--bg-surface)}
+.marquee-track{display:flex;animation:marquee 30s linear infinite;width:max-content}
+.marquee-track:hover{animation-play-state:paused}
+.marquee-item{padding:0 48px;font-family:var(--font-display);font-size:15px;font-weight:600;color:var(--text-muted);opacity:.5;display:flex;align-items:center;gap:14px;white-space:nowrap}
+.marquee-dot{width:5px;height:5px;border-radius:50%;background:var(--accent);flex-shrink:0}
 
-/* ─── ROLES SECTION ─── */
-.roles-section { max-width: 1100px; margin: 0 auto; }
-.roles-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; margin-top: 52px; }
-.role-card {
-  border-radius: var(--radius-lg);
-  padding: 32px;
-  border: 1px solid var(--border);
-  position: relative; overflow: hidden;
-  transition: transform 0.25s;
-}
-.role-card:hover { transform: translateY(-4px); }
-.role-card.student { background: linear-gradient(145deg, rgba(91,108,255,0.08), var(--surface) 60%); }
-.role-card.recruiter { background: linear-gradient(145deg, rgba(30,217,138,0.07), var(--surface) 60%); }
-.role-card.admin { background: linear-gradient(145deg, rgba(245,200,66,0.07), var(--surface) 60%); }
-.role-icon { font-size: 32px; margin-bottom: 18px; }
-.role-card h3 {
-  font-family: 'Clash Display', sans-serif; font-size: 20px;
-  font-weight: 700; margin-bottom: 10px; letter-spacing: -0.4px;
-}
-.role-card p { font-size: 14px; color: var(--ink2); margin-bottom: 22px; line-height: 1.7; }
-.role-features { list-style: none; display: flex; flex-direction: column; gap: 9px; }
-.role-features li {
-  font-size: 13px; color: var(--ink2);
-  display: flex; align-items: center; gap: 9px;
-}
-.role-features li::before {
-  content: ''; width: 16px; height: 16px; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0; font-size: 9px;
-}
-.role-card.student .role-features li::before { background: var(--a-soft); color: var(--a2); content: '✓'; display: flex; align-items: center; justify-content: center; font-weight: 700; }
-.role-card.recruiter .role-features li::before { background: var(--g-soft); color: var(--g); content: '✓'; display: flex; align-items: center; justify-content: center; font-weight: 700; }
-.role-card.admin .role-features li::before { background: var(--y-soft); color: var(--y); content: '✓'; display: flex; align-items: center; justify-content: center; font-weight: 700; }
+/* ══════════════════════════════════════════════════════════
+   HOW IT WORKS
+   ══════════════════════════════════════════════════════════ */
+.how-grid{display:grid;grid-template-columns:1fr 1fr;gap:60px 80px;align-items:center;max-width:1100px;margin:0 auto}
+.how-mockup{background:var(--bg-surface);border:1px solid var(--border-strong);border-radius:18px;overflow:hidden;box-shadow:var(--shadow-lg)}
+.how-mockup-header{background:var(--bg-muted);border-bottom:1px solid var(--border);padding:12px 16px;display:flex;align-items:center;gap:8px}
+.how-mockup-dot{width:10px;height:10px;border-radius:50%}
+.how-mockup-body{padding:16px}
+.mockup-row{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:10px;margin-bottom:8px;border:1px solid var(--border);transition:all .2s}
+.mockup-row.hl{background:var(--accent-soft);border-color:rgba(99,102,241,.25)}
+.mockup-icon{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.mockup-info{flex:1}
+.mockup-title{font-size:13px;font-weight:600}
+.mockup-meta{font-size:11px;color:var(--text-muted)}
+.mockup-pill{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
+.how-float{position:absolute;background:var(--bg-surface);border:1px solid var(--border-strong);border-radius:12px;padding:10px 14px;display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;box-shadow:var(--shadow-lg);animation:float 4s ease-in-out infinite;white-space:nowrap;z-index:2}
+.how-float.hf2{animation-delay:-2s}
 
-/* ─── TESTIMONIALS ─── */
-.testimonials-section { background: var(--bg2); overflow: hidden; }
-.testimonials-inner { max-width: 1100px; margin: 0 auto; }
-.testimonials-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; margin-top: 52px; }
-.testi-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: 26px;
-  transition: all 0.2s;
-}
-.testi-card:hover { border-color: var(--border2); }
-.testi-stars { color: var(--y); font-size: 13px; margin-bottom: 14px; letter-spacing: 2px; }
-.testi-text { font-size: 14px; color: var(--ink2); line-height: 1.75; margin-bottom: 20px; font-style: italic; }
-.testi-author { display: flex; align-items: center; gap: 10px; }
-.testi-avatar {
-  width: 36px; height: 36px; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 13px; font-weight: 700; flex-shrink: 0;
-}
-.testi-name { font-size: 13px; font-weight: 700; }
-.testi-meta { font-size: 11px; color: var(--ink3); }
+.steps-list{display:flex;flex-direction:column;gap:28px}
+.step{display:flex;gap:16px;align-items:flex-start}
+.step-num{width:38px;height:38px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:15px;font-weight:700;border:1.5px solid var(--border-strong);color:var(--text-secondary);transition:all .3s}
+.step-num.active{background:var(--accent);border-color:var(--accent);color:#fff;box-shadow:0 0 0 6px var(--accent-soft)}
+.step-body h4{font-family:var(--font-display);font-size:17px;font-weight:600;margin-bottom:4px;letter-spacing:-.3px}
+.step-body p{font-size:14px;color:var(--text-secondary);line-height:1.7}
 
-/* ─── CTA SECTION ─── */
-.cta-section {
-  text-align: center;
-  padding: 120px 5%;
-}
-.cta-inner {
-  max-width: 680px; margin: 0 auto;
-  position: relative;
-}
-.cta-inner::before {
-  content: '';
-  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-  width: 500px; height: 300px;
-  background: radial-gradient(ellipse, rgba(91,108,255,0.12), transparent 70%);
-  pointer-events: none;
-}
-.cta-title {
-  font-family: 'Clash Display', sans-serif;
-  font-size: clamp(32px, 5vw, 56px); font-weight: 700;
-  letter-spacing: -2px; margin-bottom: 18px;
-}
-.cta-sub { font-size: 16px; color: var(--ink2); margin-bottom: 36px; line-height: 1.7; }
-.cta-buttons { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+/* ══════════════════════════════════════════════════════════
+   FEATURES
+   ══════════════════════════════════════════════════════════ */
+.features-section{background:var(--bg-surface)}
+.features-header{display:flex;justify-content:space-between;align-items:flex-end;gap:24px;flex-wrap:wrap;margin-bottom:48px;max-width:1100px;margin-left:auto;margin-right:auto}
+.features-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;max-width:1100px;margin:0 auto}
+.feat-card{background:var(--bg-base);border:1px solid var(--border);border-radius:18px;padding:28px;position:relative;overflow:hidden;transition:all .25s}
+.feat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;opacity:0;transition:opacity .25s}
+.feat-card:hover{border-color:var(--border-strong);transform:translateY(-3px)}
+.feat-card:hover::before{opacity:1}
+.feat-card.fa::before{background:linear-gradient(90deg,transparent,var(--accent),transparent)}
+.feat-card.fg::before{background:linear-gradient(90deg,transparent,var(--success),transparent)}
+.feat-card.fw::before{background:linear-gradient(90deg,transparent,var(--warning),transparent)}
+.feat-card.fp::before{background:linear-gradient(90deg,transparent,var(--purple),transparent)}
+.feat-card.span2{grid-column:span 2}
+.feat-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:18px}
+.feat-card h3{font-family:var(--font-display);font-size:17px;font-weight:600;margin-bottom:8px;letter-spacing:-.3px}
+.feat-card p{font-size:14px;color:var(--text-secondary);line-height:1.7}
+.feat-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}
+.feat-tag{padding:4px 10px;border-radius:20px;font-size:11px;font-weight:500;background:var(--bg-muted);border:1px solid var(--border);color:var(--text-secondary)}
 
-/* ─── FOOTER ─── */
-footer {
-  background: var(--bg2);
-  border-top: 1px solid var(--border);
-  padding: 60px 5% 40px;
-  position: relative; z-index: 1;
-}
-.footer-grid {
-  display: grid; grid-template-columns: 2fr 1fr 1fr 1fr;
-  gap: 48px; margin-bottom: 48px;
-}
-.footer-brand .brand-name {
-  font-family: 'Clash Display', sans-serif;
-  font-size: 18px; font-weight: 700; margin-bottom: 12px;
-  display: flex; align-items: center; gap: 8px;
-}
-.footer-brand p { font-size: 13px; color: var(--ink3); line-height: 1.7; max-width: 280px; }
-.footer-col h5 {
-  font-size: 12px; text-transform: uppercase; letter-spacing: 1.2px;
-  font-weight: 700; color: var(--ink3); margin-bottom: 16px;
-}
-.footer-col ul { list-style: none; display: flex; flex-direction: column; gap: 10px; }
-.footer-col ul li a { font-size: 14px; color: var(--ink2); text-decoration: none; transition: color 0.15s; }
-.footer-col ul li a:hover { color: var(--ink); }
-.footer-bottom {
-  display: flex; justify-content: space-between; align-items: center;
-  flex-wrap: wrap; gap: 12px;
-  border-top: 1px solid var(--border); padding-top: 28px;
-}
-.footer-bottom p { font-size: 13px; color: var(--ink3); }
-.social-links { display: flex; gap: 10px; }
-.social-btn {
-  width: 34px; height: 34px; border-radius: 8px;
-  background: var(--surface); border: 1px solid var(--border);
-  display: flex; align-items: center; justify-content: center;
-  color: var(--ink2); font-size: 14px;
-  text-decoration: none; transition: all 0.18s;
-}
-.social-btn:hover { color: var(--ink); border-color: var(--border2); }
+/* ══════════════════════════════════════════════════════════
+   ROLES
+   ══════════════════════════════════════════════════════════ */
+.roles-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;max-width:1100px;margin:48px auto 0}
+.role-card{border-radius:18px;padding:30px;border:1px solid var(--border);position:relative;overflow:hidden;transition:transform .25s}
+.role-card:hover{transform:translateY(-4px)}
+.role-card.student{background:linear-gradient(145deg,rgba(99,102,241,.08),var(--bg-surface) 60%)}
+.role-card.recruiter{background:linear-gradient(145deg,rgba(16,185,129,.07),var(--bg-surface) 60%)}
+.role-card.admin{background:linear-gradient(145deg,rgba(245,158,11,.07),var(--bg-surface) 60%)}
+.role-icon{width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:18px}
+.role-card h3{font-family:var(--font-display);font-size:19px;font-weight:700;margin-bottom:8px;letter-spacing:-.4px}
+.role-card p{font-size:14px;color:var(--text-secondary);margin-bottom:20px;line-height:1.7}
+.role-features{list-style:none;display:flex;flex-direction:column;gap:8px}
+.role-features li{font-size:13px;color:var(--text-secondary);display:flex;align-items:center;gap:8px}
+.role-features li .check{width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0}
+.student .check{background:var(--accent-soft);color:var(--accent)}
+.recruiter .check{background:var(--success-soft);color:var(--success)}
+.admin .check{background:var(--warning-soft);color:var(--warning)}
 
-/* ─── SCROLL REVEAL ─── */
-.reveal {
-  opacity: 0; transform: translateY(28px);
-  transition: opacity 0.6s ease, transform 0.6s ease;
-}
-.reveal.visible { opacity: 1; transform: translateY(0); }
-.reveal-d1 { transition-delay: 0.1s; }
-.reveal-d2 { transition-delay: 0.2s; }
-.reveal-d3 { transition-delay: 0.3s; }
+/* ══════════════════════════════════════════════════════════
+   WHY CAMPUS CONNECT
+   ══════════════════════════════════════════════════════════ */
+.why-section{background:var(--bg-surface)}
+.why-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;max-width:1100px;margin:0 auto}
+.why-col{border-radius:18px;padding:32px;border:1px solid var(--border)}
+.why-col.old{background:linear-gradient(145deg,rgba(239,68,68,.04),var(--bg-base) 60%);border-color:rgba(239,68,68,.12)}
+.why-col.new{background:linear-gradient(145deg,rgba(99,102,241,.06),var(--bg-base) 60%);border-color:rgba(99,102,241,.15)}
+.why-col-label{display:inline-flex;align-items:center;gap:6px;padding:5px 14px;border-radius:20px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:20px}
+.why-col.old .why-col-label{background:var(--danger-soft);color:var(--danger)}
+.why-col.new .why-col-label{background:var(--accent-soft);color:var(--accent)}
+.why-col h3{font-family:var(--font-display);font-size:22px;font-weight:700;margin-bottom:20px;letter-spacing:-.5px}
+.why-list{list-style:none;display:flex;flex-direction:column;gap:14px}
+.why-list li{display:flex;gap:12px;align-items:flex-start;font-size:14px;color:var(--text-secondary);line-height:1.6}
+.why-list li .why-icon{width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px}
+.why-col.old .why-icon{background:var(--danger-soft);color:var(--danger)}
+.why-col.new .why-icon{background:var(--accent-soft);color:var(--accent)}
+/* ══════════════════════════════════════════════════════════
+   STATS
+   ══════════════════════════════════════════════════════════ */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;max-width:1100px;margin:0 auto}
+.stat-card{background:var(--bg-surface);border:1px solid var(--border);border-radius:16px;padding:28px;text-align:center;transition:all .3s}
+.stat-card:hover{border-color:var(--border-strong);transform:translateY(-2px);box-shadow:var(--shadow-md)}
+.stat-num{font-family:var(--font-display);font-size:32px;font-weight:800;margin-bottom:4px;letter-spacing:-1px}
+.stat-label{font-size:13px;color:var(--text-muted);font-weight:500}
 
-/* ─── RESPONSIVE ─── */
-@media (max-width: 960px) {
-  .how-grid { grid-template-columns: 1fr; }
-  .how-visual { display: none; }
-  .features-grid { grid-template-columns: 1fr 1fr; }
-  .feat-card.span2 { grid-column: span 1; }
-  .roles-grid { grid-template-columns: 1fr; }
-  .testimonials-grid { grid-template-columns: 1fr 1fr; }
-  .footer-grid { grid-template-columns: 1fr 1fr; }
-  .nav-links { display: none; }
+/* ══════════════════════════════════════════════════════════
+   TESTIMONIALS
+   ══════════════════════════════════════════════════════════ */
+.testi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;max-width:1100px;margin:48px auto 0}
+.testi-card{background:var(--bg-surface);border:1px solid var(--border);border-radius:16px;padding:26px;transition:all .2s}
+.testi-card:hover{border-color:var(--accent);box-shadow:var(--shadow-accent)}
+.testi-stars{color:var(--warning);font-size:14px;margin-bottom:14px;letter-spacing:2px}
+.testi-text{font-size:14px;color:var(--text-secondary);line-height:1.75;margin-bottom:18px;font-style:italic}
+.testi-author{display:flex;align-items:center;gap:10px}
+.testi-avatar{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0}
+.testi-name{font-size:13px;font-weight:700}
+.testi-meta{font-size:11px;color:var(--text-muted)}
+
+/* ══════════════════════════════════════════════════════════
+   FAQ
+   ══════════════════════════════════════════════════════════ */
+.faq-list{max-width:720px;margin:0 auto;display:flex;flex-direction:column;gap:10px}
+.faq-item{border:1px solid var(--border);border-radius:14px;overflow:hidden;transition:border-color .3s;background:var(--bg-surface)}
+.faq-item.open{border-color:var(--accent)}
+.faq-q{padding:18px 22px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;font-weight:600;font-size:15px;color:var(--text-primary);transition:color .2s}
+.faq-q:hover{color:var(--accent)}
+.faq-a{max-height:0;overflow:hidden;transition:max-height .4s ease,padding .4s ease;padding:0 22px;color:var(--text-secondary);font-size:14px;line-height:1.7}
+.faq-item.open .faq-a{max-height:300px;padding:0 22px 18px}
+.faq-icon{transition:transform .3s;color:var(--text-muted);font-size:18px}
+.faq-item.open .faq-icon{transform:rotate(45deg);color:var(--accent)}
+
+/* ══════════════════════════════════════════════════════════
+   CTA
+   ══════════════════════════════════════════════════════════ */
+.cta-inner{max-width:700px;margin:0 auto;text-align:center;position:relative}
+.cta-inner::before{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:500px;height:300px;background:radial-gradient(ellipse,rgba(99,102,241,.12),transparent 70%);pointer-events:none}
+.cta-border{background:linear-gradient(135deg,var(--bg-surface),var(--bg-muted));border:1px solid var(--border);border-radius:20px;padding:60px 40px;position:relative;overflow:hidden}
+.cta-border::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--accent),var(--purple),var(--accent));background-size:200% 100%;animation:shimmer 3s linear infinite}
+
+/* ══════════════════════════════════════════════════════════
+   FOOTER
+   ══════════════════════════════════════════════════════════ */
+.footer-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:40px;margin-bottom:40px}
+.footer-brand p{font-size:13px;color:var(--text-muted);line-height:1.7;max-width:280px;margin-top:10px}
+.footer-col h5{font-size:11px;text-transform:uppercase;letter-spacing:1.2px;font-weight:700;color:var(--text-muted);margin-bottom:14px}
+.footer-col ul{list-style:none;display:flex;flex-direction:column;gap:8px}
+.footer-col ul li a{font-size:13px;color:var(--text-secondary);transition:color .15s}
+.footer-col ul li a:hover{color:var(--accent)}
+.footer-bottom{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;border-top:1px solid var(--border);padding-top:24px}
+.footer-bottom p{font-size:12px;color:var(--text-muted)}
+.social-links{display:flex;gap:8px}
+.social-btn{width:32px;height:32px;border-radius:8px;background:var(--bg-muted);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:14px;transition:all .18s}
+.social-btn:hover{color:var(--accent);border-color:var(--accent)}
+
+/* ═══ RESPONSIVE ═══ */
+@media(max-width:960px){
+  .hero-grid{grid-template-columns:1fr;text-align:center}
+  .hero-sub{margin:0 auto 36px}
+  .hero-buttons{justify-content:center}
+  .hero-proof{justify-content:center}
+  .hero-visual{display:none}
+  .how-grid{grid-template-columns:1fr}
+  .how-visual-wrap{display:none}
+  .features-grid{grid-template-columns:1fr 1fr}
+  .feat-card.span2{grid-column:span 1}
+  .roles-grid{grid-template-columns:1fr}
+  .chat-grid{grid-template-columns:1fr}
+  .stats-grid{grid-template-columns:1fr 1fr}
+  .testi-grid{grid-template-columns:1fr 1fr}
+  .footer-grid{grid-template-columns:1fr 1fr}
+  .nav-links{display:none}
+  .nav-hamburger{display:flex}
 }
-@media (max-width: 600px) {
-  .features-grid { grid-template-columns: 1fr; }
-  .testimonials-grid { grid-template-columns: 1fr; }
-  .hero-stats { flex-direction: column; }
-  .stat-block { border-right: none; border-bottom: 1px solid var(--border); }
-  .stat-block:last-child { border-bottom: none; }
-  .footer-grid { grid-template-columns: 1fr; }
+@media(max-width:600px){
+  .features-grid{grid-template-columns:1fr}
+  .testi-grid{grid-template-columns:1fr}
+  .stats-grid{grid-template-columns:1fr 1fr}
+  .footer-grid{grid-template-columns:1fr}
+  .section-pad{padding:60px 5%}
+  .hero{padding:80px 5% 60px}
+  .chat-queries{grid-template-columns:1fr}
 }
 </style>
 </head>
 <body>
 
-<!-- ─── NAVBAR ─── -->
-<nav id="navbar">
-  <a class="nav-logo" href="/">
-    <div class="logo-mark"><i class="fa-solid fa-graduation-cap"></i></div>
+<!-- ═══ NAVBAR ═══ -->
+<nav class="nav" id="mainNav">
+  <a class="nav-logo" href="{% url 'landing' %}">
+    <div class="nav-logo-icon"><i class="ph-bold ph-graduation-cap"></i></div>
     Campus Connect
   </a>
+  <button class="nav-hamburger" onclick="document.getElementById('mainNav').classList.toggle('nav-open')" aria-label="Menu"><i class="ph-bold ph-list"></i></button>
   <ul class="nav-links">
-    <li><a href="#how">How it works</a></li>
+    <li><a href="#how">How It Works</a></li>
     <li><a href="#features">Features</a></li>
-    <li><a href="#roles">For you</a></li>
+    <li><a href="#roles">For You</a></li>
+    <li><a href="#why">Why Us</a></li>
     <li><a href="#testimonials">Reviews</a></li>
+    <li><a href="#faq">FAQ</a></li>
   </ul>
-  <div class="nav-actions">
-    <a class="btn-ghost" href="{% url 'login' %}">Sign in</a>
-    <a class="btn-cta" href="{% url 'register' %}">Get Started</a>
-  </div>
+  <ul class="nav-right">
+    <li><button class="theme-btn" onclick="toggleTheme()" aria-label="Toggle theme" id="themeIcon"><i class="ph-bold ph-moon"></i></button></li>
+    <li><a class="nav-signin" href="{% url 'login' %}">Sign In</a></li>
+    <li><a class="nav-cta" href="{% url 'register' %}">Get Started</a></li>
+  </ul>
 </nav>
 
-<!-- ─── HERO ─── -->
-<section class="hero">
-  <div class="hero-eyebrow">
-    <span class="live-dot"></span>
-    Placement Season 2025–26 is Live
-  </div>
-  <h1 class="hero-title">
-    Your Dream Job<br>
-    <span class="line2">Starts on Campus.</span>
-  </h1>
-  <p class="hero-sub">
-    Campus Connect bridges students and top recruiters — apply to placement drives, track your status, and land your offer, all from one portal.
-  </p>
-  <div class="hero-buttons">
-    <a class="btn-hero-primary" href="{% url 'register' %}">
-      <i class="fa-solid fa-rocket"></i>
-      Get Started Free
-    </a>
-    <a class="btn-hero-secondary" href="#how">
-      <i class="fa-solid fa-play" style="font-size:11px;"></i>
-      See how it works
-    </a>
-  </div>
-  <div class="hero-stats">
-    <div class="stat-block">
-      <div class="stat-num" style="color:var(--a2);">2K+</div>
-      <div class="stat-label">Students</div>
+<!-- ═══ HERO ═══ -->
+<section class="hero" id="hero">
+  <div class="hero-grid">
+    <div class="hero-copy">
+      <div class="hero-eyebrow">
+        <span class="live-dot"></span>
+        Placement Season 2025–26 is Live
+      </div>
+      <h1 class="hero-title">
+        Your Career,<br>
+        <span class="scribble-word">Accelerated
+          <svg viewBox="0 0 200 16" preserveAspectRatio="none"><path d="M4 12 C30 4,60 14,100 9 S170 3,196 10"/></svg>
+        </span>
+      </h1>
+      <p class="hero-sub">The structured placement portal that connects students with top recruiters. Track every application, schedule interviews, and communicate — all in one platform.</p>
+      <div class="hero-buttons">
+        <a class="btn-primary" href="{% url 'register' %}"><i class="ph-bold ph-rocket-launch" style="font-size:18px"></i> Get Started Free</a>
+        <a class="btn-ghost" href="#how"><i class="ph-bold ph-play" style="font-size:16px"></i> See How It Works</a>
+      </div>
+      <div class="hero-proof">
+        <div class="hero-proof-avatars">
+          <img src="https://picsum.photos/seed/ccp1/40/40.jpg" alt="">
+          <img src="https://picsum.photos/seed/ccp2/40/40.jpg" alt="">
+          <img src="https://picsum.photos/seed/ccp3/40/40.jpg" alt="">
+          <img src="https://picsum.photos/seed/ccp4/40/40.jpg" alt="">
+          <div class="hero-proof-extra">+2K</div>
+        </div>
+        <div>
+          <div style="font-size:14px;font-weight:700;color:var(--text-primary)">2,400+ students</div>
+          <div style="font-size:12px;color:var(--text-muted)">placed this academic year</div>
+        </div>
+      </div>
     </div>
-    <div class="stat-block">
-      <div class="stat-num" style="color:var(--g);">180+</div>
-      <div class="stat-label">Companies</div>
+
+    <div class="hero-visual">
+      <!-- Inline Animated SVG Illustration -->
+      <svg viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:480px;height:auto;overflow:visible">
+        <defs>
+          <linearGradient id="gradIndigo" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#6366F1;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#A855F7;stop-opacity:1" />
+          </linearGradient>
+          <linearGradient id="gradChart" x1="0%" y1="100%" x2="0%" y2="0%">
+            <stop offset="0%" style="stop-color:#6366F1;stop-opacity:0.2" />
+            <stop offset="100%" style="stop-color:#6366F1;stop-opacity:0.8" />
+          </linearGradient>
+        </defs>
+
+        <!-- Ambient Background Shapes -->
+        <circle cx="250" cy="250" r="180" fill="none" stroke="var(--border)" stroke-width="1" opacity="0.4" class="svg-ring"/>
+        <circle cx="250" cy="250" r="230" fill="none" stroke="var(--border)" stroke-width="1" opacity="0.2" class="svg-ring-2"/>
+        <circle cx="250" cy="260" r="100" fill="url(#gradIndigo)" opacity="0.08"/>
+
+        <!-- Rising Chart Bars -->
+        <g class="svg-rise-1">
+          <rect x="170" y="310" width="30" height="80" rx="6" fill="url(#gradChart)"/>
+          <rect x="170" y="310" width="30" height="80" rx="6" fill="none" stroke="#6366F1" stroke-width="1.5" opacity="0.6"/>
+        </g>
+        <g class="svg-rise-2">
+          <rect x="215" y="270" width="30" height="120" rx="6" fill="#10B981" opacity="0.2"/>
+          <rect x="215" y="270" width="30" height="120" rx="6" fill="none" stroke="#10B981" stroke-width="1.5" opacity="0.6"/>
+        </g>
+        <g class="svg-rise-3">
+          <rect x="260" y="220" width="30" height="170" rx="6" fill="#F59E0B" opacity="0.2"/>
+          <rect x="260" y="220" width="30" height="170" rx="6" fill="none" stroke="#F59E0B" stroke-width="1.5" opacity="0.6"/>
+        </g>
+
+        <!-- Trend Line -->
+        <path d="M185 310 L230 270 L275 220" fill="none" stroke="#818CF8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="svg-line"/>
+        <!-- Trend Line Dots -->
+        <circle cx="185" cy="310" r="4" fill="#818CF8" class="svg-line"/>
+        <circle cx="230" cy="270" r="4" fill="#818CF8" class="svg-line"/>
+        <circle cx="275" cy="220" r="4" fill="#818CF8" class="svg-line"/>
+
+        <!-- Arrow pointing up -->
+        <g class="svg-arrow" transform="translate(290, 180)">
+          <path d="M0 20 L10 0 L20 20" fill="none" stroke="#6366F1" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+          <line x1="10" y1="0" x2="10" y2="40" stroke="#6366F1" stroke-width="3" stroke-linecap="round"/>
+        </g>
+
+        <!-- Person Figure -->
+        <g class="svg-person" transform="translate(340, 240)">
+          <!-- Head -->
+          <circle cx="0" cy="-60" r="20" fill="#6366F1"/>
+          <!-- Graduation Cap -->
+          <path d="M-25 -70 L0 -85 L25 -70 L0 -60 Z" fill="#4F46E5"/>
+          <rect x="-3" y="-85" width="6" height="15" rx="2" fill="#4F46E5"/>
+          <line x1="25" y1="-70" x2="30" y2="-55" stroke="#4F46E5" stroke-width="2.5" stroke-linecap="round"/>
+          <!-- Body -->
+          <path d="M-15 -40 L-20 20 L-5 20 L0 -10 L5 20 L20 20 L15 -40 Z" fill="#4F46E5"/>
+          <!-- Arm holding paper -->
+          <path d="M15 -30 L35 -15 L35 5" fill="none" stroke="#818CF8" stroke-width="4" stroke-linecap="round"/>
+          <rect x="28" y="-20" width="20" height="25" rx="3" fill="#1E2433" stroke="#818CF8" stroke-width="1"/>
+          <line x1="32" y1="-12" x2="44" y2="-12" stroke="#64748B" stroke-width="2"/>
+          <line x1="32" y1="-4" x2="40" y2="-4" stroke="#64748B" stroke-width="2"/>
+        </g>
+
+        <!-- Floating Decorative Elements -->
+        <g class="svg-star-1" transform="translate(130, 180)">
+          <path d="M0 -10 L2.5 -2.5 L10 0 L2.5 2.5 L0 10 L-2.5 2.5 L-10 0 L-2.5 -2.5 Z" fill="#F59E0B"/>
+        </g>
+        <g class="svg-star-2" transform="translate(420, 160)">
+          <path d="M0 -8 L2 -2 L8 0 L2 2 L0 8 L-2 2 L-8 0 L-2 -2 Z" fill="#10B981"/>
+        </g>
+        <g class="svg-star-3" transform="translate(150, 350)">
+          <path d="M0 -6 L1.5 -1.5 L6 0 L1.5 1.5 L0 6 L-1.5 1.5 L-6 0 L-1.5 -1.5 Z" fill="#6366F1"/>
+        </g>
+
+        <!-- Ground line -->
+        <line x1="100" y1="390" x2="400" y2="390" stroke="var(--border)" stroke-width="2" stroke-dasharray="6 4"/>
+      </svg>
+
+      <!-- Floating status cards (kept from before) -->
+      <div class="hero-float" style="top:10%;right:-10%">
+        <div class="hero-float-icon" style="background:var(--success-soft);color:var(--success)"><i class="ph-bold ph-check-circle"></i></div>
+        <span>Selected — Adobe</span>
+      </div>
+      <div class="hero-float f2" style="bottom:12%;left:-8%">
+        <div class="hero-float-icon" style="background:var(--warning-soft);color:var(--warning)"><i class="ph-bold ph-calendar"></i></div>
+        <span>Interview in 2h</span>
+      </div>
+    </div>  
     </div>
-    <div class="stat-block">
-      <div class="stat-num" style="color:var(--y);">650+</div>
-      <div class="stat-label">Drives Posted</div>
-    </div>
-    <div class="stat-block">
-      <div class="stat-num" style="color:var(--r);">94%</div>
-      <div class="stat-label">Placement Rate</div>
-    </div>
-  </div>
 </section>
 
-<!-- ─── MARQUEE ─── -->
+<!-- ═══ MARQUEE ═══ -->
 <div class="marquee-section">
-  <div class="marquee-track" id="marquee">
-    <span class="marquee-item"><span class="dot"></span>Google</span>
-    <span class="marquee-item"><span class="dot"></span>Microsoft</span>
-    <span class="marquee-item"><span class="dot"></span>Infosys</span>
-    <span class="marquee-item"><span class="dot"></span>TCS</span>
-    <span class="marquee-item"><span class="dot"></span>Wipro</span>
-    <span class="marquee-item"><span class="dot"></span>Amazon</span>
-    <span class="marquee-item"><span class="dot"></span>Accenture</span>
-    <span class="marquee-item"><span class="dot"></span>Cognizant</span>
-    <span class="marquee-item"><span class="dot"></span>HCL Technologies</span>
-    <span class="marquee-item"><span class="dot"></span>Capgemini</span>
-    <span class="marquee-item"><span class="dot"></span>Zepto</span>
-    <span class="marquee-item"><span class="dot"></span>Razorpay</span>
-    <span class="marquee-item"><span class="dot"></span>Swiggy</span>
-    <span class="marquee-item"><span class="dot"></span>PhonePe</span>
-    <!-- duplicate for seamless loop -->
-    <span class="marquee-item"><span class="dot"></span>Google</span>
-    <span class="marquee-item"><span class="dot"></span>Microsoft</span>
-    <span class="marquee-item"><span class="dot"></span>Infosys</span>
-    <span class="marquee-item"><span class="dot"></span>TCS</span>
-    <span class="marquee-item"><span class="dot"></span>Wipro</span>
-    <span class="marquee-item"><span class="dot"></span>Amazon</span>
-    <span class="marquee-item"><span class="dot"></span>Accenture</span>
-    <span class="marquee-item"><span class="dot"></span>Cognizant</span>
-    <span class="marquee-item"><span class="dot"></span>HCL Technologies</span>
-    <span class="marquee-item"><span class="dot"></span>Capgemini</span>
-    <span class="marquee-item"><span class="dot"></span>Zepto</span>
-    <span class="marquee-item"><span class="dot"></span>Razorpay</span>
-    <span class="marquee-item"><span class="dot"></span>Swiggy</span>
-    <span class="marquee-item"><span class="dot"></span>PhonePe</span>
+  <div class="marquee-track">
+    <span class="marquee-item"><span class="marquee-dot"></span>Google</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>Microsoft</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>Amazon</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>Flipkart</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>Adobe</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>Deloitte</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>Infosys</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>Goldman Sachs</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>Uber</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>Razorpay</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>Swiggy</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>PhonePe</span>
+    <!-- duplicate for loop -->
+    <span class="marquee-item"><span class="marquee-dot"></span>Google</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>Microsoft</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>Amazon</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>Flipkart</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>Adobe</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>Deloitte</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>Infosys</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>Goldman Sachs</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>Uber</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>Razorpay</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>Swiggy</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>PhonePe</span>
   </div>
 </div>
 
-<!-- ─── HOW IT WORKS ─── -->
-<section id="how" style="padding:100px 5%;">
+<!-- ═══ HOW IT WORKS ═══ -->
+<section id="how" class="section-pad">
   <div class="how-grid">
-    <!-- Visual -->
-    <div class="how-visual reveal">
-      <div class="floating-badge badge-a">
-        <i class="fa-solid fa-circle-check" style="color:var(--g);"></i>
-        <span>Shortlisted at Wipro!</span>
+    <div class="how-visual-wrap reveal" style="position:relative">
+      <div class="how-float" style="top:-16px;right:-16px">
+        <i class="ph-bold ph-check-circle" style="color:var(--success)"></i>
+        <span>Shortlisted!</span>
       </div>
       <div class="how-mockup">
-        <div class="mockup-header">
-          <div class="mockup-dot" style="background:#ff5470;"></div>
-          <div class="mockup-dot" style="background:#f5c842;"></div>
-          <div class="mockup-dot" style="background:#1ed98a;"></div>
-          <span style="margin-left:8px;font-size:12px;color:var(--ink3);">Placement Drives</span>
+        <div class="how-mockup-header">
+          <div class="how-mockup-dot" style="background:#EF4444"></div>
+          <div class="how-mockup-dot" style="background:#F59E0B"></div>
+          <div class="how-mockup-dot" style="background:#10B981"></div>
+          <span style="margin-left:8px;font-size:12px;color:var(--text-muted)">Placement Drives</span>
         </div>
-        <div class="mockup-content">
-          <div class="mockup-row highlight">
-            <div class="company-icon" style="background:rgba(91,108,255,0.12);">🔵</div>
-            <div class="info">
-              <div class="title">Software Engineer</div>
-              <div class="meta">Microsoft · ₹18 LPA · CSE</div>
-            </div>
-            <div class="pill" style="background:var(--a-soft);color:var(--a2);">Apply</div>
+        <div class="how-mockup-body">
+          <div class="mockup-row hl">
+            <div class="mockup-icon" style="background:var(--accent-soft);color:var(--accent)"><i class="ph-bold ph-buildings"></i></div>
+            <div class="mockup-info"><div class="mockup-title">Software Engineer</div><div class="mockup-meta">Microsoft &middot; 18 LPA &middot; CSE</div></div>
+            <div class="mockup-pill" style="background:var(--accent-soft);color:var(--accent)">Apply</div>
           </div>
           <div class="mockup-row">
-            <div class="company-icon" style="background:rgba(30,217,138,0.1);">🟢</div>
-            <div class="info">
-              <div class="title">SWE Intern</div>
-              <div class="meta">Google · ₹80K/mo · CSE</div>
-            </div>
-            <div class="pill" style="background:var(--g-soft);color:var(--g);">Apply</div>
+            <div class="mockup-icon" style="background:var(--success-soft);color:var(--success)"><i class="ph-bold ph-buildings"></i></div>
+            <div class="mockup-info"><div class="mockup-title">SWE Intern</div><div class="mockup-meta">Google &middot; 80K/mo &middot; CSE</div></div>
+            <div class="mockup-pill" style="background:var(--success-soft);color:var(--success)">Apply</div>
           </div>
           <div class="mockup-row">
-            <div class="company-icon" style="background:rgba(245,200,66,0.1);">🟠</div>
-            <div class="info">
-              <div class="title">Systems Engineer</div>
-              <div class="meta">Infosys · ₹3.6 LPA · All</div>
-            </div>
-            <div class="pill" style="background:rgba(255,255,255,0.05);color:var(--ink3);">Applied</div>
+            <div class="mockup-icon" style="background:var(--warning-soft);color:var(--warning)"><i class="ph-bold ph-buildings"></i></div>
+            <div class="mockup-info"><div class="mockup-title">Systems Engineer</div><div class="mockup-meta">Infosys &middot; 3.6 LPA &middot; All</div></div>
+            <div class="mockup-pill" style="background:var(--bg-muted);color:var(--text-muted)">Applied</div>
           </div>
           <div class="mockup-row">
-            <div class="company-icon" style="background:rgba(255,84,112,0.1);">🔴</div>
-            <div class="info">
-              <div class="title">System Engineer</div>
-              <div class="meta">TCS · ₹3.36 LPA · All</div>
-            </div>
-            <div class="pill" style="background:var(--a-soft);color:var(--a2);">Apply</div>
+            <div class="mockup-icon" style="background:var(--danger-soft);color:var(--danger)"><i class="ph-bold ph-buildings"></i></div>
+            <div class="mockup-info"><div class="mockup-title">System Engineer</div><div class="mockup-meta">TCS &middot; 3.36 LPA &middot; All</div></div>
+            <div class="mockup-pill" style="background:var(--accent-soft);color:var(--accent)">Apply</div>
           </div>
         </div>
       </div>
-      <div class="floating-badge badge-b">
-        <i class="fa-solid fa-calendar" style="color:var(--a2);"></i>
-        <span>Interview on May 12, 10:30 AM</span>
+      <div class="how-float hf2" style="bottom:-16px;left:-16px">
+        <i class="ph-bold ph-calendar" style="color:var(--accent)"></i>
+        <span>Interview May 12, 10:30 AM</span>
       </div>
     </div>
 
-    <!-- Steps -->
     <div>
       <p class="section-tag">How it works</p>
-      <h2 class="section-heading">Go from profile<br>to offer in 4 steps</h2>
-      <p class="section-sub" style="margin-bottom:40px;">Everything from registration to offer letter — handled seamlessly by Campus Connect.</p>
+      <h2 style="font-family:var(--font-display);font-size:clamp(28px,4.5vw,48px);font-weight:700;letter-spacing:-1.5px;margin-bottom:16px">Go from profile to<br>offer in 4 steps</h2>
+      <p style="font-size:16px;color:var(--text-secondary);max-width:460px;line-height:1.7;margin-bottom:36px">Everything from registration to offer letter — handled seamlessly by Campus Connect.</p>
       <div class="steps-list">
-        <div class="step reveal reveal-d1">
+        <div class="step reveal rd1">
           <div class="step-num active">1</div>
-          <div class="step-body">
-            <h4>Create your profile</h4>
-            <p>Register as a student, fill in your academics, upload your resume and add skills. Your profile is your digital resume for every recruiter.</p>
-          </div>
+          <div class="step-body"><h4>Create your profile</h4><p>Register as a student, fill in your academics, upload your resume. Your profile is your digital resume for every recruiter.</p></div>
         </div>
-        <div class="step reveal reveal-d2">
+        <div class="step reveal rd2">
           <div class="step-num">2</div>
-          <div class="step-body">
-            <h4>Browse & apply to drives</h4>
-            <p>Explore placement drives filtered to your eligibility. One-click apply — the portal verifies your CGPA and branch automatically.</p>
-          </div>
+          <div class="step-body"><h4>Browse and apply to drives</h4><p>Explore placement drives filtered to your eligibility. One-click apply — the portal verifies your CGPA and branch automatically.</p></div>
         </div>
-        <div class="step reveal reveal-d3">
+        <div class="step reveal rd3">
           <div class="step-num">3</div>
-          <div class="step-body">
-            <h4>Track your applications</h4>
-            <p>See real-time status updates — Applied, Shortlisted, or Selected — and get notified by email and portal alerts instantly.</p>
-          </div>
+          <div class="step-body"><h4>Track your applications</h4><p>See real-time status updates — Applied, Shortlisted, Selected — and get notified by email and portal alerts instantly.</p></div>
         </div>
         <div class="step reveal">
           <div class="step-num">4</div>
-          <div class="step-body">
-            <h4>Attend interviews & get placed</h4>
-            <p>View your interview schedule, location, and meeting links all in one place. Land your offer and celebrate your placement!</p>
-          </div>
+          <div class="step-body"><h4>Attend interviews and get placed</h4><p>View your interview schedule, location, and meeting links all in one place. Land your offer and celebrate your placement.</p></div>
         </div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ─── FEATURES ─── -->
-<section id="features" class="features-section">
+<!-- ═══ FEATURES ═══ -->
+<section id="features" class="section-pad features-section">
   <div class="features-header reveal">
     <div>
       <p class="section-tag">Features</p>
-      <h2 class="section-heading">Everything a campus<br>portal should be</h2>
+      <h2 style="font-family:var(--font-display);font-size:clamp(28px,4.5vw,48px);font-weight:700;letter-spacing:-1.5px">Everything a campus<br>portal should be</h2>
     </div>
-    <p class="section-sub">Built for students, recruiters, and administrators — with every workflow covered out of the box.</p>
+    <p style="font-size:16px;color:var(--text-secondary);max-width:400px;line-height:1.7">Built for students, recruiters, and administrators — with every workflow covered out of the box.</p>
   </div>
   <div class="features-grid">
-    <div class="feat-card accent-a reveal reveal-d1">
-      <div class="feat-icon" style="background:var(--a-soft); color:var(--a2);"><i class="fa-solid fa-circle-check"></i></div>
+    <div class="feat-card fa reveal rd1">
+      <div class="feat-icon" style="background:var(--accent-soft);color:var(--accent)"><i class="ph-bold ph-shield-check"></i></div>
       <h3>Auto Eligibility Check</h3>
       <p>The portal verifies your CGPA and branch against each drive's criteria before letting you apply — no surprises.</p>
     </div>
-    <div class="feat-card accent-g reveal reveal-d2">
-      <div class="feat-icon" style="background:var(--g-soft); color:var(--g);"><i class="fa-solid fa-bell"></i></div>
+    <div class="feat-card fg reveal rd2">
+      <div class="feat-icon" style="background:var(--success-soft);color:var(--success)"><i class="ph-bold ph-bell-ringing"></i></div>
       <h3>Smart Notifications</h3>
       <p>Email + portal alerts for every milestone — application received, shortlisted, interview scheduled, offer made.</p>
     </div>
-    <div class="feat-card accent-y reveal reveal-d3">
-      <div class="feat-icon" style="background:var(--y-soft); color:var(--y);"><i class="fa-solid fa-calendar-days"></i></div>
+    <div class="feat-card fw reveal rd3">
+      <div class="feat-icon" style="background:var(--warning-soft);color:var(--warning)"><i class="ph-bold ph-calendar-check"></i></div>
       <h3>Interview Scheduling</h3>
-      <p>Admins can schedule interviews with date, time, venue, and meeting link. Students see everything in one screen.</p>
+      <p>Schedule interviews with date, time, venue, and meeting link. Students see everything in one screen.</p>
     </div>
-    <div class="feat-card span2 accent-a reveal reveal-d1">
-      <div class="feat-icon" style="background:var(--a-soft); color:var(--a2);"><i class="fa-solid fa-user-graduate"></i></div>
+    <div class="feat-card span2 fa reveal rd1">
+      <div class="feat-icon" style="background:var(--accent-soft);color:var(--accent)"><i class="ph-bold ph-user-focus"></i></div>
       <h3>Rich Student Profiles</h3>
-      <p>Build a complete profile with resume PDF upload, profile photo, LinkedIn + GitHub links, skills, certifications, CGPA, and a live profile completion indicator. Recruiters see everything they need at a glance.</p>
-      <div class="feat-tag-list">
-        <span class="feat-tag">Resume Upload</span>
-        <span class="feat-tag">Profile Photo</span>
-        <span class="feat-tag">Skills</span>
-        <span class="feat-tag">Certifications</span>
-        <span class="feat-tag">LinkedIn</span>
-        <span class="feat-tag">GitHub</span>
-        <span class="feat-tag">Completion Score</span>
+      <p>Build a complete profile with resume PDF upload, profile photo, LinkedIn and GitHub links, skills, certifications, CGPA, and a live profile completion indicator. Recruiters see everything they need at a glance.</p>
+      <div class="feat-tags">
+        <span class="feat-tag">Resume Upload</span><span class="feat-tag">Profile Photo</span><span class="feat-tag">Skills</span>
+        <span class="feat-tag">Certifications</span><span class="feat-tag">LinkedIn</span><span class="feat-tag">GitHub</span><span class="feat-tag">Completion Score</span>
       </div>
     </div>
-    <div class="feat-card accent-g reveal reveal-d2">
-      <div class="feat-icon" style="background:rgba(255,84,112,0.12); color:var(--r);"><i class="fa-solid fa-shield-halved"></i></div>
+    <div class="feat-card fp reveal rd2">
+      <div class="feat-icon" style="background:var(--purple-soft);color:var(--purple)"><i class="ph-bold ph-github-logo"></i></div>
       <h3>OAuth Login</h3>
       <p>Google and GitHub login with role-based access — students, recruiters, and admins each see a different portal.</p>
     </div>
-    <div class="feat-card accent-y reveal reveal-d1">
-      <div class="feat-icon" style="background:var(--g-soft); color:var(--g);"><i class="fa-solid fa-magnifying-glass"></i></div>
-      <h3>Search & Filter</h3>
+    <div class="feat-card fg reveal rd1">
+      <div class="feat-icon" style="background:var(--success-soft);color:var(--success)"><i class="ph-bold ph-magnifying-glass"></i></div>
+      <h3>Search and Filter</h3>
       <p>Filter drives by company name, role, branch, or job type. Find the right opportunity in seconds.</p>
     </div>
-    <div class="feat-card span2 accent-g reveal reveal-d2">
-      <div class="feat-icon" style="background:var(--y-soft); color:var(--y);"><i class="fa-solid fa-gauge-high"></i></div>
+    <div class="feat-card span2 fw reveal rd2">
+      <div class="feat-icon" style="background:var(--warning-soft);color:var(--warning)"><i class="ph-bold ph-gauge"></i></div>
       <h3>Admin Command Center</h3>
       <p>The admin dashboard gives a bird's-eye view of all students, recruiters, applications, and placements. Update statuses, schedule interviews, and manage the entire placement cycle from one screen.</p>
-      <div class="feat-tag-list">
-        <span class="feat-tag">Placement Stats</span>
-        <span class="feat-tag">Student Management</span>
-        <span class="feat-tag">Status Updates</span>
-        <span class="feat-tag">Interview Scheduling</span>
-        <span class="feat-tag">Drive Management</span>
+      <div class="feat-tags">
+        <span class="feat-tag">Placement Stats</span><span class="feat-tag">Student Management</span><span class="feat-tag">Status Updates</span>
+        <span class="feat-tag">Interview Scheduling</span><span class="feat-tag">Drive Management</span>
       </div>
     </div>
-    <div class="feat-card accent-a reveal reveal-d3">
-      <div class="feat-icon" style="background:var(--a-soft); color:var(--a2);"><i class="fa-solid fa-file-lines"></i></div>
+    <div class="feat-card fa reveal rd3">
+      <div class="feat-icon" style="background:var(--accent-soft);color:var(--accent)"><i class="ph-bold ph-file-text"></i></div>
       <h3>Application Tracker</h3>
-      <p>Students can view and withdraw applications. Status flows from Applied → Shortlisted → Selected or Rejected.</p>
+      <p>Students can view and withdraw applications. Status flows from Applied to Shortlisted to Selected or Rejected.</p>
     </div>
   </div>
 </section>
 
-<!-- ─── ROLES ─── -->
-<section id="roles" style="padding:100px 5%;">
-  <div class="roles-section">
+<!-- ═══ ROLES ═══ -->
+<section id="roles" class="section-pad">
+  <div style="max-width:1100px;margin:0 auto">
     <div class="reveal">
       <p class="section-tag">Built for everyone</p>
-      <h2 class="section-heading">One platform,<br>three roles</h2>
+      <h2 style="font-family:var(--font-display);font-size:clamp(28px,4.5vw,48px);font-weight:700;letter-spacing:-1.5px;margin-bottom:16px">One platform,<br>three roles</h2>
     </div>
     <div class="roles-grid">
-      <div class="role-card student reveal reveal-d1">
-        <div class="role-icon">🎓</div>
+      <div class="role-card student reveal rd1">
+        <div class="role-icon" style="background:var(--accent-soft);color:var(--accent)"><i class="ph-bold ph-student"></i></div>
         <h3>Student</h3>
         <p>Your complete placement journey — from profile to offer — all in one place.</p>
         <ul class="role-features">
-          <li>Build and manage your placement profile</li>
-          <li>Browse and apply to eligible drives</li>
-          <li>Track all applications in real time</li>
-          <li>View interview schedules & meeting links</li>
-          <li>Get notified at every step</li>
+          <li><span class="check"><i class="ph-bold ph-check" style="font-size:10px"></i></span>Build and manage your placement profile</li>
+          <li><span class="check"><i class="ph-bold ph-check" style="font-size:10px"></i></span>Browse and apply to eligible drives</li>
+          <li><span class="check"><i class="ph-bold ph-check" style="font-size:10px"></i></span>Track all applications in real time</li>
+          <li><span class="check"><i class="ph-bold ph-check" style="font-size:10px"></i></span>View interview schedules and meeting links</li>
+          <li><span class="check"><i class="ph-bold ph-check" style="font-size:10px"></i></span>Get notified at every step</li>
         </ul>
       </div>
-      <div class="role-card recruiter reveal reveal-d2">
-        <div class="role-icon">🏢</div>
+      <div class="role-card recruiter reveal rd2">
+        <div class="role-icon" style="background:var(--success-soft);color:var(--success)"><i class="ph-bold ph-buildings"></i></div>
         <h3>Recruiter</h3>
         <p>Post drives, define criteria, and find the right talent from campus.</p>
         <ul class="role-features">
-          <li>Post placement drives with ease</li>
-          <li>Set CGPA and branch eligibility</li>
-          <li>Manage your applicant pool</li>
-          <li>Get notified when students apply</li>
-          <li>Shortlist and progress candidates</li>
+          <li><span class="check"><i class="ph-bold ph-check" style="font-size:10px"></i></span>Post placement drives with ease</li>
+          <li><span class="check"><i class="ph-bold ph-check" style="font-size:10px"></i></span>Set CGPA and branch eligibility</li>
+          <li><span class="check"><i class="ph-bold ph-check" style="font-size:10px"></i></span>Manage your applicant pool</li>
+          <li><span class="check"><i class="ph-bold ph-check" style="font-size:10px"></i></span>Get notified when students apply</li>
+          <li><span class="check"><i class="ph-bold ph-check" style="font-size:10px"></i></span>Shortlist and progress candidates</li>
         </ul>
       </div>
-      <div class="role-card admin reveal reveal-d3">
-        <div class="role-icon">⚙️</div>
+      <div class="role-card admin reveal rd3">
+        <div class="role-icon" style="background:var(--warning-soft);color:var(--warning)"><i class="ph-bold ph-shield-check"></i></div>
         <h3>Admin</h3>
         <p>Full control over the entire placement operation from one dashboard.</p>
         <ul class="role-features">
-          <li>Manage all students & recruiters</li>
-          <li>Update application statuses</li>
-          <li>Schedule interviews for any applicant</li>
-          <li>View placement analytics & stats</li>
-          <li>Access Django admin for full control</li>
+          <li><span class="check"><i class="ph-bold ph-check" style="font-size:10px"></i></span>Manage all students and recruiters</li>
+          <li><span class="check"><i class="ph-bold ph-check" style="font-size:10px"></i></span>Update application statuses</li>
+          <li><span class="check"><i class="ph-bold ph-check" style="font-size:10px"></i></span>Schedule interviews for any applicant</li>
+          <li><span class="check"><i class="ph-bold ph-check" style="font-size:10px"></i></span>View placement analytics and stats</li>
+          <li><span class="check"><i class="ph-bold ph-check" style="font-size:10px"></i></span>Access Django admin for full control</li>
         </ul>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ─── TESTIMONIALS ─── -->
-<section id="testimonials" class="testimonials-section">
-  <div class="testimonials-inner">
-    <div class="reveal" style="text-align:center; margin-bottom:0;">
-      <p class="section-tag" style="justify-content:center;">Student Stories</p>
-      <h2 class="section-heading" style="text-align:center;">Placed through<br>Campus Connect</h2>
+<!-- ═══ WHY CAMPUS CONNECT ═══ -->
+<section id="why" class="section-pad why-section">
+  <div style="max-width:1100px;margin:0 auto">
+    <div class="reveal" style="text-align:center;margin-bottom:48px">
+      <p class="section-tag" style="justify-content:center">Why Campus Connect</p>
+      <h2 style="font-family:var(--font-display);font-size:clamp(28px,4.5vw,48px);font-weight:700;letter-spacing:-1.5px;margin-bottom:14px">Stop chasing updates.<br>Start getting offers.</h2>
+      <p style="font-size:16px;color:var(--text-secondary);max-width:540px;margin:0 auto;line-height:1.7">Placement season used to mean chaos. We replaced it with clarity.</p>
     </div>
-    <div class="testimonials-grid">
-      <div class="testi-card reveal reveal-d1">
-        <div class="testi-stars">★★★★★</div>
+    <div class="why-grid">
+      <div class="why-col old reveal rd1">
+        <div class="why-col-label"><i class="ph-bold ph-x-circle" style="font-size:14px"></i> The Old Way</div>
+        <h3 style="color:var(--danger)">Chaos, confusion, missed chances</h3>
+        <ul class="why-list">
+          <li><span class="why-icon"><i class="ph-bold ph-x"></i></span><span>WhatsApp groups with 500+ messages — important updates buried instantly</span></li>
+          <li><span class="why-icon"><i class="ph-bold ph-x"></i></span><span>Excel sheets shared over email that nobody updates</span></li>
+          <li><span class="why-icon"><i class="ph-bold ph-x"></i></span><span>Interview links sent at midnight for a 9 AM call</span></li>
+          <li><span class="why-icon"><i class="ph-bold ph-x"></i></span><span>No way to track which companies you applied to</span></li>
+          <li><span class="why-icon"><i class="ph-bold ph-x"></i></span><span>Students applying to drives they aren't eligible for</span></li>
+          <li><span class="why-icon"><i class="ph-bold ph-x"></i></span><span>Recruiters getting unorganized PDF attachments</span></li>
+        </ul>
+      </div>
+      <div class="why-col new reveal rd2">
+        <div class="why-col-label"><i class="ph-bold ph-check-circle" style="font-size:14px"></i> The Campus Connect Way</div>
+        <h3 style="color:var(--accent)">Structured, tracked, automated</h3>
+        <ul class="why-list">
+          <li><span class="why-icon"><i class="ph-bold ph-check"></i></span><span>Real-time portal notifications the second they happen</span></li>
+          <li><span class="why-icon"><i class="ph-bold ph-check"></i></span><span>Application tracker with live status: Applied → Shortlisted → Selected</span></li>
+          <li><span class="why-icon"><i class="ph-bold ph-check"></i></span><span>Interview details with date, time, venue, and meeting link</span></li>
+          <li><span class="why-icon"><i class="ph-bold ph-check"></i></span><span>Auto eligibility check — CGPA and branch verified before you apply</span></li>
+          <li><span class="why-icon"><i class="ph-bold ph-check"></i></span><span>Rich student profiles with resume, skills, and certifications</span></li>
+          <li><span class="why-icon"><i class="ph-bold ph-check"></i></span><span>Built-in scheduling, status updates, and email alerts</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- ═══ STATS ═══ -->
+<section class="section-pad">
+  <div class="stats-grid">
+    <div class="stat-card reveal rd1">
+      <div class="stat-num" style="color:var(--accent)" data-count="2400">0</div>
+      <div class="stat-label">Students Placed</div>
+    </div>
+    <div class="stat-card reveal rd2">
+      <div class="stat-num" style="color:var(--success)" data-count="150">0</div>
+      <div class="stat-label">Companies Visited</div>
+    </div>
+    <div class="stat-card reveal rd3">
+      <div class="stat-num" style="color:var(--warning)" data-count="45">0</div>
+      <div class="stat-label">Average LPA</div>
+    </div>
+    <div class="stat-card reveal">
+      <div class="stat-num" style="color:var(--purple)" data-count="92">0</div>
+      <div class="stat-label">Placement Rate %</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ TESTIMONIALS ═══ -->
+<section id="testimonials" class="section-pad" style="background:var(--bg-surface)">
+  <div style="max-width:1100px;margin:0 auto">
+    <div class="reveal" style="text-align:center;margin-bottom:0">
+      <p class="section-tag" style="justify-content:center">Student Stories</p>
+      <h2 style="font-family:var(--font-display);font-size:clamp(28px,4.5vw,48px);font-weight:700;letter-spacing:-1.5px">Placed through<br>Campus Connect</h2>
+    </div>
+    <div class="testi-grid">
+      <div class="testi-card reveal rd1">
+        <div class="testi-stars"><i class="ph-fill ph-star"></i><i class="ph-fill ph-star"></i><i class="ph-fill ph-star"></i><i class="ph-fill ph-star"></i><i class="ph-fill ph-star"></i></div>
         <p class="testi-text">"The auto eligibility check saved me so much time. I only saw drives I could actually apply to — no more reading through every job description manually."</p>
         <div class="testi-author">
-          <div class="testi-avatar" style="background:var(--a-soft); color:var(--a2);">AS</div>
-          <div>
-            <div class="testi-name">Arjun Sharma</div>
-            <div class="testi-meta">CSE 2026 · Selected at Infosys</div>
-          </div>
+          <div class="testi-avatar" style="background:var(--accent-soft);color:var(--accent)">AS</div>
+          <div><div class="testi-name">Arjun Sharma</div><div class="testi-meta">CSE 2026 &middot; Selected at Infosys</div></div>
         </div>
       </div>
-      <div class="testi-card reveal reveal-d2">
-        <div class="testi-stars">★★★★★</div>
+      <div class="testi-card reveal rd2">
+        <div class="testi-stars"><i class="ph-fill ph-star"></i><i class="ph-fill ph-star"></i><i class="ph-fill ph-star"></i><i class="ph-fill ph-star"></i><i class="ph-fill ph-star"></i></div>
         <p class="testi-text">"I got the interview notification email within seconds of it being scheduled. The portal keeps you in the loop at every single step. Absolutely loved it."</p>
         <div class="testi-author">
-          <div class="testi-avatar" style="background:var(--g-soft); color:var(--g);">PK</div>
-          <div>
-            <div class="testi-name">Priya Kapoor</div>
-            <div class="testi-meta">IT 2026 · Shortlisted at Google</div>
-          </div>
+          <div class="testi-avatar" style="background:var(--success-soft);color:var(--success)">PK</div>
+          <div><div class="testi-name">Priya Kapoor</div><div class="testi-meta">IT 2026 &middot; Shortlisted at Google</div></div>
         </div>
       </div>
-      <div class="testi-card reveal reveal-d3">
-        <div class="testi-stars">★★★★★</div>
-        <p class="testi-text">"As a recruiter, posting a drive takes less than 2 minutes. The student profiles are detailed and I get instant notifications when someone applies. Super clean tool."</p>
+      <div class="testi-card reveal rd3">
+        <div class="testi-stars"><i class="ph-fill ph-star"></i><i class="ph-fill ph-star"></i><i class="ph-fill ph-star"></i><i class="ph-fill ph-star"></i><i class="ph-fill ph-star-half"></i></div>
+        <p class="testi-text">"As a recruiter, posting a drive takes less than 2 minutes. The student profiles are detailed and I get instant notifications when someone applies."</p>
         <div class="testi-author">
-          <div class="testi-avatar" style="background:var(--y-soft); color:var(--y);">RM</div>
-          <div>
-            <div class="testi-name">Rahul Mehta</div>
-            <div class="testi-meta">HR Manager · Wipro Technologies</div>
-          </div>
+          <div class="testi-avatar" style="background:var(--warning-soft);color:var(--warning)">RM</div>
+          <div><div class="testi-name">Rahul Mehta</div><div class="testi-meta">HR Manager &middot; Wipro Technologies</div></div>
         </div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ─── CTA ─── -->
-<section class="cta-section">
-  <div class="cta-inner reveal">
-    <p class="section-tag" style="justify-content:center;">Get started today</p>
-    <h2 class="cta-title">Ready to get placed?</h2>
-    <p class="cta-sub">Join thousands of students and hundreds of recruiters already using Campus Connect for placement season 2025–26.</p>
-    <div class="cta-buttons">
-      <a class="btn-hero-primary" href="{% url 'register' %}">
-        <i class="fa-solid fa-user-plus"></i>
-        Create Free Account
-      </a>
-      <a class="btn-hero-secondary" href="{% url 'login' %}">
-        Already have an account? Sign in
-        <i class="fa-solid fa-arrow-right" style="font-size:12px;"></i>
-      </a>
+<!-- ═══ FAQ ═══ -->
+<section id="faq" class="section-pad">
+  <div class="reveal" style="text-align:center;margin-bottom:40px">
+    <p class="section-tag" style="justify-content:center">FAQ</p>
+    <h2 style="font-family:var(--font-display);font-size:clamp(28px,4.5vw,48px);font-weight:700;letter-spacing:-1.5px">Frequently Asked<br>Questions</h2>
+  </div>
+  <div class="faq-list">
+    <div class="faq-item open" onclick="toggleFaq(this)">
+      <div class="faq-q"><span>How do I apply to placement drives?</span><i class="ph-bold ph-plus faq-icon"></i></div>
+      <div class="faq-a">After registering as a student and completing your profile, browse active drives on your dashboard. Each drive shows eligibility, CTC, and deadline. Click "Apply" — your profile and resume are auto-attached. You'll receive a confirmation notification instantly.</div>
+    </div>
+    <div class="faq-item" onclick="toggleFaq(this)">
+      <div class="faq-q"><span>How does the chat system work?</span><i class="ph-bold ph-plus faq-icon"></i></div>
+      <div class="faq-a">A chat room is automatically created when a recruiter shortlists you. By default, you communicate through categorized query buttons (Schedule, Links, Documents, Status). The recruiter can unlock free-text for 5 minutes when detailed communication is needed. Admins can observe chats in read-only mode for moderation.</div>
+    </div>
+    <div class="faq-item" onclick="toggleFaq(this)">
+      <div class="faq-q"><span>How do recruiters get verified?</span><i class="ph-bold ph-plus faq-icon"></i></div>
+      <div class="faq-a">When a recruiter registers, they enter the admin's verification queue. Admins review their company details, email domain, and documents, then approve or reject with remarks. Only verified recruiters can post placement drives. This prevents fraudulent postings.</div>
+    </div>
+    <div class="faq-item" onclick="toggleFaq(this)">
+      <div class="faq-q"><span>Can I create an admin account?</span><i class="ph-bold ph-plus faq-icon"></i></div>
+      <div class="faq-a">No. The master admin is created via the Django createsuperuser command. Subsequent admins are promoted internally through the admin dashboard. There is no "Admin" option on the public registration page. This is a security measure to prevent unauthorized access.</div>
+    </div>
+    <div class="faq-item" onclick="toggleFaq(this)">
+      <div class="faq-q"><span>What happens after I'm selected?</span><i class="ph-bold ph-plus faq-icon"></i></div>
+      <div class="faq-a">Your application status changes to "Selected" and your profile earns a "Placed" badge. You can view your complete offer details and placement history from your dashboard. The placement coordinator is also notified for institutional records.</div>
+    </div>
+    <div class="faq-item" onclick="toggleFaq(this)">
+      <div class="faq-q"><span>Is my data secure?</span><i class="ph-bold ph-plus faq-icon"></i></div>
+      <div class="faq-a">All data is stored securely with Django's authentication system. Passwords are hashed, sensitive routes enforce POST requests, and the chat system uses safe update patterns (filter().update() instead of model.save()) to prevent recursion bugs. Admin observer mode ensures chat moderation without compromising privacy.</div>
     </div>
   </div>
 </section>
 
-<!-- ─── FOOTER ─── -->
-<footer>
+<!-- ═══ CTA ═══ -->
+<section class="section-pad">
+  <div class="cta-inner reveal">
+    <div class="cta-border">
+      <p class="section-tag" style="justify-content:center">Get started today</p>
+      <h2 style="font-family:var(--font-display);font-size:clamp(28px,5vw,52px);font-weight:700;letter-spacing:-2px;margin-bottom:16px">Ready to get placed?</h2>
+      <p style="font-size:16px;color:var(--text-secondary);margin-bottom:32px;line-height:1.7;max-width:480px;margin-left:auto;margin-right:auto">Join thousands of students and hundreds of recruiters already using Campus Connect for placement season 2025–26.</p>
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+        <a class="btn-primary" href="{% url 'register' %}"><i class="ph-bold ph-user-plus" style="font-size:18px"></i> Create Free Account</a>
+        <a class="btn-secondary" href="{% url 'login' %}"><i class="ph-bold ph-sign-in" style="font-size:18px"></i> Sign In</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ FOOTER ═══ -->
+<footer style="background:var(--bg-surface);border-top:1px solid var(--border);padding:60px 5% 40px;position:relative;z-index:1">
   <div class="footer-grid">
     <div class="footer-brand">
-      <div class="brand-name">
-        <div class="logo-mark" style="width:28px;height:28px;border-radius:8px;background:var(--a);display:flex;align-items:center;justify-content:center;font-size:13px;color:#fff;">
-          <i class="fa-solid fa-graduation-cap"></i>
-        </div>
+      <div style="display:flex;align-items:center;gap:8px;font-family:var(--font-display);font-size:18px;font-weight:700">
+        <div style="width:28px;height:28px;border-radius:8px;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:13px;color:#fff"><i class="ph-bold ph-graduation-cap"></i></div>
         Campus Connect
       </div>
       <p>A full-featured Django placement portal connecting students, recruiters, and administrators for seamless campus placements.</p>
@@ -995,7 +887,6 @@ footer {
         <li><a href="#">Students</a></li>
         <li><a href="#">Recruiters</a></li>
         <li><a href="#">Admins</a></li>
-        <li><a href="#">Django Admin</a></li>
       </ul>
     </div>
     <div class="footer-col">
@@ -1008,33 +899,76 @@ footer {
     </div>
   </div>
   <div class="footer-bottom">
-    <p>© {% now "Y" %} Campus Connect. Built with Django.</p>
+    <p>&copy; {% now "Y" %} Campus Connect. Built with Django.</p>
     <div class="social-links">
-      <a class="social-btn" href="#"><i class="fa-brands fa-github"></i></a>
-      <a class="social-btn" href="#"><i class="fa-brands fa-linkedin-in"></i></a>
-      <a class="social-btn" href="#"><i class="fa-brands fa-twitter"></i></a>
+      <a class="social-btn" href="#"><i class="ph-bold ph-github-logo"></i></a>
+      <a class="social-btn" href="#"><i class="ph-bold ph-linkedin-logo"></i></a>
+      <a class="social-btn" href="#"><i class="ph-bold ph-x-logo"></i></a>
     </div>
   </div>
 </footer>
 
+<!-- ═══ JAVASCRIPT ═══ -->
 <script>
-  // Navbar scroll effect
-  const nav = document.getElementById('navbar');
-  window.addEventListener('scroll', () => {
-    nav.classList.toggle('scrolled', window.scrollY > 40);
+/* Theme toggle */
+const _html=document.documentElement;
+const _stored=localStorage.getItem('cc-theme')||'dark';
+_html.setAttribute('data-theme',_stored);
+_setIcon(_stored);
+
+function toggleTheme(){
+  const cur=_html.getAttribute('data-theme');
+  const nxt=cur==='dark'?'light':'dark';
+  _html.setAttribute('data-theme',nxt);
+  localStorage.setItem('cc-theme',nxt);
+  _setIcon(nxt);
+}
+function _setIcon(t){
+  const el=document.getElementById('themeIcon');
+  if(el) el.innerHTML=t==='dark'?'<i class="ph-bold ph-moon"></i>':'<i class="ph-bold ph-sun"></i>';
+}
+
+/* Navbar scroll */
+const _nav=document.getElementById('mainNav');
+window.addEventListener('scroll',()=>{_nav.classList.toggle('scrolled',window.scrollY>40)});
+
+/* Mobile nav */
+/* Hamburger already toggles .nav-open via inline onclick */
+
+/* Scroll reveal */
+const _obs=new IntersectionObserver((entries)=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){e.target.classList.add('visible');_obs.unobserve(e.target)}
   });
+},{threshold:0.1,rootMargin:'0px 0px -40px 0px'});
+document.querySelectorAll('.reveal').forEach(el=>_obs.observe(el));
 
-  // Scroll reveal
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach(e => {
-      if (e.isIntersecting) {
-        e.target.classList.add('visible');
-        observer.unobserve(e.target);
-      }
-    });
-  }, { threshold: 0.12 });
+/* Counter animation */
+const _cObs=new IntersectionObserver((entries)=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      const el=e.target;
+      if(el.dataset.animated)return;
+      el.dataset.animated='1';
+      const target=parseInt(el.dataset.count);
+      let cur=0;
+      const step=Math.max(1,Math.floor(target/50));
+      const iv=setInterval(()=>{
+        cur+=step;
+        if(cur>=target){cur=target;clearInterval(iv)}
+        el.textContent=cur.toLocaleString();
+      },25);
+    }
+  });
+},{threshold:0.5});
+document.querySelectorAll('[data-count]').forEach(el=>_cObs.observe(el));
 
-  document.querySelectorAll('.reveal, .step').forEach(el => observer.observe(el));
+/* FAQ accordion */
+function toggleFaq(item){
+  const wasOpen=item.classList.contains('open');
+  document.querySelectorAll('.faq-item').forEach(f=>f.classList.remove('open'));
+  if(!wasOpen)item.classList.add('open');
+}
 </script>
 </body>
 </html>
