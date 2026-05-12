@@ -7,7 +7,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.getenv('SECRET_KEY')
 
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
 
@@ -152,3 +152,25 @@ LOGGING = {
         'campus_connect':{'handlers': ['console'], 'level': 'INFO', 'propagate': False},
     },
 }
+
+import dj_database_url
+import os
+
+# Production Settings for Render
+if os.environ.get('RENDER'):
+    # 1. Turn off DEBUG
+    DEBUG = False
+    
+    # 2. Allow the live URL
+    RENDER_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
+    if RENDER_HOSTNAME:
+        ALLOWED_HOSTS.append(RENDER_HOSTNAME)
+
+    # 3. Serve static files securely
+    MIDDLEWARE.append('whitenoise.middleware.WhiteNoiseMiddleware')
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+    
+    # 4. Use the live PostgreSQL database
+    DATABASES = {
+        'default': dj_database_url.config(conn_max_age=600)
+    }
