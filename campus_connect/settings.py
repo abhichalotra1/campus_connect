@@ -158,19 +158,31 @@ import os
 
 # Production Settings for Render
 if os.environ.get('RENDER'):
-    # 1. Turn off DEBUG
     DEBUG = False
     
-    # 2. Allow the live URL
     RENDER_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
     if RENDER_HOSTNAME:
         ALLOWED_HOSTS.append(RENDER_HOSTNAME)
 
-    # 3. Serve static files securely
     MIDDLEWARE.append('whitenoise.middleware.WhiteNoiseMiddleware')
     STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
     
-    # 4. Use the live PostgreSQL database
     DATABASES = {
         'default': dj_database_url.config(conn_max_age=600)
     }
+    
+    DEFAULT_FILE_STORAGE = 'django.core.files.storage.InMemoryStorage'
+
+    # ==========================================
+    # AUTO-FIX: Create missing profiles on startup
+    # ==========================================
+    import django
+    django.setup()
+    from accounts.models import User
+    from students.models import StudentProfile, RecruiterProfile
+    
+    for user in User.objects.all():
+        if user.role == 'student':
+            StudentProfile.objects.get_or_create(user=user, defaults={'branch': 'CSE', 'roll_number': 'N/A', 'passing_year': 2025})
+        elif user.role == 'recruiter':
+            RecruiterProfile.objects.get_or_create(user=user)

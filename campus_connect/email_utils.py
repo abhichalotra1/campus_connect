@@ -30,7 +30,7 @@ def _send(subject, template, context, to_email):
             to         = [to_email],
         )
         msg.attach_alternative(html_body, "text/html")
-        msg.send(fail_silently=False)
+        msg.send(fail_silently=True)
         logger.info(f"[EMAIL] ✓ '{subject}' → {to_email}")
     except Exception as e:
         logger.error(f"[EMAIL] ✗ '{subject}' → {to_email} | Error: {e}")
