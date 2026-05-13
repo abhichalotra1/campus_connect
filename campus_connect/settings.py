@@ -172,17 +172,3 @@ if os.environ.get('RENDER'):
     }
     
     DEFAULT_FILE_STORAGE = 'django.core.files.storage.InMemoryStorage'
-
-    # ==========================================
-    # AUTO-FIX: Create missing profiles on startup
-    # ==========================================
-    import django
-    django.setup()
-    from accounts.models import User
-    from students.models import StudentProfile, RecruiterProfile
-    
-    for user in User.objects.all():
-        if user.role == 'student':
-            StudentProfile.objects.get_or_create(user=user, defaults={'branch': 'CSE', 'roll_number': 'N/A', 'passing_year': 2025})
-        elif user.role == 'recruiter':
-            RecruiterProfile.objects.get_or_create(user=user)
