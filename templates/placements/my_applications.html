@@ -158,21 +158,6 @@
   .badge-rejected { background: var(--red-soft); color: var(--red); }
 
   /* Action Buttons */
-  .btn-chat {
-    padding: 6px 14px;
-    border-radius: 9px;
-    background: var(--primary);
-    color: #fff;
-    font-size: 12px;
-    font-weight: 700;
-    text-decoration: none;
-    transition: all 0.18s;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    box-shadow: 0 2px 8px var(--p-glow);
-  }
-  .btn-chat:hover { background: var(--primary2); transform: translateY(-1px); }
 
   .btn-withdraw {
     padding: 6px 12px;
@@ -269,12 +254,6 @@
           <span class="status-badge badge-rejected"><i class="fas fa-times-circle"></i> Rejected</span>
         {% endif %}
 
-        <!-- Chat Button (Visible if shortlisted, selected, or placed) -->
-        {% if app.status == 'shortlisted' or app.status == 'selected' or app.status == 'placed' %}
-        <a href="{% url 'start_chat' app.pk %}" class="btn-chat">
-          <i class="fas fa-comment-dots"></i> Chat
-        </a>
-        {% endif %}
 
         <!-- Withdraw Button (Visible if applied) -->
         {% if app.status == 'applied' %}

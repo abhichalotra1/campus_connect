@@ -342,7 +342,6 @@ img{max-width:100%;display:block}
   .features-grid{grid-template-columns:1fr 1fr}
   .feat-card.span2{grid-column:span 1}
   .roles-grid{grid-template-columns:1fr}
-  .chat-grid{grid-template-columns:1fr}
   .stats-grid{grid-template-columns:1fr 1fr}
   .testi-grid{grid-template-columns:1fr 1fr}
   .footer-grid{grid-template-columns:1fr 1fr}
@@ -356,7 +355,6 @@ img{max-width:100%;display:block}
   .footer-grid{grid-template-columns:1fr}
   .section-pad{padding:60px 5%}
   .hero{padding:80px 5% 60px}
-  .chat-queries{grid-template-columns:1fr}
 }
 </style>
 </head>
@@ -825,10 +823,6 @@ img{max-width:100%;display:block}
       <div class="faq-a">After registering as a student and completing your profile, browse active drives on your dashboard. Each drive shows eligibility, CTC, and deadline. Click "Apply" — your profile and resume are auto-attached. You'll receive a confirmation notification instantly.</div>
     </div>
     <div class="faq-item" onclick="toggleFaq(this)">
-      <div class="faq-q"><span>How does the chat system work?</span><i class="ph-bold ph-plus faq-icon"></i></div>
-      <div class="faq-a">A chat room is automatically created when a recruiter shortlists you. By default, you communicate through categorized query buttons (Schedule, Links, Documents, Status). The recruiter can unlock free-text for 5 minutes when detailed communication is needed. Admins can observe chats in read-only mode for moderation.</div>
-    </div>
-    <div class="faq-item" onclick="toggleFaq(this)">
       <div class="faq-q"><span>How do recruiters get verified?</span><i class="ph-bold ph-plus faq-icon"></i></div>
       <div class="faq-a">When a recruiter registers, they enter the admin's verification queue. Admins review their company details, email domain, and documents, then approve or reject with remarks. Only verified recruiters can post placement drives. This prevents fraudulent postings.</div>
     </div>
@@ -842,7 +836,7 @@ img{max-width:100%;display:block}
     </div>
     <div class="faq-item" onclick="toggleFaq(this)">
       <div class="faq-q"><span>Is my data secure?</span><i class="ph-bold ph-plus faq-icon"></i></div>
-      <div class="faq-a">All data is stored securely with Django's authentication system. Passwords are hashed, sensitive routes enforce POST requests, and the chat system uses safe update patterns (filter().update() instead of model.save()) to prevent recursion bugs. Admin observer mode ensures chat moderation without compromising privacy.</div>
+      <div class="faq-a">Accounts use Django's built-in authentication, and passwords are stored as salted hashes, never as plain text. Access to each page depends on your role (student, recruiter or admin), so you only see the data meant for you.</div>
     </div>
   </div>
 </section>

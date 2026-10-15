@@ -98,8 +98,6 @@
     font-size: 12px; font-weight: 700; text-decoration: none; padding: 5px 12px;
     border-radius: 8px; display: inline-flex; align-items: center; gap: 5px; transition: all 0.18s; border: none; cursor: pointer;
   }
-  .btn-message { background: var(--primary); color: #fff; }
-  .btn-message:hover { background: var(--primary2); box-shadow: 0 4px 10px var(--p-glow); }
   .btn-schedule { background: var(--green-soft); color: var(--green); border: 1px solid rgba(34,211,160,0.3); }
   .btn-schedule:hover { background: var(--green); color: #fff; }
   .btn-resume { background: none; color: var(--primary2); padding: 5px 0; font-weight: 600; }
@@ -220,12 +218,6 @@
             </form>
 
             <div class="action-row">
-              {% if app.status == 'shortlisted' or app.status == 'selected' or app.status == 'placed' %}
-              <a href="{% url 'start_chat' app.pk %}" class="btn-action btn-message">
-                <i class="fas fa-comment-dots"></i> Message
-              </a>
-              {% endif %}
-
               {% if app.status == 'shortlisted' or app.status == 'selected' %}
               <a href="{% url 'schedule_interview' app.pk %}" class="btn-action btn-schedule">
                 <i class="fas fa-calendar-plus"></i> Schedule

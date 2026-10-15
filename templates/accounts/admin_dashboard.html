@@ -125,12 +125,6 @@
   .btn-reactivate { color: var(--green); background: var(--green-soft); border: 1px solid rgba(34,211,160,0.3); }
   .btn-reactivate:hover { background: var(--green); color: #fff; }
   
-  .btn-observe-chat {
-    font-size: 12px; font-weight: 600; color: var(--primary2); text-decoration: none;
-    padding: 4px 10px; border-radius: 6px; background: var(--p-soft);
-    border: 1px solid rgba(79,70,229,0.3); display: inline-flex; align-items: center; gap: 4px; transition: all 0.18s;
-  }
-  .btn-observe-chat:hover { background: var(--primary); color: #fff; }
 
   .status-badge { padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; white-space: nowrap; }
   .badge-active { background: var(--green-soft); color: var(--green); }
@@ -332,9 +326,6 @@
             </form>
             <div class="action-group" style="margin-top:8px;">
               <a href="/placements/schedule/{{ app.pk }}/" class="link-schedule"><i class="fas fa-calendar" style="margin-right:4px;"></i>Schedule</a>
-              {% if app.status == 'shortlisted' or app.status == 'selected' %}
-              <a href="{% url 'start_chat' app.pk %}" class="btn-observe-chat"><i class="fas fa-eye"></i> View Chat</a>
-              {% endif %}
             </div>
           </td>
         </tr>

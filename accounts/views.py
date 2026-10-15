@@ -194,30 +194,6 @@ def update_application_status(request, pk):
             app.status = status
             app.save()
 
-            # ── AUTO-CREATE CONVERSATION ON SHORTLIST ──
-            if status == 'shortlisted':
-                from placements.models import Conversation # Import here to avoid circular imports
-                
-                # Get or create prevents duplicates if they un-shortlist and re-shortlist
-                conv, created = Conversation.objects.get_or_create(
-                    application=app,
-                    defaults={
-                        'student': app.student,
-                        'recruiter': app.drive.posted_by,
-                        'drive': app.drive
-                    }
-                )
-                
-                # Add a system message to start the chat
-                if created:
-                    from placements.models import ChatMessage
-                    ChatMessage.objects.create(
-                        conversation=conv,
-                        sender='system',
-                        message_type='system',
-                        content=f"Chat initiated. {app.drive.posted_by.get_full_name()} has shortlisted you for {app.drive.role}."
-                    )
-
             send_notification(
                 user=app.student,
                 title=f'Application Update - {app.drive.company}',

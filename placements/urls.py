@@ -30,11 +30,4 @@ urlpatterns = [
     path('save-drive/<int:pk>/', views.save_drive_view,    name='save_drive'),
     path('unsave-drive/<int:pk>/', views.unsave_drive_view, name='unsave_drive'),
 
-        # Chat URLs
-    path('chat/start/<int:application_id>/', views.get_or_create_chat_view, name='start_chat'),    
-    path('chat/<int:conversation_id>/', views.chat_room_view, name='chat_room'),
-    path('chat/<int:conversation_id>/fetch/', views.fetch_messages_api, name='chat_fetch'),
-    path('chat/<int:conversation_id>/send/', views.send_message_api, name='chat_send'),
-    path('chat/<int:conversation_id>/unlock/', views.unlock_student_chat, name='chat_unlock'),
-    path('chat/file/<int:pk>/download/', views.download_chat_file, name='chat_file_download'),
 ]
