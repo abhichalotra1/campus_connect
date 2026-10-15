@@ -1,8 +1,5 @@
 from django.shortcuts import render
 
-def landing(request):
-    return render(request, 'landing.html')
-
 def custom_404(request, exception):
     return render(request, '404.html', status=404)
 

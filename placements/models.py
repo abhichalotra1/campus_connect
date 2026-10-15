@@ -80,7 +80,6 @@ class Application(models.Model):
     drive      = models.ForeignKey(PlacementDrive, on_delete=models.CASCADE)
     status     = models.CharField(max_length=20, choices=STATUS_CHOICES, default='applied')
     applied_at = models.DateTimeField(auto_now_add=True)
-    resume     = models.FileField(upload_to='application_resumes/', blank=True, null=True)
 
     class Meta:
         unique_together = ('student', 'drive')

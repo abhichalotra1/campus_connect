@@ -9,7 +9,6 @@ urlpatterns = [
     # Drive Management
     path('edit-drive/<int:pk>/',     views.edit_drive_view,        name='edit_drive'),
     path('delete-drive/<int:pk>/',   views.delete_drive_view,      name='delete_drive'),
-    path('company/<int:user_id>/',   views.company_profile_view,   name='company_profile'), # NEW LINE
     
     # General Drive Routes
     path('',                         views.drive_list_view,        name='drive_list'),

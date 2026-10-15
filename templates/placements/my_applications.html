@@ -120,7 +120,6 @@
     font-weight: 500;
     transition: color 0.15s;
   }
-  .app-company:hover { color: var(--ink); }
   .app-meta {
     font-size: 12px;
     color: var(--ink3);
@@ -229,7 +228,7 @@
         
         <div>
           <a href="{% url 'drive_detail' app.drive.pk %}" class="app-role">{{ app.drive.role }}</a>
-          <a href="{% url 'company_profile' app.drive.posted_by.pk %}" class="app-company">{{ app.drive.company }}</a>
+          <span class="app-company">{{ app.drive.company }}</span>
           <div class="app-meta">
             <span><i class="fas fa-map-marker-alt"></i> {{ app.drive.location }}</span>
             <span><i class="fas fa-indian-rupee-sign"></i> {{ app.drive.formatted_salary }}</span>

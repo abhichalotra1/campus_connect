@@ -116,11 +116,7 @@
   .info-val.active { color: var(--green); }
   .info-val.closed { color: var(--red); }
 
-  .company-link {
-    color: var(--primary2); text-decoration: none; font-weight: 600; font-size: 14px;
-    display: inline-flex; align-items: center; gap: 5px; transition: color 0.15s;
-  }
-  .company-link:hover { color: var(--ink); }
+  .company-name { color: var(--ink); font-weight: 600; font-size: 14px; }
   .posted-date { color: var(--ink3); font-size: 13px; margin-top: 8px; }
 
   /* Responsive */
@@ -228,9 +224,7 @@
 
         <div class="panel">
           <h3 class="panel-title"><i class="fas fa-building" style="color: var(--primary2);"></i> Posted By</h3>
-          <a href="{% url 'company_profile' drive.posted_by.pk %}" class="company-link">
-            <i class="fas fa-external-link-alt"></i> View Company Profile
-          </a>
+          <div class="company-name">{{ drive.company }}</div>
           <div class="posted-date">Posted on {{ drive.created_at|date:"d M Y" }}</div>
         </div>
       </div>

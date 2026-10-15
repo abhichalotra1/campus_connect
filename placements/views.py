@@ -1,7 +1,6 @@
 import json
 from django.http import JsonResponse
 from django.utils import timezone
-from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from accounts.decorators import verified_recruiter_required
 from accounts.models import User 
@@ -358,20 +357,6 @@ def delete_drive_view(request, pk):
 
     return render(request, 'placements/delete_drive_confirm.html', {'drive': drive})
 
-
-def company_profile_view(request, user_id):
-    recruiter = get_object_or_404(User, pk=user_id, role='recruiter')
-
-    from students.models import RecruiterProfile
-    profile, created = RecruiterProfile.objects.get_or_create(user=recruiter)
-
-    drives = PlacementDrive.objects.filter(posted_by=recruiter, status='active').order_by('-created_at')
-
-    return render(request, 'placements/company_profile.html', {
-        'recruiter': recruiter,
-        'profile':   profile,
-        'drives':    drives,
-    })
 
 @login_required
 def saved_jobs_view(request):
