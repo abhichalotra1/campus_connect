@@ -91,7 +91,6 @@ class RecruiterProfile(models.Model):
                                                    validators=[validate_image_size])
 
     # ── Verification fields ──────────────────────────────
-    is_verified                = models.BooleanField(default=False)
     verification_status        = models.CharField(
                                     max_length=20,
                                     choices=VERIFICATION_CHOICES,
@@ -104,3 +103,8 @@ class RecruiterProfile(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.company_name or 'Recruiter'}"
+
+    @property
+    def is_verified(self):
+        """A recruiter is verified exactly when an admin has approved them."""
+        return self.verification_status == 'approved'

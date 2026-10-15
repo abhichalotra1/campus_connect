@@ -411,13 +411,9 @@ def admin_verify_recruiter(request, user_id):
         profile.admin_remark = admin_remark
 
         if action == 'approve':
-            profile.is_verified         = True
             profile.verification_status = 'approved'
             profile.verified_at         = timezone.now()
             profile.save()
-
-            recruiter_user.is_verified = True
-            recruiter_user.save()
 
             send_notification(
                 user=recruiter_user,
@@ -429,12 +425,8 @@ def admin_verify_recruiter(request, user_id):
             messages.success(request, f'{recruiter_user.username} has been verified.')
 
         elif action == 'reject':
-            profile.is_verified         = False
             profile.verification_status = 'rejected'
             profile.save()
-
-            recruiter_user.is_verified = False
-            recruiter_user.save()
 
             send_notification(
                 user=recruiter_user,
