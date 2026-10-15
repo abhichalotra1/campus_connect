@@ -2,6 +2,9 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
+from django.core.validators import validate_email
 from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
@@ -21,44 +24,95 @@ def landing_view(request):
     return render(request, 'landing.html')
 
 
+def _validate_registration(data):
+    """Return a list of error strings for the registration form data."""
+    errors = []
+
+    username = data['username']
+    if not username:
+        errors.append('Username is required.')
+    else:
+        try:
+            User._meta.get_field('username').run_validators(username)
+            if len(username) > User._meta.get_field('username').max_length:
+                raise ValidationError('too long')
+        except ValidationError:
+            errors.append('Username may only contain letters, numbers and @/./+/-/_ (max 150 characters).')
+        else:
+            if User.objects.filter(username__iexact=username).exists():
+                errors.append('Username already taken!')
+
+    email = data['email']
+    if not email:
+        errors.append('Email is required.')
+    else:
+        try:
+            validate_email(email)
+        except ValidationError:
+            errors.append('Enter a valid email address.')
+        else:
+            if User.objects.filter(email__iexact=email).exists():
+                errors.append('An account with this email already exists.')
+
+    for field, label in (('first_name', 'First name'), ('last_name', 'Last name')):
+        if len(data[field]) > User._meta.get_field(field).max_length:
+            errors.append(f'{label} is too long.')
+    if len(data['phone']) > User._meta.get_field('phone').max_length:
+        errors.append('Phone number is too long.')
+
+    if data['password1'] != data['password2']:
+        errors.append('Passwords do not match!')
+    else:
+        # Runs the validators from AUTH_PASSWORD_VALIDATORS (length, common, numeric, similarity).
+        candidate = User(username=username, email=email,
+                         first_name=data['first_name'], last_name=data['last_name'])
+        try:
+            validate_password(data['password1'], user=candidate)
+        except ValidationError as exc:
+            errors.extend(exc.messages)
+    return errors
+
+
 def register_view(request):
     if request.user.is_authenticated:
         return redirect('dashboard')
+    form = {}
     if request.method == 'POST':
-        username   = request.POST.get('username', '')
-        email      = request.POST.get('email', '')
-        password1  = request.POST.get('password1', '')
-        password2  = request.POST.get('password2', '')
-        first_name = request.POST.get('first_name', '')
-        last_name  = request.POST.get('last_name', '')
-        phone      = request.POST.get('phone', '')
+        form = {
+            'username':   request.POST.get('username', '').strip(),
+            'email':      request.POST.get('email', '').strip(),
+            'password1':  request.POST.get('password1', ''),
+            'password2':  request.POST.get('password2', ''),
+            'first_name': request.POST.get('first_name', '').strip(),
+            'last_name':  request.POST.get('last_name', '').strip(),
+            'phone':      request.POST.get('phone', '').strip(),
+            'role':       request.POST.get('role', 'student'),
+        }
+        if form['role'] not in ['student', 'recruiter']:
+            form['role'] = 'student'
 
-        role = request.POST.get('role', 'student')
-        if role not in ['student', 'recruiter']:
-            role = 'student'
+        errors = _validate_registration(form)
+        if errors:
+            for err in errors:
+                messages.error(request, err)
+            # Re-show the form with what they typed (never send passwords back).
+            form['password1'] = form['password2'] = ''
+            return render(request, 'accounts/register.html', {'form': form})
 
-        if password1 != password2:
-            messages.error(request, 'Passwords do not match!')
-            return redirect('register')
-
-        if User.objects.filter(username=username).exists():
-            messages.error(request, 'Username already taken!')
-            return redirect('register')
-
-        user = User.objects.create_user(
-            username=username,
-            email=email,
-            password=password1,
-            first_name=first_name,
-            last_name=last_name,
-            phone=phone,
-            role=role
+        User.objects.create_user(
+            username=form['username'],
+            email=form['email'],
+            password=form['password1'],
+            first_name=form['first_name'],
+            last_name=form['last_name'],
+            phone=form['phone'],
+            role=form['role'],
         )
 
         messages.success(request, 'Account created! Please login.')
         return redirect('login')
 
-    return render(request, 'accounts/register.html')
+    return render(request, 'accounts/register.html', {'form': form})
 
 
 def _safe_next(request):
@@ -77,6 +131,9 @@ def login_view(request):
     if request.method == 'POST':
         username = request.POST.get('username', '').strip()
         password = request.POST.get('password', '')
+        if not username or not password:
+            messages.error(request, 'Please enter both your username/email and password.')
+            return render(request, 'accounts/login.html')
         user = authenticate(request, username=username, password=password)
 
         if user is not None:
