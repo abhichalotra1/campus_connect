@@ -48,45 +48,8 @@
   .auth-subtitle { color: var(--ink3); font-size: 14px; }
 
   /* Social Buttons */
-  .social-stack {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    margin-bottom: 1.5rem;
-  }
-  .social-btn {
-    padding: 12px;
-    border-radius: 10px;
-    background: var(--surface2);
-    border: 1px solid var(--border2);
-    color: var(--ink);
-    text-decoration: none;
-    font-weight: 600;
-    font-size: 14px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    transition: all 0.2s;
-  }
-  .social-btn:hover { background: var(--bg3); border-color: var(--ink3); }
-  .social-btn i { font-size: 18px; }
 
   /* Divider */
-  .divider {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 20px;
-  }
-  .divider-line { flex: 1; height: 1px; background: var(--border2); }
-  .divider-text {
-    font-size: 11px;
-    color: var(--ink3);
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
 
   /* Forms */
   .form-group {
@@ -164,22 +127,6 @@
       <p class="auth-subtitle">Sign in to access your dashboard</p>
     </div>
 
-    <!-- Social Logins -->
-    <div class="social-stack">
-      <a href="{% url 'github_login' %}" class="social-btn">
-        <i class="fab fa-github"></i> Continue with GitHub
-      </a>
-      <a href="{% url 'google_login' %}" class="social-btn">
-        <i class="fab fa-google" style="color: #4285F4;"></i> Continue with Google
-      </a>
-    </div>
-
-    <div class="divider">
-      <div class="divider-line"></div>
-      <span class="divider-text">or sign in with email</span>
-      <div class="divider-line"></div>
-    </div>
-
     <!-- Email Login Form -->
     <form method="POST">
       {% csrf_token %}
@@ -190,8 +137,8 @@
       {% endif %}
       
       <div class="form-group">
-        <label class="form-label">Username</label>
-        <input type="text" name="username" class="form-control" placeholder="Enter your username" required>
+        <label class="form-label">Username or email</label>
+        <input type="text" name="username" class="form-control" placeholder="Enter your username or email" required>
       </div>
       <div class="form-group">
         <label class="form-label">Password</label>

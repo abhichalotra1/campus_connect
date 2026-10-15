@@ -28,18 +28,7 @@
   }
   .auth-subtitle { color: var(--ink3); font-size: 14px; }
 
-  .social-stack { display: flex; flex-direction: column; gap: 10px; margin-bottom: 1.5rem; }
-  .social-btn {
-    padding: 12px; border-radius: 10px; background: var(--surface2); border: 1px solid var(--border2);
-    color: var(--ink); text-decoration: none; font-weight: 600; font-size: 14px;
-    display: flex; align-items: center; justify-content: center; gap: 10px; transition: all 0.2s;
-  }
-  .social-btn:hover { background: var(--bg3); border-color: var(--ink3); }
-  .social-btn i { font-size: 18px; }
 
-  .divider { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
-  .divider-line { flex: 1; height: 1px; background: var(--border2); }
-  .divider-text { font-size: 11px; color: var(--ink3); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
 
   .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 18px; }
   .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
@@ -79,22 +68,6 @@
     <div class="auth-header">
       <h3 class="auth-title">Create your account</h3>
       <p class="auth-subtitle">Start your placement journey today</p>
-    </div>
-
-    <!-- Social Signups -->
-    <div class="social-stack">
-      <a href="{% url 'github_login' %}" class="social-btn">
-        <i class="fab fa-github"></i> Sign up with GitHub
-      </a>
-      <a href="{% url 'google_login' %}" class="social-btn">
-        <i class="fab fa-google" style="color: #4285F4;"></i> Sign up with Google
-      </a>
-    </div>
-
-    <div class="divider">
-      <div class="divider-line"></div>
-      <span class="divider-text">or register manually</span>
-      <div class="divider-line"></div>
     </div>
 
     <!-- Manual Registration Form -->

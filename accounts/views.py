@@ -71,7 +71,6 @@ def login_view(request):
                 messages.error(request, 'Your account has been deactivated by the administrator.')
                 return redirect('login')
             login(request, user)
-            User.objects.filter(pk=request.user.pk).update(last_active_at=timezone.now())          
             messages.success(request, f'Welcome back, {user.first_name}!')
             return redirect('dashboard')
         else:
@@ -91,13 +90,7 @@ def dashboard_view(request):
     user = request.user
     context = {'user': user}
 
-    # ── SAFE HEARTBEAT UPDATE ──
-    # Only update last_active_at, bypassing any signals that might trigger save() loops
-    User.objects.filter(pk=user.pk).update(last_active_at=timezone.now())
-    # Refresh the user object so the template has the new data if needed
-    user.refresh_from_db()
-
-    open_drives = PlacementDrive.objects.filter(status='active')   
+    open_drives = PlacementDrive.objects.filter(status='active')
     context['open_drives_count'] = open_drives.count()
     context['recent_drives'] = open_drives.order_by('-created_at')[:5]
 
@@ -109,7 +102,7 @@ def dashboard_view(request):
         context['applications_count'] = apps.count()
         context['shortlisted_count'] = apps.filter(status='shortlisted').count()
         context['my_applications'] = apps.order_by('-applied_at')[:4]
-        context['placed_applications'] = apps.filter(status='placed')
+        context['selected_applications'] = apps.filter(status='selected')
 
         interviews = Interview.objects.filter(
             application__student=user,
@@ -189,40 +182,15 @@ def update_application_status(request, pk):
     if request.method == 'POST':
         status = request.POST.get('status')
 
-        # ✨ 'placed' is now included in this single check
-        if status in ['applied', 'shortlisted', 'rejected', 'selected', 'placed']:
+        if status in ['applied', 'shortlisted', 'rejected', 'selected']:
             app.status = status
             app.save()
-
-            # ── AUTO-CREATE CONVERSATION ON SHORTLIST ──
-            if status == 'shortlisted':
-                from placements.models import Conversation # Import here to avoid circular imports
-                
-                # Get or create prevents duplicates if they un-shortlist and re-shortlist
-                conv, created = Conversation.objects.get_or_create(
-                    application=app,
-                    defaults={
-                        'student': app.student,
-                        'recruiter': app.drive.posted_by,
-                        'drive': app.drive
-                    }
-                )
-                
-                # Add a system message to start the chat
-                if created:
-                    from placements.models import ChatMessage
-                    ChatMessage.objects.create(
-                        conversation=conv,
-                        sender='system',
-                        message_type='system',
-                        content=f"Chat initiated. {app.drive.posted_by.get_full_name()} has shortlisted you for {app.drive.role}."
-                    )
 
             send_notification(
                 user=app.student,
                 title=f'Application Update - {app.drive.company}',
                 message=f'Your application for {app.drive.role} at {app.drive.company} has been {status}!',
-                notif_type=status if status in ['shortlisted', 'rejected', 'selected', 'placed'] else 'general'
+                notif_type=status if status in ['shortlisted', 'rejected', 'selected'] else 'general'
             )
 
             send_status_update_email(app.student, app.drive, status)
@@ -231,7 +199,7 @@ def update_application_status(request, pk):
     if request.user.role == 'recruiter':
         return redirect('recruiter_applicants')
     else:
-        return redirect('admin_dashboard')        
+        return redirect('admin_dashboard')
 
 
 @login_required
@@ -335,55 +303,6 @@ def export_students_csv(request):
         except StudentProfile.DoesNotExist:
             writer.writerow([user.get_full_name(), user.email, user.username,
                              '', '', '', '', '', '', ''])
-    return response
-
-
-@login_required
-def export_students_excel(request):
-    if request.user.role != 'admin':
-        return redirect('dashboard')
-
-    import openpyxl
-    from django.http import HttpResponse
-    from openpyxl.styles import Font, PatternFill, Alignment
-
-    wb = openpyxl.Workbook()
-    ws = wb.active
-    ws.title = "Students"
-
-    headers = ['Name', 'Email', 'Username', 'Phone', 'Branch', 'CGPA',
-               'Roll Number', 'Passing Year', 'Skills', 'LinkedIn', 'GitHub']
-
-    header_fill = PatternFill(start_color="5B6CFF", end_color="5B6CFF", fill_type="solid")
-    header_font = Font(bold=True, color="FFFFFF")
-
-    for col, header in enumerate(headers, 1):
-        cell = ws.cell(row=1, column=col, value=header)
-        cell.fill = header_fill
-        cell.font = header_font
-        cell.alignment = Alignment(horizontal='center')
-
-    for user in User.objects.filter(role='student').select_related('studentprofile'):
-        try:
-            p = user.studentprofile
-            ws.append([
-                user.get_full_name(), user.email, user.username, user.phone,
-                p.branch, p.cgpa, p.roll_number, p.passing_year,
-                p.skills, p.linkedin, p.github
-            ])
-        except StudentProfile.DoesNotExist:
-            ws.append([user.get_full_name(), user.email, user.username,
-                       user.phone, '', '', '', '', '', '', ''])
-
-    for col in ws.columns:
-        max_len = max((len(str(cell.value or '')) for cell in col), default=10)
-        ws.column_dimensions[col[0].column_letter].width = min(max_len + 4, 40)
-
-    response = HttpResponse(
-        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-    )
-    response['Content-Disposition'] = 'attachment; filename="students.xlsx"'
-    wb.save(response)
     return response
 
 
@@ -508,9 +427,9 @@ def admin_toggle_drive_status(request, drive_id):
     if request.user.role != 'admin':
         messages.error(request, 'Access denied.')
         return redirect('dashboard')
-    
+
     drive = get_object_or_404(PlacementDrive, pk=drive_id)
-    
+
     if request.method == 'POST':
         if drive.status == 'active':
             drive.status = 'closed'
@@ -518,9 +437,9 @@ def admin_toggle_drive_status(request, drive_id):
         else:
             drive.status = 'active'
             messages.success(request, f'Drive "{drive.company} - {drive.role}" has been reopened.')
-        
+
         drive.save()
-        
+
     return redirect('admin_dashboard')
 
 
@@ -531,22 +450,22 @@ def admin_toggle_user_status(request, user_id):
     if request.user.role != 'admin':
         messages.error(request, 'Access denied.')
         return redirect('dashboard')
-    
+
     target_user = get_object_or_404(User, pk=user_id)
-    
+
     # Prevent admin from deactivating themselves
     if target_user == request.user:
         messages.error(request, "You cannot deactivate your own account!")
         return redirect('admin_dashboard')
-        
+
     if request.method == 'POST':
         # Toggle the is_active status
         target_user.is_active = not target_user.is_active
         target_user.save()
-        
+
         if target_user.is_active:
             messages.success(request, f'User {target_user.username} has been reactivated.')
         else:
             messages.warning(request, f'User {target_user.username} has been deactivated. They can no longer log in.')
-            
+
     return redirect('admin_dashboard')

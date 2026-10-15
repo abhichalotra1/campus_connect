@@ -15,7 +15,7 @@ class StudentProfile(models.Model):
     user           = models.OneToOneField(User, on_delete=models.CASCADE)
     branch         = models.CharField(max_length=10, choices=BRANCH_CHOICES)
     cgpa           = models.FloatField(default=0.0)
-    roll_number    = models.CharField(max_length=20, unique=True)
+    roll_number    = models.CharField(max_length=20, unique=True, null=True, blank=True)
     passing_year   = models.IntegerField(default=2025)
     skills         = models.TextField(blank=True, help_text="Comma separated skills")
     certifications = models.TextField(blank=True)

@@ -2,18 +2,18 @@
 {% load tz %}
 
 {% block dashboard_content %}
-<!-- ✨ PLACED CELEBRATION BANNER ✨ -->
-{% if user.role == 'student' and placed_applications|length > 0 %}
+<!-- ✨ SELECTED CELEBRATION BANNER ✨ -->
+{% if user.role == 'student' and selected_applications|length > 0 %}
 <div class="anim" style="background: linear-gradient(90deg, #059669, #10b981); border-radius: 16px; padding: 28px; margin-bottom: 24px; color: white; box-shadow: 0 10px 30px rgba(16,185,129,0.3); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
   <div>
     <h2 style="font-family: var(--font-display); font-weight: 800; font-size: 24px; margin-bottom: 8px; color: white;">
       🎉 Congratulations, {{ user.first_name|default:"Student" }}!
     </h2>
     <p style="font-size: 16px; opacity: 0.95; margin: 0;">
-      You have been officially placed! Your hard work paid off.
+      You have been officially selected! Your hard work paid off.
     </p>
     <div style="margin-top: 16px; display: flex; gap: 12px; flex-wrap: wrap;">
-      {% for app in placed_applications %}
+      {% for app in selected_applications %}
       <span style="background: rgba(255,255,255,0.2); padding: 8px 16px; border-radius: 8px; font-weight: 700; font-family: var(--font-display); font-size: 14px;">
         🏆 {{ app.drive.company }} - {{ app.drive.role }}
       </span>

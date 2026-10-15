@@ -9,7 +9,6 @@ urlpatterns = [
     # Drive Management
     path('edit-drive/<int:pk>/',     views.edit_drive_view,        name='edit_drive'),
     path('delete-drive/<int:pk>/',   views.delete_drive_view,      name='delete_drive'),
-    path('company/<int:user_id>/',   views.company_profile_view,   name='company_profile'), # NEW LINE
     
     # General Drive Routes
     path('',                         views.drive_list_view,        name='drive_list'),
@@ -30,11 +29,4 @@ urlpatterns = [
     path('save-drive/<int:pk>/', views.save_drive_view,    name='save_drive'),
     path('unsave-drive/<int:pk>/', views.unsave_drive_view, name='unsave_drive'),
 
-        # Chat URLs
-    path('chat/start/<int:application_id>/', views.get_or_create_chat_view, name='start_chat'),    
-    path('chat/<int:conversation_id>/', views.chat_room_view, name='chat_room'),
-    path('chat/<int:conversation_id>/fetch/', views.fetch_messages_api, name='chat_fetch'),
-    path('chat/<int:conversation_id>/send/', views.send_message_api, name='chat_send'),
-    path('chat/<int:conversation_id>/unlock/', views.unlock_student_chat, name='chat_unlock'),
-    path('chat/file/<int:pk>/download/', views.download_chat_file, name='chat_file_download'),
 ]

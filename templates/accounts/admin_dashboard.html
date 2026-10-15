@@ -25,8 +25,6 @@
   }
   .btn-export-csv { color: var(--green); border: 1px solid rgba(34,211,160,0.3); background: var(--green-soft); }
   .btn-export-csv:hover { background: var(--green); color: #fff; }
-  .btn-export-excel { color: var(--green); border: 1px solid rgba(34,211,160,0.3); background: var(--green-soft); }
-  .btn-export-excel:hover { background: var(--green); color: #fff; }
   .btn-search { color: #fff; background: var(--primary); border: none; }
   .btn-search:hover { background: var(--primary2); box-shadow: 0 4px 12px var(--p-glow); }
 
@@ -125,12 +123,6 @@
   .btn-reactivate { color: var(--green); background: var(--green-soft); border: 1px solid rgba(34,211,160,0.3); }
   .btn-reactivate:hover { background: var(--green); color: #fff; }
   
-  .btn-observe-chat {
-    font-size: 12px; font-weight: 600; color: var(--primary2); text-decoration: none;
-    padding: 4px 10px; border-radius: 6px; background: var(--p-soft);
-    border: 1px solid rgba(79,70,229,0.3); display: inline-flex; align-items: center; gap: 4px; transition: all 0.18s;
-  }
-  .btn-observe-chat:hover { background: var(--primary); color: #fff; }
 
   .status-badge { padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; white-space: nowrap; }
   .badge-active { background: var(--green-soft); color: var(--green); }
@@ -138,7 +130,6 @@
   .badge-applied { background: var(--p-soft); color: var(--primary2); }
   .badge-shortlisted { background: rgba(245,158,11,0.12); color: #f59e0b; }
   .badge-selected { background: var(--green-soft); color: var(--green); }
-  .badge-placed { background: rgba(245,158,11,0.15); color: #f59e0b; }
   .badge-rejected { background: var(--red-soft); color: var(--red); }
   .badge-pending { background: rgba(245,158,11,0.12); color: #f59e0b; }
   .badge-unverified { background: var(--surface2); color: var(--ink3); }
@@ -174,7 +165,6 @@
   </div>
   <div class="ad-actions">
     <a href="{% url 'export_students' %}" class="btn-export btn-export-csv"><i class="fas fa-download"></i> Export CSV</a>
-    <a href="{% url 'export_students_excel' %}" class="btn-export btn-export-excel"><i class="fas fa-file-excel"></i> Export Excel</a>
     <a href="{% url 'search_students' %}" class="btn-export btn-search"><i class="fas fa-search"></i> Search Students</a>
   </div>
 </div>
@@ -313,7 +303,6 @@
             {% if app.status == 'applied' %}<span class="status-badge badge-applied">Applied</span>
             {% elif app.status == 'shortlisted' %}<span class="status-badge badge-shortlisted">Shortlisted</span>
             {% elif app.status == 'selected' %}<span class="status-badge badge-selected">Selected</span>
-            {% elif app.status == 'placed' %}<span class="status-badge badge-placed">🏆 Placed</span>
             {% elif app.status == 'rejected' %}<span class="status-badge badge-rejected">Rejected</span>{% endif %}
           </td>
           <td>
@@ -324,7 +313,6 @@
                   <option value="applied" {% if app.status == 'applied' %}selected{% endif %}>Applied</option>
                   <option value="shortlisted" {% if app.status == 'shortlisted' %}selected{% endif %}>Shortlisted</option>
                   <option value="selected" {% if app.status == 'selected' %}selected{% endif %}>Selected</option>
-                  <option value="placed" {% if app.status == 'placed' %}selected{% endif %}>Placed ✅</option>
                   <option value="rejected" {% if app.status == 'rejected' %}selected{% endif %}>Rejected</option>
                 </select>
                 <button type="submit" class="btn-update">Update</button>
@@ -332,9 +320,6 @@
             </form>
             <div class="action-group" style="margin-top:8px;">
               <a href="/placements/schedule/{{ app.pk }}/" class="link-schedule"><i class="fas fa-calendar" style="margin-right:4px;"></i>Schedule</a>
-              {% if app.status == 'shortlisted' or app.status == 'selected' %}
-              <a href="{% url 'start_chat' app.pk %}" class="btn-observe-chat"><i class="fas fa-eye"></i> View Chat</a>
-              {% endif %}
             </div>
           </td>
         </tr>
