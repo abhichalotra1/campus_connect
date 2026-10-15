@@ -55,17 +55,6 @@
   }
   .app-card:hover::before { opacity: 1; }
 
-  /* Placed Card Special Style */
-  .app-card.is-placed {
-    border-color: rgba(245,158,11,0.3);
-    background: linear-gradient(135deg, rgba(245,158,11,0.05) 0%, var(--surface) 100%);
-  }
-  .app-card.is-placed::before {
-    background: #f59e0b;
-    opacity: 1;
-    box-shadow: 0 0 10px rgba(245,158,11,0.4);
-  }
-
   .app-inner {
     display: flex;
     justify-content: space-between;
@@ -153,7 +142,6 @@
   .badge-applied { background: rgba(255,255,255,0.05); color: var(--ink2); border: 1px solid var(--border); }
   .badge-shortlisted { background: var(--yellow-soft); color: var(--yellow); }
   .badge-selected { background: var(--green-soft); color: var(--green); }
-  .badge-placed { background: rgba(245,158,11,0.15); color: #f59e0b; box-shadow: 0 0 12px rgba(245,158,11,0.15); }
   .badge-rejected { background: var(--red-soft); color: var(--red); }
 
   /* Action Buttons */
@@ -213,9 +201,9 @@
 {% if applications %}
 <div class="app-list">
   {% for app in applications %}
-  <div class="app-card {% if app.status == 'placed' %}is-placed{% endif %}">
+  <div class="app-card">
     <div class="app-inner">
-      
+
       <!-- Left Side: Logo & Info -->
       <div class="app-left">
         {% if app.drive.company_logo %}
@@ -225,7 +213,7 @@
             {{ app.drive.company|first|upper }}
           </div>
         {% endif %}
-        
+
         <div>
           <a href="{% url 'drive_detail' app.drive.pk %}" class="app-role">{{ app.drive.role }}</a>
           <span class="app-company">{{ app.drive.company }}</span>
@@ -239,7 +227,7 @@
 
       <!-- Right Side: Status & Actions -->
       <div class="app-right">
-        
+
         <!-- Status Badges -->
         {% if app.status == 'applied' %}
           <span class="status-badge badge-applied"><i class="fas fa-clock"></i> Applied</span>
@@ -247,8 +235,6 @@
           <span class="status-badge badge-shortlisted"><i class="fas fa-star"></i> Shortlisted</span>
         {% elif app.status == 'selected' %}
           <span class="status-badge badge-selected"><i class="fas fa-check-circle"></i> Selected</span>
-        {% elif app.status == 'placed' %}
-          <span class="status-badge badge-placed">🏆 Placed</span>
         {% elif app.status == 'rejected' %}
           <span class="status-badge badge-rejected"><i class="fas fa-times-circle"></i> Rejected</span>
         {% endif %}

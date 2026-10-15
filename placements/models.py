@@ -73,7 +73,6 @@ class Application(models.Model):
         ('shortlisted', 'Shortlisted'),
         ('rejected',    'Rejected'),
         ('selected',    'Selected'),
-        ('placed',      'Placed'),   # <-- ADD THIS LINE
     )
 
     student    = models.ForeignKey(User, on_delete=models.CASCADE)

@@ -130,7 +130,6 @@
   .badge-applied { background: var(--p-soft); color: var(--primary2); }
   .badge-shortlisted { background: rgba(245,158,11,0.12); color: #f59e0b; }
   .badge-selected { background: var(--green-soft); color: var(--green); }
-  .badge-placed { background: rgba(245,158,11,0.15); color: #f59e0b; }
   .badge-rejected { background: var(--red-soft); color: var(--red); }
   .badge-pending { background: rgba(245,158,11,0.12); color: #f59e0b; }
   .badge-unverified { background: var(--surface2); color: var(--ink3); }
@@ -304,7 +303,6 @@
             {% if app.status == 'applied' %}<span class="status-badge badge-applied">Applied</span>
             {% elif app.status == 'shortlisted' %}<span class="status-badge badge-shortlisted">Shortlisted</span>
             {% elif app.status == 'selected' %}<span class="status-badge badge-selected">Selected</span>
-            {% elif app.status == 'placed' %}<span class="status-badge badge-placed">🏆 Placed</span>
             {% elif app.status == 'rejected' %}<span class="status-badge badge-rejected">Rejected</span>{% endif %}
           </td>
           <td>
@@ -315,7 +313,6 @@
                   <option value="applied" {% if app.status == 'applied' %}selected{% endif %}>Applied</option>
                   <option value="shortlisted" {% if app.status == 'shortlisted' %}selected{% endif %}>Shortlisted</option>
                   <option value="selected" {% if app.status == 'selected' %}selected{% endif %}>Selected</option>
-                  <option value="placed" {% if app.status == 'placed' %}selected{% endif %}>Placed ✅</option>
                   <option value="rejected" {% if app.status == 'rejected' %}selected{% endif %}>Rejected</option>
                 </select>
                 <button type="submit" class="btn-update">Update</button>

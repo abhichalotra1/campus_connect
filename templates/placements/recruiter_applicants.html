@@ -288,9 +288,6 @@ function confirmStatus(selectElement, appId) {
   if (selectElement.value === 'selected') {
     icon.className = 'fas fa-check-circle modal-icon';
     icon.style.color = 'var(--green)';
-  } else if (selectElement.value === 'placed') {
-    icon.className = 'fas fa-trophy modal-icon';
-    icon.style.color = '#f59e0b';
   } else if (selectElement.value === 'rejected') {
     icon.className = 'fas fa-times-circle modal-icon';
     icon.style.color = 'var(--red)';
@@ -308,8 +305,9 @@ function confirmStatus(selectElement, appId) {
 
   // Set up confirm button
   const confirmBtn = document.getElementById('modalConfirmBtn');
-  confirmBtn.onclick = function() {
-    submitWithLoading(this, 'Updating...');
+    confirmBtn.onclick = function() {
+    this.disabled = true;
+    this.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Updating...';
     document.getElementById('statusForm-' + appId).submit();
   };
 }

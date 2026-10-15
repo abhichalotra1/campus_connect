@@ -90,7 +90,7 @@ def dashboard_view(request):
     user = request.user
     context = {'user': user}
 
-    open_drives = PlacementDrive.objects.filter(status='active')   
+    open_drives = PlacementDrive.objects.filter(status='active')
     context['open_drives_count'] = open_drives.count()
     context['recent_drives'] = open_drives.order_by('-created_at')[:5]
 
@@ -102,7 +102,7 @@ def dashboard_view(request):
         context['applications_count'] = apps.count()
         context['shortlisted_count'] = apps.filter(status='shortlisted').count()
         context['my_applications'] = apps.order_by('-applied_at')[:4]
-        context['placed_applications'] = apps.filter(status='placed')
+        context['selected_applications'] = apps.filter(status='selected')
 
         interviews = Interview.objects.filter(
             application__student=user,
@@ -182,8 +182,7 @@ def update_application_status(request, pk):
     if request.method == 'POST':
         status = request.POST.get('status')
 
-        # ✨ 'placed' is now included in this single check
-        if status in ['applied', 'shortlisted', 'rejected', 'selected', 'placed']:
+        if status in ['applied', 'shortlisted', 'rejected', 'selected']:
             app.status = status
             app.save()
 
@@ -191,7 +190,7 @@ def update_application_status(request, pk):
                 user=app.student,
                 title=f'Application Update - {app.drive.company}',
                 message=f'Your application for {app.drive.role} at {app.drive.company} has been {status}!',
-                notif_type=status if status in ['shortlisted', 'rejected', 'selected', 'placed'] else 'general'
+                notif_type=status if status in ['shortlisted', 'rejected', 'selected'] else 'general'
             )
 
             send_status_update_email(app.student, app.drive, status)
@@ -200,7 +199,7 @@ def update_application_status(request, pk):
     if request.user.role == 'recruiter':
         return redirect('recruiter_applicants')
     else:
-        return redirect('admin_dashboard')        
+        return redirect('admin_dashboard')
 
 
 @login_required
@@ -428,9 +427,9 @@ def admin_toggle_drive_status(request, drive_id):
     if request.user.role != 'admin':
         messages.error(request, 'Access denied.')
         return redirect('dashboard')
-    
+
     drive = get_object_or_404(PlacementDrive, pk=drive_id)
-    
+
     if request.method == 'POST':
         if drive.status == 'active':
             drive.status = 'closed'
@@ -438,9 +437,9 @@ def admin_toggle_drive_status(request, drive_id):
         else:
             drive.status = 'active'
             messages.success(request, f'Drive "{drive.company} - {drive.role}" has been reopened.')
-        
+
         drive.save()
-        
+
     return redirect('admin_dashboard')
 
 
@@ -451,22 +450,22 @@ def admin_toggle_user_status(request, user_id):
     if request.user.role != 'admin':
         messages.error(request, 'Access denied.')
         return redirect('dashboard')
-    
+
     target_user = get_object_or_404(User, pk=user_id)
-    
+
     # Prevent admin from deactivating themselves
     if target_user == request.user:
         messages.error(request, "You cannot deactivate your own account!")
         return redirect('admin_dashboard')
-        
+
     if request.method == 'POST':
         # Toggle the is_active status
         target_user.is_active = not target_user.is_active
         target_user.save()
-        
+
         if target_user.is_active:
             messages.success(request, f'User {target_user.username} has been reactivated.')
         else:
             messages.warning(request, f'User {target_user.username} has been deactivated. They can no longer log in.')
-            
+
     return redirect('admin_dashboard')
