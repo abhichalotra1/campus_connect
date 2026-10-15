@@ -71,7 +71,6 @@ def login_view(request):
                 messages.error(request, 'Your account has been deactivated by the administrator.')
                 return redirect('login')
             login(request, user)
-            User.objects.filter(pk=request.user.pk).update(last_active_at=timezone.now())          
             messages.success(request, f'Welcome back, {user.first_name}!')
             return redirect('dashboard')
         else:
@@ -90,12 +89,6 @@ def logout_view(request):
 def dashboard_view(request):
     user = request.user
     context = {'user': user}
-
-    # ── SAFE HEARTBEAT UPDATE ──
-    # Only update last_active_at, bypassing any signals that might trigger save() loops
-    User.objects.filter(pk=user.pk).update(last_active_at=timezone.now())
-    # Refresh the user object so the template has the new data if needed
-    user.refresh_from_db()
 
     open_drives = PlacementDrive.objects.filter(status='active')   
     context['open_drives_count'] = open_drives.count()
