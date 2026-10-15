@@ -1,8 +1,23 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.core.exceptions import ValidationError
 from .models import StudentProfile, RecruiterProfile
 from placements.models import PlacementDrive, Application
+
+
+def _save_validated(request, profile):
+    """Run model validators, then save. Returns True on success."""
+    try:
+        profile.full_clean()
+    except ValidationError as e:
+        for field, errors in e.message_dict.items():
+            label = '' if field == '__all__' else field.replace('_', ' ').title() + ': '
+            for err in errors:
+                messages.error(request, f'{label}{err}')
+        return False
+    profile.save()
+    return True
 
 
 @login_required
@@ -12,7 +27,7 @@ def profile_view(request):
     if user.role == 'student':
         profile, _ = StudentProfile.objects.get_or_create(
             user=user,
-            defaults={'branch': 'CSE', 'roll_number': None, 'passing_year': 2025}
+            defaults={'branch': 'CSE'}
         )
         return render(request, 'students/profile.html', {
             'profile': profile,
@@ -20,11 +35,10 @@ def profile_view(request):
 
     elif user.role == 'recruiter':
         profile, _ = RecruiterProfile.objects.get_or_create(user=user)
-        
+
         # Fetch the drives posted by this recruiter to show on their profile
-        from placements.models import PlacementDrive
         my_drives = PlacementDrive.objects.filter(posted_by=user).order_by('-created_at')
-        
+
         return render(request, 'students/recruiter_profile.html', {
             'profile': profile,
             'my_drives': my_drives,
@@ -56,37 +70,41 @@ def edit_profile_view(request):
     if user.role == 'student':
         profile, _ = StudentProfile.objects.get_or_create(
             user=user,
-            defaults={'branch': 'CSE', 'roll_number': None, 'passing_year': 2025}
+            defaults={'branch': 'CSE'}
         )
 
         if request.method == 'POST':
             profile.branch         = request.POST.get('branch', profile.branch)
-            profile.roll_number = request.POST.get('roll_number', profile.roll_number) or None
-            profile.passing_year   = request.POST.get('passing_year', profile.passing_year)
+            profile.roll_number    = request.POST.get('roll_number', profile.roll_number) or None
             profile.skills         = request.POST.get('skills', profile.skills)
             profile.certifications = request.POST.get('certifications', profile.certifications)
             profile.about          = request.POST.get('about', profile.about)
             profile.linkedin       = request.POST.get('linkedin', profile.linkedin)
             profile.github         = request.POST.get('github', profile.github)
 
-            try:
-                profile.cgpa = float(request.POST.get('cgpa', profile.cgpa))
-            except (ValueError, TypeError):
-                pass
+            # Blank number fields keep the old value; anything else is validated
+            passing_year = request.POST.get('passing_year', '').strip()
+            if passing_year:
+                profile.passing_year = passing_year
+            cgpa = request.POST.get('cgpa', '').strip()
+            if cgpa:
+                profile.cgpa = cgpa
 
             if 'resume' in request.FILES:
                 profile.resume = request.FILES['resume']
             if 'profile_pic' in request.FILES:
                 profile.profile_pic = request.FILES['profile_pic']
 
-            profile.save()
-            messages.success(request, 'Profile updated successfully!')
-            return redirect('profile')
+            if _save_validated(request, profile):
+                messages.success(request, 'Profile updated successfully!')
+                return redirect('profile')
+            # On error, fall through and re-render the form with the errors
 
         return render(request, 'students/edit_profile.html', {
-    'profile': profile,
-    'branch_choices': PlacementDrive.BRANCH_CHOICES,
-})
+            'profile': profile,
+            'branch_choices': PlacementDrive.BRANCH_CHOICES,
+        })
+
     elif user.role == 'recruiter':
         profile, _ = RecruiterProfile.objects.get_or_create(user=user)
 
@@ -102,9 +120,9 @@ def edit_profile_view(request):
             if 'profile_pic' in request.FILES:
                 profile.profile_pic = request.FILES['profile_pic']
 
-            profile.save()
-            messages.success(request, 'Recruiter profile updated successfully!')
-            return redirect('profile')
+            if _save_validated(request, profile):
+                messages.success(request, 'Recruiter profile updated successfully!')
+                return redirect('profile')
 
         return render(request, 'students/edit_recruiter_profile.html', {'profile': profile})
 

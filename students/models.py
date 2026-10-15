@@ -1,5 +1,13 @@
+from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
+from django.utils import timezone
+
 from accounts.models import User
+from .validators import validate_resume, validate_image_size
+
+
+def default_passing_year():
+    return timezone.now().year
 
 
 class StudentProfile(models.Model):
@@ -14,14 +22,22 @@ class StudentProfile(models.Model):
 
     user           = models.OneToOneField(User, on_delete=models.CASCADE)
     branch         = models.CharField(max_length=10, choices=BRANCH_CHOICES)
-    cgpa           = models.FloatField(default=0.0)
+    cgpa           = models.FloatField(
+                        default=0.0,
+                        validators=[MinValueValidator(0), MaxValueValidator(10)],
+                     )
     roll_number    = models.CharField(max_length=20, unique=True, null=True, blank=True)
-    passing_year   = models.IntegerField(default=2025)
+    passing_year   = models.IntegerField(
+                        default=default_passing_year,
+                        validators=[MinValueValidator(2000), MaxValueValidator(2050)],
+                     )
     skills         = models.TextField(blank=True, help_text="Comma separated skills")
     certifications = models.TextField(blank=True)
     about          = models.TextField(blank=True)
-    resume         = models.FileField(upload_to='resumes/', blank=True, null=True)
-    profile_pic    = models.ImageField(upload_to='profile_pics/', blank=True, null=True)
+    resume         = models.FileField(upload_to='resumes/', blank=True, null=True,
+                                      validators=[validate_resume])
+    profile_pic    = models.ImageField(upload_to='profile_pics/', blank=True, null=True,
+                                       validators=[validate_image_size])
     linkedin       = models.URLField(blank=True)
     github         = models.URLField(blank=True)
     created_at     = models.DateTimeField(auto_now_add=True)
@@ -71,7 +87,8 @@ class RecruiterProfile(models.Model):
     company_address            = models.TextField(blank=True)
     about                      = models.TextField(blank=True)
     linkedin                   = models.URLField(blank=True)
-    profile_pic                = models.ImageField(upload_to='recruiter_pics/', blank=True, null=True)
+    profile_pic                = models.ImageField(upload_to='recruiter_pics/', blank=True, null=True,
+                                                   validators=[validate_image_size])
 
     # ── Verification fields ──────────────────────────────
     is_verified                = models.BooleanField(default=False)
