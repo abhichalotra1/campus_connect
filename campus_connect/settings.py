@@ -137,7 +137,7 @@ EMAIL_PORT          = 587
 EMAIL_USE_TLS       = True
 EMAIL_HOST_USER     = os.getenv('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
-DEFAULT_FROM_EMAIL  = f'Campus Connect <{os.getenv("EMAIL_HOST_USER")}>'
+DEFAULT_FROM_EMAIL  = f'Campus Connect <{EMAIL_HOST_USER or "noreply@campusconnect.local"}>'
 
 # ── LOGGING ───────────────────────────────────────────────────────────────
 LOGGING = {
@@ -160,10 +160,14 @@ LOGGING = {
         'placements':     {'handlers': ['console'], 'level': 'INFO', 'propagate': False},
         'campus_connect': {'handlers': ['console'], 'level': 'INFO', 'propagate': False},
     },
+        'root': {'handlers': ['console'], 'level': 'WARNING'},
 }
 
 # ── PRODUCTION (Render) ───────────────────────────────────────────────────
 if os.getenv('RENDER'):
+    if not os.getenv('DATABASE_URL'):
+        raise ImproperlyConfigured('DATABASE_URL must be set on Render.')
+
     RENDER_HOSTNAME = os.getenv('RENDER_EXTERNAL_HOSTNAME')
     if RENDER_HOSTNAME:
         ALLOWED_HOSTS.append(RENDER_HOSTNAME)
@@ -172,6 +176,12 @@ if os.getenv('RENDER'):
     # Render terminates HTTPS at its proxy; trust its forwarded-protocol header
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_HSTS_SECONDS = 3600  # raise later (e.g. 31536000) once all is stable
+
     STORAGES['staticfiles'] = {
         'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
     }
+    SILENCED_SYSTEM_CHECKS = ['security.W005', 'security.W021']
