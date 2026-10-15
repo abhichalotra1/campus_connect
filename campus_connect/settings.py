@@ -138,6 +138,7 @@ EMAIL_USE_TLS       = True
 EMAIL_HOST_USER     = os.getenv('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
 DEFAULT_FROM_EMAIL  = f'Campus Connect <{EMAIL_HOST_USER or "noreply@campusconnect.local"}>'
+EMAIL_TIMEOUT       = 10  # seconds; never let SMTP stall a request
 
 # ── LOGGING ───────────────────────────────────────────────────────────────
 LOGGING = {
