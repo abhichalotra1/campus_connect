@@ -308,55 +308,6 @@ def export_students_csv(request):
 
 
 @login_required
-def export_students_excel(request):
-    if request.user.role != 'admin':
-        return redirect('dashboard')
-
-    import openpyxl
-    from django.http import HttpResponse
-    from openpyxl.styles import Font, PatternFill, Alignment
-
-    wb = openpyxl.Workbook()
-    ws = wb.active
-    ws.title = "Students"
-
-    headers = ['Name', 'Email', 'Username', 'Phone', 'Branch', 'CGPA',
-               'Roll Number', 'Passing Year', 'Skills', 'LinkedIn', 'GitHub']
-
-    header_fill = PatternFill(start_color="5B6CFF", end_color="5B6CFF", fill_type="solid")
-    header_font = Font(bold=True, color="FFFFFF")
-
-    for col, header in enumerate(headers, 1):
-        cell = ws.cell(row=1, column=col, value=header)
-        cell.fill = header_fill
-        cell.font = header_font
-        cell.alignment = Alignment(horizontal='center')
-
-    for user in User.objects.filter(role='student').select_related('studentprofile'):
-        try:
-            p = user.studentprofile
-            ws.append([
-                user.get_full_name(), user.email, user.username, user.phone,
-                p.branch, p.cgpa, p.roll_number, p.passing_year,
-                p.skills, p.linkedin, p.github
-            ])
-        except StudentProfile.DoesNotExist:
-            ws.append([user.get_full_name(), user.email, user.username,
-                       user.phone, '', '', '', '', '', '', ''])
-
-    for col in ws.columns:
-        max_len = max((len(str(cell.value or '')) for cell in col), default=10)
-        ws.column_dimensions[col[0].column_letter].width = min(max_len + 4, 40)
-
-    response = HttpResponse(
-        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-    )
-    response['Content-Disposition'] = 'attachment; filename="students.xlsx"'
-    wb.save(response)
-    return response
-
-
-@login_required
 def search_students_view(request):
     if request.user.role not in ['recruiter', 'admin']:
         return redirect('dashboard')

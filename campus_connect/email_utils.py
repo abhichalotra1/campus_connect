@@ -129,16 +129,3 @@ def send_interview_email(student, drive, scheduled_at, location='', meeting_link
         },
         to_email = student.email,
     )
-
-
-# ─────────────────────────────────────────
-#  7. DEADLINE REMINDER  (called by management command)
-# ─────────────────────────────────────────
-def send_deadline_reminder_email(student, drive):
-    """Remind student about a drive deadline 2 days away."""
-    _send(
-        subject  = f"⏰ Deadline Reminder – {drive.company} closes in 2 days!",
-        template = "emails/deadline_reminder.html",
-        context  = {'student': student, 'drive': drive},
-        to_email = student.email,
-    )

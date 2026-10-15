@@ -25,8 +25,6 @@
   }
   .btn-export-csv { color: var(--green); border: 1px solid rgba(34,211,160,0.3); background: var(--green-soft); }
   .btn-export-csv:hover { background: var(--green); color: #fff; }
-  .btn-export-excel { color: var(--green); border: 1px solid rgba(34,211,160,0.3); background: var(--green-soft); }
-  .btn-export-excel:hover { background: var(--green); color: #fff; }
   .btn-search { color: #fff; background: var(--primary); border: none; }
   .btn-search:hover { background: var(--primary2); box-shadow: 0 4px 12px var(--p-glow); }
 
@@ -168,7 +166,6 @@
   </div>
   <div class="ad-actions">
     <a href="{% url 'export_students' %}" class="btn-export btn-export-csv"><i class="fas fa-download"></i> Export CSV</a>
-    <a href="{% url 'export_students_excel' %}" class="btn-export btn-export-excel"><i class="fas fa-file-excel"></i> Export Excel</a>
     <a href="{% url 'search_students' %}" class="btn-export btn-search"><i class="fas fa-search"></i> Search Students</a>
   </div>
 </div>
