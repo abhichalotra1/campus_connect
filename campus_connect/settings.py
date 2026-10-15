@@ -23,11 +23,6 @@ INSTALLED_APPS = [
     # Allauth
     'allauth',
     'allauth.account',
-    'allauth.socialaccount',
-    'allauth.socialaccount.providers.google',
-    'allauth.socialaccount.providers.github',
-    'allauth.socialaccount.providers.facebook',
-    'allauth.socialaccount.providers.linkedin_oauth2',
 
     # Our apps
     'accounts.apps.AccountsConfig',  # ← loads signals for welcome email
@@ -111,7 +106,6 @@ ACCOUNT_SIGNUP_FIELDS = ['email*', 'username*', 'password1*', 'password2*']
 ACCOUNT_LOGIN_URL = '/accounts/login/'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/accounts/login/'
-SOCIALACCOUNT_AUTO_SIGNUP = True
 
 # ── EMAIL (Gmail SMTP) ─────────────────────────────────────────────────────
 EMAIL_BACKEND       = 'django.core.mail.backends.smtp.EmailBackend'
@@ -121,9 +115,6 @@ EMAIL_USE_TLS       = True
 EMAIL_HOST_USER     = os.getenv('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
 DEFAULT_FROM_EMAIL  = f'Campus Connect <{os.getenv("EMAIL_HOST_USER")}>'
-
-# ── SOCIAL ACCOUNT ADAPTER ────────────────────────────────────────────────
-SOCIALACCOUNT_ADAPTER = 'accounts.adapters.CustomSocialAccountAdapter'
 
 # ── CUSTOM ERROR PAGES ────────────────────────────────────────────────────
 HANDLER404 = 'campus_connect.views.custom_404'

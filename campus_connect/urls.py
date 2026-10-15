@@ -4,7 +4,6 @@ from django.conf import settings
 from django.conf.urls.static import static
 from accounts import views as account_views
 from django.contrib.auth import views as auth_views
-from django.views.generic import RedirectView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -12,13 +11,6 @@ urlpatterns = [
     # Our Custom Accounts App (Login, Register, Dashboard, Stats, etc.)
     path('accounts/', include('accounts.urls')),
     
-    # Django Allauth (Google/GitHub OAuth)
-    # This MUST come after our custom accounts urls so our register page takes priority
-    path('auth/', include('allauth.urls')),
-    
-    # Redirect Allauth's default /accounts/signup/ to our beautiful custom /accounts/register/
-    path('accounts/signup/', RedirectView.as_view(url='/accounts/register/', permanent=True)),
-
     # Students App
     path('students/', include('students.urls')),
     

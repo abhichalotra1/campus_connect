@@ -12,7 +12,7 @@ A campus placement portal built with Django. Students browse and apply to placem
 
 ## Tech stack
 
-Django 6, SQLite (local) / PostgreSQL (Render), django-allauth, WhiteNoise, Bootstrap (CDN).
+Django 6, SQLite (local) / PostgreSQL (Render), django-allauth (account only, used so users can log in with username or email), WhiteNoise, Bootstrap (CDN).
 
 ## Run locally
 
