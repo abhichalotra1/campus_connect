@@ -26,3 +26,5 @@ staticfiles/
 # Windows
 Thumbs.db
 desktop.ini
+*.bak
+db.sqlite3

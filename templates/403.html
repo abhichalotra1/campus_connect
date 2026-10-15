@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Access Denied | Campus Connect</title>
+  <style>
+    :root {
+      --bg: #0b0f1a;
+      --surface: #121829;
+      --border: rgba(255, 255, 255, 0.08);
+      --ink: #f1f5f9;
+      --ink2: #94a3b8;
+      --primary: #6366f1;
+      --primary2: #818cf8;
+      --red: #f87171;
+      --red-soft: rgba(248, 113, 113, 0.12);
+    }
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg: #f4f6fb;
+        --surface: #ffffff;
+        --border: rgba(15, 23, 42, 0.1);
+        --ink: #0f172a;
+        --ink2: #475569;
+        --red: #dc2626;
+        --red-soft: rgba(220, 38, 38, 0.1);
+      }
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    }
+    .card {
+      width: 100%;
+      max-width: 460px;
+      text-align: center;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 44px 32px;
+    }
+    .icon {
+      width: 64px;
+      height: 64px;
+      margin: 0 auto 20px;
+      border-radius: 50%;
+      background: var(--red-soft);
+      color: var(--red);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 30px;
+    }
+    .code {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      color: var(--red);
+      margin-bottom: 8px;
+    }
+    h1 { font-size: 26px; font-weight: 800; margin-bottom: 10px; }
+    p { color: var(--ink2); font-size: 15px; line-height: 1.6; margin-bottom: 28px; }
+    .actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+    .btn {
+      padding: 11px 22px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 700;
+      text-decoration: none;
+      transition: opacity 0.15s;
+    }
+    .btn:hover { opacity: 0.85; }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-ghost { border: 1px solid var(--border); color: var(--ink); }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <div class="icon" aria-hidden="true">&#128274;</div>
+    <div class="code">ERROR 403</div>
+    <h1>Access denied</h1>
+    <p>You don't have permission to view this page. If you think this is a mistake, try signing in with a different account or contact the placement team.</p>
+    <div class="actions">
+      <a href="/dashboard/" class="btn btn-primary">Go to dashboard</a>
+      <a href="/" class="btn btn-ghost">Back to home</a>
+    </div>
+  </main>
+</body>
+</html>

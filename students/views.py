@@ -12,7 +12,7 @@ def profile_view(request):
     if user.role == 'student':
         profile, _ = StudentProfile.objects.get_or_create(
             user=user,
-            defaults={'branch': 'CSE', 'roll_number': 'N/A', 'passing_year': 2025}
+            defaults={'branch': 'CSE', 'roll_number': None, 'passing_year': 2025}
         )
         return render(request, 'students/profile.html', {
             'profile': profile,
@@ -56,12 +56,12 @@ def edit_profile_view(request):
     if user.role == 'student':
         profile, _ = StudentProfile.objects.get_or_create(
             user=user,
-            defaults={'branch': 'CSE', 'roll_number': 'N/A', 'passing_year': 2025}
+            defaults={'branch': 'CSE', 'roll_number': None, 'passing_year': 2025}
         )
 
         if request.method == 'POST':
             profile.branch         = request.POST.get('branch', profile.branch)
-            profile.roll_number    = request.POST.get('roll_number', profile.roll_number)
+            profile.roll_number = request.POST.get('roll_number', profile.roll_number) or None
             profile.passing_year   = request.POST.get('passing_year', profile.passing_year)
             profile.skills         = request.POST.get('skills', profile.skills)
             profile.certifications = request.POST.get('certifications', profile.certifications)

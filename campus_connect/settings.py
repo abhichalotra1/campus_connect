@@ -1,15 +1,25 @@
-from pathlib import Path
-from dotenv import load_dotenv
-load_dotenv()
 import os
+from pathlib import Path
+
+import dj_database_url
+from django.core.exceptions import ImproperlyConfigured
+from dotenv import load_dotenv
+
+load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# ── CORE ──────────────────────────────────────────────────────────────────
 SECRET_KEY = os.getenv('SECRET_KEY')
+if not SECRET_KEY:
+    raise ImproperlyConfigured('SECRET_KEY environment variable is not set.')
 
-DEBUG = False
+# Off unless explicitly turned on (set DEBUG=True in your local .env only)
+DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
+ALLOWED_HOSTS = [
+    h.strip() for h in os.getenv('ALLOWED_HOSTS', '127.0.0.1,localhost').split(',') if h.strip()
+]
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -25,7 +35,7 @@ INSTALLED_APPS = [
     'allauth.account',
 
     # Our apps
-    'accounts.apps.AccountsConfig',  # ← loads signals for welcome email
+    'accounts.apps.AccountsConfig',  # loads signals for welcome email
     'students',
     'placements',
     'notifications',
@@ -33,6 +43,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -63,12 +74,16 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'campus_connect.wsgi.application'
 
+# ── DATABASE ──────────────────────────────────────────────────────────────
+# SQLite locally; any DATABASE_URL (e.g. Render Postgres) overrides it.
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+if os.getenv('DATABASE_URL'):
+    DATABASES['default'] = dj_database_url.config(conn_max_age=600)
 
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
@@ -82,18 +97,26 @@ TIME_ZONE = 'Asia/Kolkata'
 USE_I18N = True
 USE_TZ = True
 
+# ── STATIC & MEDIA ────────────────────────────────────────────────────────
 STATIC_URL = 'static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-AUTH_USER_MODEL = 'accounts.User'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
+STORAGES = {
+    # Uploads. Replaced in the media-storage step (Cloudinary or persistent disk).
+    'default': {'BACKEND': 'django.core.files.storage.FileSystemStorage'},
+    'staticfiles': {'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage'},
+}
+
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+AUTH_USER_MODEL = 'accounts.User'
+
 LOGIN_URL = '/accounts/login/'
-SITE_ID = 2
+SITE_ID = 1
 
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
@@ -107,7 +130,7 @@ ACCOUNT_LOGIN_URL = '/accounts/login/'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/accounts/login/'
 
-# ── EMAIL (Gmail SMTP) ─────────────────────────────────────────────────────
+# ── EMAIL (Gmail SMTP) ────────────────────────────────────────────────────
 EMAIL_BACKEND       = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST          = 'smtp.gmail.com'
 EMAIL_PORT          = 587
@@ -115,11 +138,6 @@ EMAIL_USE_TLS       = True
 EMAIL_HOST_USER     = os.getenv('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
 DEFAULT_FROM_EMAIL  = f'Campus Connect <{os.getenv("EMAIL_HOST_USER")}>'
-
-# ── CUSTOM ERROR PAGES ────────────────────────────────────────────────────
-HANDLER404 = 'campus_connect.views.custom_404'
-HANDLER500 = 'campus_connect.views.custom_500'
-HANDLER403 = 'campus_connect.views.custom_403'
 
 # ── LOGGING ───────────────────────────────────────────────────────────────
 LOGGING = {
@@ -138,28 +156,22 @@ LOGGING = {
         },
     },
     'loggers': {
-        'accounts':      {'handlers': ['console'], 'level': 'INFO', 'propagate': False},
-        'placements':    {'handlers': ['console'], 'level': 'INFO', 'propagate': False},
-        'campus_connect':{'handlers': ['console'], 'level': 'INFO', 'propagate': False},
+        'accounts':       {'handlers': ['console'], 'level': 'INFO', 'propagate': False},
+        'placements':     {'handlers': ['console'], 'level': 'INFO', 'propagate': False},
+        'campus_connect': {'handlers': ['console'], 'level': 'INFO', 'propagate': False},
     },
 }
 
-import dj_database_url
-import os
-
-# Production Settings for Render
-if os.environ.get('RENDER'):
-    DEBUG = False
-    
-    RENDER_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
+# ── PRODUCTION (Render) ───────────────────────────────────────────────────
+if os.getenv('RENDER'):
+    RENDER_HOSTNAME = os.getenv('RENDER_EXTERNAL_HOSTNAME')
     if RENDER_HOSTNAME:
         ALLOWED_HOSTS.append(RENDER_HOSTNAME)
+        CSRF_TRUSTED_ORIGINS = [f'https://{RENDER_HOSTNAME}']
 
-    MIDDLEWARE.append('whitenoise.middleware.WhiteNoiseMiddleware')
-    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-    
-    DATABASES = {
-        'default': dj_database_url.config(conn_max_age=600)
+    # Render terminates HTTPS at its proxy; trust its forwarded-protocol header
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+    STORAGES['staticfiles'] = {
+        'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
     }
-    
-    DEFAULT_FILE_STORAGE = 'django.core.files.storage.InMemoryStorage'

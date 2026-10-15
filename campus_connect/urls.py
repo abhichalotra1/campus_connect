@@ -57,3 +57,6 @@ urlpatterns = [
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+handler403 = 'campus_connect.views.custom_403'
+handler404 = 'campus_connect.views.custom_404'
+handler500 = 'campus_connect.views.custom_500'
