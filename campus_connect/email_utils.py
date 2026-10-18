@@ -30,8 +30,8 @@ def _send(subject, template, context, to_email):
             to         = [to_email],
         )
         msg.attach_alternative(html_body, "text/html")
-        msg.send(fail_silently=True)
-        logger.info(f"[EMAIL] ✓ '{subject}' → {to_email}")
+        msg.send()  # queued by the async backend; delivery result is logged there
+        logger.info(f"[EMAIL] queued '{subject}' → {to_email}")
     except Exception as e:
         logger.error(f"[EMAIL] ✗ '{subject}' → {to_email} | Error: {e}")
 

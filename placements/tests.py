@@ -168,3 +168,44 @@ class RegistrationValidationTests(TestCase):
     def test_admin_role_cannot_be_self_assigned(self):
         self.post(role='admin')
         self.assertEqual(User.objects.get(username='newuser').role, 'student')
+
+
+class DriveExpiryTests(TestCase):
+    def setUp(self):
+        self.rec = make_user('rec', 'recruiter')
+        self.student = make_user('stu', 'student')
+        today = timezone.localdate()
+        mk = lambda company, days, status='active': PlacementDrive.objects.create(
+            posted_by=self.rec, company=company, role='Dev', description='d', location='X',
+            job_type='full_time', deadline=today + timedelta(days=days), status=status)
+        self.live = mk('LiveCo', 3)
+        self.today = mk('TodayCo', 0)
+        self.expired = mk('ExpiredCo', -1)            # still stored as 'active'
+        self.closed = mk('ClosedCo', 3, status='closed')
+
+    def test_open_queryset_excludes_expired_and_closed(self):
+        names = set(PlacementDrive.objects.open().values_list('company', flat=True))
+        self.assertEqual(names, {'LiveCo', 'TodayCo'})
+
+    def test_is_open_property(self):
+        self.assertTrue(self.live.is_open)
+        self.assertTrue(self.today.is_open)           # deadline day itself still counts
+        self.assertFalse(self.expired.is_open)
+        self.assertFalse(self.closed.is_open)
+
+    def test_drive_list_hides_expired_without_any_cleanup_job(self):
+        self.client.force_login(self.student)
+        resp = self.client.get(reverse('drive_list'))
+        self.assertContains(resp, 'LiveCo')
+        self.assertNotContains(resp, 'ExpiredCo')
+        self.assertNotContains(resp, 'ClosedCo')
+        self.expired.refresh_from_db()
+        self.assertEqual(self.expired.status, 'active')  # page load no longer writes to the DB
+
+    def test_cleanup_command_closes_expired(self):
+        from django.core.management import call_command
+        call_command('close_expired_drives', verbosity=0)
+        self.expired.refresh_from_db()
+        self.live.refresh_from_db()
+        self.assertEqual(self.expired.status, 'closed')
+        self.assertEqual(self.live.status, 'active')

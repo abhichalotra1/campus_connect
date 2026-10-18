@@ -5,7 +5,6 @@ Triggers welcome email automatically when a new user registers.
 """
 
 import logging
-import threading
 
 from django.db import transaction
 from django.db.models.signals import post_save
@@ -28,7 +27,5 @@ def _send_welcome(user):
 def send_welcome_on_register(sender, instance, created, **kwargs):
     """Fire welcome email only on first creation, not on profile updates."""
     if created and instance.email:
-        # Run after the DB commit, off the request thread, so signup never waits on SMTP
-        transaction.on_commit(
-            lambda: threading.Thread(target=_send_welcome, args=(instance,), daemon=True).start()
-        )
+        # Wait for the DB commit; the email backend delivers in the background
+        transaction.on_commit(lambda: _send_welcome(instance))

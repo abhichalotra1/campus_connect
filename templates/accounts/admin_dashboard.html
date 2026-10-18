@@ -261,7 +261,7 @@
           <td class="text-muted">{{ drive.posted_by.username }}</td>
           <td class="text-muted">{{ drive.deadline|date:"d M Y" }}</td>
           <td>
-            {% if drive.status == 'active' %}<span class="status-badge badge-active">Active</span>
+            {% if drive.is_open %}<span class="status-badge badge-active">Active</span>
             {% else %}<span class="status-badge badge-closed">Closed</span>{% endif %}
           </td>
           <td>

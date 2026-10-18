@@ -33,9 +33,7 @@ from campus_connect.email_utils import (
 
 @login_required
 def drive_list_view(request):
-    from .utils import close_expired_drives
-    close_expired_drives()
-    drives = PlacementDrive.objects.filter(status='active').order_by('-created_at')
+    drives = PlacementDrive.objects.open().order_by('-created_at')
 
     search   = request.GET.get('search', '')
     branch   = request.GET.get('branch', '')
@@ -89,7 +87,7 @@ def apply_view(request, pk):
         messages.error(request, 'Only students can apply to drives.')
         return redirect('drive_detail', pk=pk)
 
-    if drive.deadline < timezone.now().date():
+    if drive.deadline < timezone.localdate():
         messages.error(request, 'The deadline for this drive has passed!')
         return redirect('drive_detail', pk=pk)
 
@@ -226,7 +224,7 @@ def _build_drive_from_post(request):
         deadline = None
     if deadline is None:
         errors.append('Enter a valid application deadline.')
-    elif deadline < timezone.now().date():
+    elif deadline < timezone.localdate():
         errors.append('The deadline cannot be in the past.')
 
     logo = request.FILES.get('company_logo')
