@@ -4,7 +4,7 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('accounts', '0003_remove_user_last_active_at'),
+        ('accounts', '0004_auditlog'),
     ]
 
     operations = [

@@ -2,7 +2,7 @@ from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from accounts.models import AuditLog, User
-from students.models import StudentProfile
+from students.models import RecruiterProfile, StudentProfile
 
 
 def make_user(username, role='student', password='Pass12345!x', **extra):
@@ -85,12 +85,15 @@ class AdminAuditTests(TestCase):
         self.client.force_login(User.objects.get(username='boss'))
         self.client.post(reverse('admin_verify_recruiter', args=[self.recruiter.pk]),
                          {'action': 'approve', 'admin_remark': 'ok'})
-        self.recruiter.refresh_from_db()
-        self.assertTrue(self.recruiter.is_verified)
+        profile = self.recruiter.recruiterprofile
+        profile.refresh_from_db()
+        self.assertEqual(profile.verification_status, 'approved')
+        self.assertTrue(profile.is_verified)
         self.assertTrue(AuditLog.objects.filter(action='recruiter_approved', target='rec').exists())
 
     def test_non_admin_cannot_approve(self):
         self.client.force_login(User.objects.get(username='rec'))
         self.client.post(reverse('admin_verify_recruiter', args=[self.recruiter.pk]), {'action': 'approve'})
-        self.recruiter.refresh_from_db()
-        self.assertFalse(self.recruiter.is_verified)
+        profile, _ = RecruiterProfile.objects.get_or_create(user=self.recruiter)
+        self.assertFalse(profile.is_verified)
+        self.assertNotEqual(profile.verification_status, 'approved')
