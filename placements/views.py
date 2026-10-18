@@ -16,6 +16,7 @@ import math
 # ── MODELS IMPORT ──
 from .models import PlacementDrive, Application, Interview, Bookmark
 from students.models import StudentProfile
+from students.validators import validate_image
 from students.validators import validate_image_size
 from notifications.views import send_notification
 from campus_connect.email_utils import (
@@ -230,6 +231,12 @@ def _build_drive_from_post(request):
     logo = request.FILES.get('company_logo')
     if logo is None:
         errors.append('Company Logo is compulsory!')
+    else:
+        try:
+            validate_image(logo)
+        except ValidationError as exc:
+            errors.extend(exc.messages)
+            logo = None
 
     drive = PlacementDrive(
         posted_by=request.user, company_logo=logo, salary_amount=salary, salary_type=salary_type,
@@ -410,6 +417,14 @@ def edit_drive_view(request, pk):
         return redirect('drive_list')
 
     if request.method == 'POST':
+        if 'company_logo' in request.FILES:
+            try:
+                validate_image(request.FILES['company_logo'])
+            except ValidationError as exc:
+                for message in exc.messages:
+                    messages.error(request, message)
+                return render(request, 'placements/edit_drive.html', {'drive': drive})
+
         drive.company         = request.POST.get('company', drive.company)
         drive.role            = request.POST.get('role', drive.role)
         drive.description     = request.POST.get('description', drive.description)

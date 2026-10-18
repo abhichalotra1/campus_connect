@@ -278,3 +278,84 @@ class RejectedUploadTests(TestCase):
         resp = self.client.get(reverse('edit_profile'))
         self.assertContains(resp, 'accept=".pdf,application/pdf"')
         self.assertNotContains(resp, '.docx"')
+
+
+def png_bytes():
+    import io
+    from PIL import Image
+    buf = io.BytesIO()
+    Image.new('RGB', (4, 4), 'red').save(buf, 'PNG')
+    return buf.getvalue()
+
+
+class ImageUploadValidationTests(TestCase):
+    """Pictures must be real images: a Word file must never reach the storage service."""
+
+    def setUp(self):
+        self.user = make_user('stu', 'student')
+        StudentProfile.objects.create(user=self.user, branch='CSE')
+        self.client.force_login(self.user)
+
+    def post_pic(self, upload):
+        return self.client.post(reverse('edit_profile'), {'branch': 'CSE', 'profile_pic': upload})
+
+    def test_docx_as_picture_is_rejected(self):
+        resp = self.post_pic(SimpleUploadedFile('notes.docx', b'PK\x03\x04 fake', content_type='application/msword'))
+        self.assertContains(resp, 'Image must be a JPG, PNG, GIF or WebP file.')
+
+    def test_non_image_bytes_with_png_name_are_rejected(self):
+        resp = self.post_pic(SimpleUploadedFile('sneaky.png', b'PK\x03\x04 this is a zip', content_type='image/png'))
+        self.assertContains(resp, 'This file is not a valid image.')
+
+    def test_svg_is_rejected(self):
+        resp = self.post_pic(SimpleUploadedFile('x.svg', b'<svg onload="alert(1)"/>', content_type='image/svg+xml'))
+        self.assertContains(resp, 'JPG, PNG, GIF or WebP')
+
+    def test_oversized_image_is_rejected(self):
+        big = png_bytes() + b'0' * (2 * 1024 * 1024)
+        self.assertContains(self.post_pic(SimpleUploadedFile('big.png', big, content_type='image/png')),
+                            'smaller than 2 MB')
+
+    def test_real_png_is_accepted(self):
+        with tempfile.TemporaryDirectory() as tmp, override_settings(MEDIA_ROOT=tmp):
+            resp = self.post_pic(SimpleUploadedFile('me.png', png_bytes(), content_type='image/png'))
+            self.assertEqual(resp.status_code, 302)
+        self.assertTrue(StudentProfile.objects.get(user=self.user).profile_pic)
+
+
+from django.test import TransactionTestCase
+
+
+@override_settings(STORAGES=CLOUD_STORAGES)
+class StorageFailureTests(TransactionTestCase):
+    """A Cloudinary outage must give a friendly message, not a crashed page."""
+
+    def setUp(self):
+        cloudinary.config(cloud_name='democloud', api_key='k', api_secret='s')
+        self.user = make_user('stu', 'student')
+        StudentProfile.objects.create(user=self.user, branch='CSE')
+        self.client.force_login(self.user)
+
+    def test_upload_failure_redirects_back_with_message(self):
+        import cloudinary.exceptions
+        with mock.patch('cloudinary.uploader.upload', side_effect=cloudinary.exceptions.Error('boom')):
+            resp = self.client.post(reverse('edit_profile'), {
+                'branch': 'CSE',
+                'profile_pic': SimpleUploadedFile('me.png', png_bytes(), content_type='image/png')})
+            self.assertRedirects(resp, reverse('edit_profile'), fetch_redirect_response=False)
+            page = self.client.get(reverse('edit_profile'))
+        self.assertContains(page, 'We could not save your file right now')
+        self.assertFalse(StudentProfile.objects.get(user=self.user).profile_pic)
+
+    def test_upload_uses_a_timeout(self):
+        seen = {}
+
+        def fake_request(method, url, fields=None, headers=None, **kw):
+            seen.update(kw)
+            f = dict((k, v) for k, v in fields if k != 'file')
+            return FakeResponse({'public_id': f['public_id'], 'format': 'png', 'version': 1,
+                                 'resource_type': 'image', 'type': 'upload', 'signature': 'x'})
+
+        with mock.patch('cloudinary.uploader._http.request', fake_request):
+            CloudinaryMediaStorage().save('profile_pics/a.png', SimpleUploadedFile('a.png', png_bytes()))
+        self.assertEqual(seen.get('timeout'), 20)

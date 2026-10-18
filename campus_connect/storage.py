@@ -30,6 +30,12 @@ logger = logging.getLogger(__name__)
 # Upload folders whose files must not be linked directly
 PRIVATE_PREFIXES = ('resumes/',)
 
+UPLOAD_TIMEOUT = 20  # seconds; never let a slow Cloudinary hold a web worker hostage
+
+
+class StorageUnavailable(OSError):
+    """The file could not be stored (network down, bad credentials, file refused...)."""
+
 
 @deconstructible
 class CloudinaryMediaStorage(Storage):
@@ -65,18 +71,18 @@ class CloudinaryMediaStorage(Storage):
         name = self._norm(name)
         if hasattr(content, 'seek'):
             content.seek(0)
-        if self.is_private(name):
-            # raw files keep their extension inside the public_id
+        private = self.is_private(name)
+        public_id = name if private else self._public_id_and_format(name)[0]  # raw ids keep the extension
+        try:
             result = cloudinary.uploader.upload(
-                content, public_id=name, resource_type='raw',
-                overwrite=False, filename=posixpath.basename(name),
+                content, public_id=public_id, resource_type='raw' if private else 'image',
+                overwrite=False, filename=posixpath.basename(name), timeout=UPLOAD_TIMEOUT,
             )
+        except Exception as exc:  # SDK errors, network failures, rejected files
+            logger.exception('Cloudinary upload failed for %s', name)
+            raise StorageUnavailable('Could not store the uploaded file.') from exc
+        if private:
             return result['public_id']
-        public_id, _ = self._public_id_and_format(name)
-        result = cloudinary.uploader.upload(
-            content, public_id=public_id, resource_type='image',
-            overwrite=False, filename=posixpath.basename(name),
-        )
         return f"{result['public_id']}.{result['format']}"
 
     def exists(self, name):

@@ -3,7 +3,7 @@ from django.db import models
 from django.utils import timezone
 
 from accounts.models import User
-from .validators import validate_resume, validate_image_size
+from .validators import validate_resume, validate_image
 
 
 def default_passing_year():
@@ -37,7 +37,7 @@ class StudentProfile(models.Model):
     resume         = models.FileField(upload_to='resumes/', blank=True, null=True,
                                       validators=[validate_resume])
     profile_pic    = models.ImageField(upload_to='profile_pics/', blank=True, null=True,
-                                       validators=[validate_image_size])
+                                       validators=[validate_image])
     linkedin       = models.URLField(blank=True)
     github         = models.URLField(blank=True)
     created_at     = models.DateTimeField(auto_now_add=True)
@@ -88,7 +88,7 @@ class RecruiterProfile(models.Model):
     about                      = models.TextField(blank=True)
     linkedin                   = models.URLField(blank=True)
     profile_pic                = models.ImageField(upload_to='recruiter_pics/', blank=True, null=True,
-                                                   validators=[validate_image_size])
+                                                   validators=[validate_image])
 
     # ── Verification fields ──────────────────────────────
     verification_status        = models.CharField(
