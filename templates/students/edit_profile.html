@@ -232,8 +232,8 @@
         </div>
         
         <div class="form-group">
-          <label class="form-label">Resume (PDF)</label>
-          <input type="file" name="resume" class="form-control" accept=".pdf,.doc,.docx">
+          <label class="form-label">Resume (PDF only, max 2 MB)</label>
+          <input type="file" name="resume" class="form-control" accept=".pdf,application/pdf">
           {% if profile.resume %}
             <small class="file-hint">Current: <a href="{{ profile.resume.url }}" target="_blank">View Resume</a></small>
           {% endif %}

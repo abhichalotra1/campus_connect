@@ -1,3 +1,4 @@
+from django.db import models
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -8,11 +9,26 @@ from .models import StudentProfile, RecruiterProfile
 from placements.models import PlacementDrive, Application
 
 
+def _discard_unsaved_files(instance):
+    """Put back the saved files after a rejected upload.
+
+    Otherwise the re-rendered form would show the rejected file as the "current" one,
+    with a link to something that was never stored.
+    """
+    saved = type(instance).objects.filter(pk=instance.pk).first()
+    for field in instance._meta.get_fields():
+        if isinstance(field, models.FileField):
+            current = getattr(instance, field.name)
+            if current and not current._committed:
+                setattr(instance, field.name, getattr(saved, field.name) if saved else None)
+
+
 def _save_validated(request, profile):
     """Run model validators, then save. Returns True on success."""
     try:
         profile.full_clean()
     except ValidationError as e:
+        _discard_unsaved_files(profile)
         for field, errors in e.message_dict.items():
             label = '' if field == '__all__' else field.replace('_', ' ').title() + ': '
             for err in errors:

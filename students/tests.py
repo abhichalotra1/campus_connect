@@ -239,3 +239,42 @@ class ModelFieldUploadTests(TestCase):
         self.assertEqual(len(calls), 2)
         self.assertTrue(profile.resume.url.startswith('/students/resume/resumes/'))
         self.assertTrue(profile.profile_pic.url.startswith('https://res.cloudinary.com/democloud/image/upload/'))
+
+
+class RejectedUploadTests(TestCase):
+    """A rejected resume must not leave a bogus 'Current: View Resume' link behind."""
+
+    def setUp(self):
+        self.user = make_user('stu', 'student')
+        self.profile = StudentProfile.objects.create(user=self.user, branch='CSE')
+        self.client.force_login(self.user)
+
+    def post_resume(self, upload):
+        return self.client.post(reverse('edit_profile'), {'branch': 'CSE', 'resume': upload})
+
+    def test_docx_is_rejected_with_message_and_no_phantom_link(self):
+        docx = SimpleUploadedFile('My Resume.docx', b'PK\x03\x04 fake', content_type=
+                                  'application/vnd.openxmlformats-officedocument.wordprocessingml.document')
+        resp = self.post_resume(docx)
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'Resume must be a PDF file.')
+        self.assertNotContains(resp, 'View Resume')
+        self.assertNotContains(resp, 'My%20Resume.docx')
+        self.profile.refresh_from_db()
+        self.assertFalse(self.profile.resume)
+
+    def test_rejected_upload_keeps_the_previously_saved_resume(self):
+        StudentProfile.objects.filter(pk=self.profile.pk).update(resume='resumes/old.pdf')
+        resp = self.post_resume(SimpleUploadedFile('new.docx', b'PK fake'))
+        self.assertContains(resp, 'Resume must be a PDF file.')
+        self.assertContains(resp, 'resumes/old.pdf')
+        self.assertNotContains(resp, 'new.docx')
+
+    def test_oversized_pdf_is_rejected(self):
+        big = SimpleUploadedFile('cv.pdf', b'%PDF-1.4' + b'0' * (2 * 1024 * 1024 + 1), content_type='application/pdf')
+        self.assertContains(self.post_resume(big), 'smaller than 2 MB')
+
+    def test_picker_only_offers_pdf(self):
+        resp = self.client.get(reverse('edit_profile'))
+        self.assertContains(resp, 'accept=".pdf,application/pdf"')
+        self.assertNotContains(resp, '.docx"')
