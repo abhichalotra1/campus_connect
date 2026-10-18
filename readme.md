@@ -19,7 +19,7 @@ Django 6, SQLite (local) / PostgreSQL (Render), django-allauth (account only, us
 ```bash
 git clone <your-repo-url> campus_connect
 cd campus_connect
-git checkout lite
+git checkout main
 
 python -m venv .venv
 # Windows:  .venv\Scripts\activate

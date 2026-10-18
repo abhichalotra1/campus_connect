@@ -130,6 +130,7 @@
     <!-- Email Login Form -->
     <form method="POST">
       {% csrf_token %}
+      {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
       {% if form.errors %}
         <div class="cc-alert error">
           <i class="fas fa-exclamation-circle"></i> Invalid username or password.

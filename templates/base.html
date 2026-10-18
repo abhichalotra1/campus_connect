@@ -281,7 +281,7 @@ main.cc-main {
       <li><a class="nav-user" href="{% url 'profile' %}"><i class="fas fa-user"></i> {{ user.username }}</a></li>
       <li><a class="nav-user" href="{% url 'edit_profile' %}"><i class="fa-solid fa-pen"></i> Edit Profile</a></li>
       <li><a class="nav-user" href="{% url 'password_change' %}"><i class="fa-solid fa-key"></i> Change Password</a></li>
-      <li><a class="nav-user" href="{% url 'logout' %}"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+      <li><form method="post" action="{% url 'logout' %}" style="margin:0;display:inline;">{% csrf_token %}<button type="submit" class="nav-user" style="background:none;border:0;cursor:pointer;font:inherit;color:inherit;"><i class="fas fa-sign-out-alt"></i> Logout</button></form></li>
     </ul>
   {% else %}
     <ul class="nav-links"></ul>

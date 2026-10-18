@@ -255,9 +255,12 @@ body { font-family: var(--font-body); background: var(--bg); color: var(--ink); 
       <div class="user-name">{{ user.get_full_name|default:user.username }}</div>
       <div class="user-role">{{ user.role|capfirst }}</div>
     </div>
-    <a class="logout-btn" href="{% url 'logout' %}" title="Sign out">
-      <i class="fa-solid fa-arrow-right-from-bracket"></i>
-    </a>
+    <form method="post" action="{% url 'logout' %}" style="margin:0;flex-shrink:0;">
+      {% csrf_token %}
+      <button type="submit" class="logout-btn" title="Sign out" aria-label="Sign out">
+        <i class="fa-solid fa-arrow-right-from-bracket"></i>
+      </button>
+    </form>
   </div>
 </aside>
 <div class="sidebar-overlay" id="overlay" onclick="closeSidebar()"></div>

@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Too many attempts – Campus Connect</title>
+  <style>
+    body{font-family:system-ui,sans-serif;display:flex;min-height:100vh;align-items:center;justify-content:center;margin:0;background:#0f1020;color:#e8e8f4}
+    .box{max-width:420px;padding:32px;text-align:center}
+    h1{font-size:22px;margin:0 0 12px}
+    p{color:#a5a5c0;line-height:1.6}
+    a{color:#8b8dff}
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h1>Too many failed login attempts</h1>
+    <p>For your security, sign-in is paused for 15 minutes. Please try again later, or <a href="{% url 'password_reset' %}">reset your password</a>.</p>
+  </div>
+</body>
+</html>

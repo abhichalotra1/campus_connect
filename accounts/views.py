@@ -3,9 +3,12 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
+from django.utils.http import url_has_allowed_host_and_scheme
+from django.views.decorators.http import require_POST
 from django.db.models import Count, Q
 from django.db.models.functions import TruncMonth
 
+from .audit import log_action
 from .models import User
 from placements.models import PlacementDrive, Application, Interview
 from students.models import StudentProfile, RecruiterProfile
@@ -58,12 +61,22 @@ def register_view(request):
     return render(request, 'accounts/register.html')
 
 
+def _safe_next(request):
+    """Return the ?next= target only if it points back at this site."""
+    target = request.POST.get('next') or request.GET.get('next') or ''
+    if target and url_has_allowed_host_and_scheme(
+        target, allowed_hosts={request.get_host()}, require_https=request.is_secure()
+    ):
+        return target
+    return ''
+
+
 def login_view(request):
     if request.user.is_authenticated:
         return redirect('dashboard')
     if request.method == 'POST':
-        username = request.POST['username']
-        password = request.POST['password']
+        username = request.POST.get('username', '').strip()
+        password = request.POST.get('password', '')
         user = authenticate(request, username=username, password=password)
 
         if user is not None:
@@ -71,14 +84,15 @@ def login_view(request):
                 messages.error(request, 'Your account has been deactivated by the administrator.')
                 return redirect('login')
             login(request, user)
-            messages.success(request, f'Welcome back, {user.first_name}!')
-            return redirect('dashboard')
+            messages.success(request, f'Welcome back, {user.first_name or user.username}!')
+            return redirect(_safe_next(request) or 'dashboard')
         else:
             messages.error(request, 'Invalid username or password!')
 
-    return render(request, 'accounts/login.html')
+    return render(request, 'accounts/login.html', {'next': _safe_next(request)})
 
 
+@require_POST
 def logout_view(request):
     logout(request)
     messages.success(request, 'Logged out successfully!')
@@ -121,14 +135,18 @@ def dashboard_view(request):
         apps = Application.objects.filter(drive__in=my_drives)
         context['applications_count'] = apps.count()
         context['shortlisted_count'] = apps.filter(status='shortlisted').count()
-        context['interviews_count'] = apps.filter(status='shortlisted').count()
+        context['interviews_count'] = Interview.objects.filter(
+            application__in=apps, scheduled_at__gte=timezone.now()
+        ).count()
         context['my_drives'] = my_drives.order_by('-created_at')[:5]
 
     elif user.role == 'admin':
         apps = Application.objects.all()
         context['applications_count'] = apps.count()
         context['shortlisted_count'] = apps.filter(status='shortlisted').count()
-        context['interviews_count'] = apps.filter(status='shortlisted').count()
+        context['interviews_count'] = Interview.objects.filter(
+            scheduled_at__gte=timezone.now()
+        ).count()
         context['total_students'] = User.objects.filter(role='student').count()
         context['total_recruiters'] = User.objects.filter(role='recruiter').count()
 
@@ -278,6 +296,12 @@ def stats_view(request):
     return render(request, 'accounts/stats.html', context)
 
 
+def _csv_safe(value):
+    """Neutralise spreadsheet formulas in user-supplied text (CSV injection)."""
+    text = '' if value is None else str(value)
+    return "'" + text if text[:1] in ('=', '+', '-', '@', '\t', '\r') else text
+
+
 @login_required
 def export_students_csv(request):
     if request.user.role != 'admin':
@@ -285,6 +309,8 @@ def export_students_csv(request):
 
     import csv
     from django.http import HttpResponse
+
+    log_action(request, 'export_students_csv', details='Full student CSV export')
 
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = 'attachment; filename="students.csv"'
@@ -295,14 +321,14 @@ def export_students_csv(request):
     for user in User.objects.filter(role='student').select_related('studentprofile'):
         try:
             p = user.studentprofile
-            writer.writerow([
+            writer.writerow([_csv_safe(c) for c in [
                 user.get_full_name(), user.email, user.username,
                 p.branch, p.cgpa, p.roll_number, p.passing_year,
                 p.skills, p.linkedin, p.github
-            ])
+            ]])
         except StudentProfile.DoesNotExist:
-            writer.writerow([user.get_full_name(), user.email, user.username,
-                             '', '', '', '', '', '', ''])
+            writer.writerow([_csv_safe(c) for c in [user.get_full_name(), user.email, user.username,
+                             '', '', '', '', '', '', '']])
     return response
 
 
@@ -399,6 +425,7 @@ def admin_verify_recruiter(request, user_id):
                 message='Your recruiter account has been verified. You can now post placement drives.',
                 notif_type='general'
             )
+            log_action(request, 'recruiter_approved', recruiter_user.username, admin_remark)
             messages.success(request, f'{recruiter_user.username} has been verified.')
 
         elif action == 'reject':
@@ -415,6 +442,7 @@ def admin_verify_recruiter(request, user_id):
                 message=f'Your verification request was not approved. Reason: {admin_remark}',
                 notif_type='general'
             )
+            log_action(request, 'recruiter_rejected', recruiter_user.username, admin_remark)
             messages.warning(request, f'{recruiter_user.username} verification rejected.')
 
     return redirect('admin_dashboard')
@@ -462,6 +490,8 @@ def admin_toggle_user_status(request, user_id):
         # Toggle the is_active status
         target_user.is_active = not target_user.is_active
         target_user.save()
+        log_action(request, 'user_activated' if target_user.is_active else 'user_deactivated',
+                   target_user.username)
 
         if target_user.is_active:
             messages.success(request, f'User {target_user.username} has been reactivated.')

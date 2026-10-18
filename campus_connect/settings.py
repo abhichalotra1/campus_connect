@@ -1,4 +1,5 @@
 import os
+from datetime import timedelta
 from pathlib import Path
 
 import dj_database_url
@@ -33,6 +34,7 @@ INSTALLED_APPS = [
     # Allauth
     'allauth',
     'allauth.account',
+    'axes',  # login throttling
 
     # Our apps
     'accounts.apps.AccountsConfig',  # loads signals for welcome email
@@ -51,6 +53,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'allauth.account.middleware.AccountMiddleware',
+    'axes.middleware.AxesMiddleware',  # keep last
 ]
 
 ROOT_URLCONF = 'campus_connect.urls'
@@ -119,6 +122,7 @@ LOGIN_URL = '/accounts/login/'
 SITE_ID = 1
 
 AUTHENTICATION_BACKENDS = [
+    'axes.backends.AxesStandaloneBackend',  # must be first
     'django.contrib.auth.backends.ModelBackend',
     'allauth.account.auth_backends.AuthenticationBackend',
 ]
@@ -129,6 +133,15 @@ ACCOUNT_SIGNUP_FIELDS = ['email*', 'username*', 'password1*', 'password2*']
 ACCOUNT_LOGIN_URL = '/accounts/login/'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/accounts/login/'
+
+# ── LOGIN THROTTLING (django-axes) ────────────────────────────────────────
+# Lock a username+IP pair after 5 failed logins for 15 minutes. Locking on the
+# pair (not username alone) stops an attacker from locking real users out.
+AXES_FAILURE_LIMIT = 5
+AXES_COOLOFF_TIME = timedelta(minutes=15)
+AXES_LOCKOUT_PARAMETERS = [['ip_address', 'username']]
+AXES_RESET_ON_SUCCESS = True
+AXES_LOCKOUT_TEMPLATE = 'lockout.html'
 
 # ── EMAIL (Gmail SMTP) ────────────────────────────────────────────────────
 EMAIL_BACKEND       = 'django.core.mail.backends.smtp.EmailBackend'
@@ -161,7 +174,7 @@ LOGGING = {
         'placements':     {'handlers': ['console'], 'level': 'INFO', 'propagate': False},
         'campus_connect': {'handlers': ['console'], 'level': 'INFO', 'propagate': False},
     },
-        'root': {'handlers': ['console'], 'level': 'WARNING'},
+    'root': {'handlers': ['console'], 'level': 'WARNING'},
 }
 
 # ── PRODUCTION (Render) ───────────────────────────────────────────────────
@@ -176,6 +189,10 @@ if os.getenv('RENDER'):
 
     # Render terminates HTTPS at its proxy; trust its forwarded-protocol header
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+    # Throttle by the real client IP, not Render's proxy (one proxy hop)
+    AXES_IPWARE_PROXY_COUNT = 1
+    AXES_IPWARE_META_PRECEDENCE_ORDER = ['HTTP_X_FORWARDED_FOR', 'REMOTE_ADDR']
 
     SECURE_SSL_REDIRECT = True
     SESSION_COOKIE_SECURE = True

@@ -1,6 +1,8 @@
 import json
 from django.http import JsonResponse
 from django.utils import timezone
+from django.utils.dateparse import parse_datetime
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 from accounts.decorators import verified_recruiter_required
 from accounts.models import User 
@@ -75,11 +77,12 @@ def drive_detail_view(request, pk):
 
 
 @login_required
+@require_POST
 def apply_view(request, pk):
     drive = get_object_or_404(PlacementDrive, pk=pk)
 
-    if request.method != 'POST':
-        messages.error(request, "Invalid application method!")
+    if request.user.role != 'student':
+        messages.error(request, 'Only students can apply to drives.')
         return redirect('drive_detail', pk=pk)
 
     if drive.deadline < timezone.now().date():
@@ -224,10 +227,20 @@ def schedule_interview_view(request, app_id):
         messages.error(request, 'Access denied!')
         return redirect('dashboard')
 
-    application = get_object_or_404(Application, pk=app_id)
+    application = get_object_or_404(Application.objects.select_related('drive'), pk=app_id)
+
+    # Recruiters may only schedule interviews for applicants to their own drives
+    if request.user.role != 'admin' and application.drive.posted_by != request.user:
+        messages.error(request, "You can only schedule interviews for your own drives.")
+        return redirect('recruiter_applicants')
 
     if request.method == 'POST':
-        scheduled_at = request.POST['scheduled_at']
+        scheduled_at = parse_datetime(request.POST.get('scheduled_at', '').strip())
+        if scheduled_at is None:
+            messages.error(request, 'Please choose a valid date and time for the interview.')
+            return render(request, 'placements/schedule_interview.html', {'application': application})
+        if timezone.is_naive(scheduled_at):
+            scheduled_at = timezone.make_aware(scheduled_at)
         location     = request.POST.get('location', '')
         meeting_link = request.POST.get('meeting_link', '')
         notes        = request.POST.get('notes', '')
@@ -243,24 +256,25 @@ def schedule_interview_view(request, app_id):
             }
         )
 
+        when = timezone.localtime(scheduled_at).strftime('%d %b %Y, %I:%M %p')
         send_notification(
             user=application.student,
             title=f'Interview Scheduled - {application.drive.company}',
-            message=f'Your interview for {application.drive.role} at {application.drive.company} is scheduled on {scheduled_at}.',
+            message=f'Your interview for {application.drive.role} at {application.drive.company} is scheduled on {when}.',
             notif_type='general'
         )
 
         send_interview_email(
             student=application.student,
             drive=application.drive,
-            scheduled_at=scheduled_at,
+            scheduled_at=when,
             location=location,
             meeting_link=meeting_link,
             notes=notes,
         )
 
         messages.success(request, 'Interview scheduled successfully!')
-        return redirect('admin_dashboard')
+        return redirect('admin_dashboard' if request.user.role == 'admin' else 'recruiter_applicants')
 
     return render(request, 'placements/schedule_interview.html', {
         'application': application
@@ -272,13 +286,17 @@ def recruiter_applicants_view(request):
     if request.user.role not in ['recruiter', 'admin']:
         return redirect('drive_list')
 
-    my_drives         = PlacementDrive.objects.filter(posted_by=request.user)
+    # Admins can review applicants for every drive; recruiters only their own
+    if request.user.role == 'admin':
+        my_drives = PlacementDrive.objects.all().order_by('-created_at')
+    else:
+        my_drives = PlacementDrive.objects.filter(posted_by=request.user).order_by('-created_at')
     selected_drive_id = request.GET.get('drive')
     applications      = []
     selected_drive    = None
 
     if selected_drive_id:
-        selected_drive = get_object_or_404(PlacementDrive, pk=selected_drive_id, posted_by=request.user)
+        selected_drive = get_object_or_404(my_drives, pk=selected_drive_id)
         applications   = Application.objects.filter(drive=selected_drive).select_related('student', 'student__studentprofile')
 
     return render(request, 'placements/recruiter_applicants.html', {
@@ -373,6 +391,7 @@ def saved_jobs_view(request):
     })
 
 @login_required
+@require_POST
 def save_drive_view(request, pk):
     drive = get_object_or_404(PlacementDrive, pk=pk)
     
@@ -390,6 +409,7 @@ def save_drive_view(request, pk):
     return redirect('drive_detail', pk=pk)
 
 @login_required
+@require_POST
 def unsave_drive_view(request, pk):
     drive = get_object_or_404(PlacementDrive, pk=pk)
     
@@ -403,4 +423,9 @@ def unsave_drive_view(request, pk):
     else:
         messages.info(request, 'This job was not in your saved list.')
         
-    return redirect(request.META.get('HTTP_REFERER', 'saved_jobs'))
+    referer = request.META.get('HTTP_REFERER', '')
+    if referer and url_has_allowed_host_and_scheme(
+        referer, allowed_hosts={request.get_host()}, require_https=request.is_secure()
+    ):
+        return redirect(referer)
+    return redirect('saved_jobs')
