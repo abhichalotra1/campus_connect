@@ -216,8 +216,8 @@
           </div>
           <div class="info-row">
             <span class="info-key">Status</span>
-            <span class="info-val {% if drive.status == 'active' %}active{% else %}closed{% endif %}">
-              {{ drive.get_status_display }}
+            <span class="info-val {% if drive.is_open %}active{% else %}closed{% endif %}">
+              {% if drive.is_open %}Active{% else %}Closed{% endif %}
             </span>
           </div>
         </div>

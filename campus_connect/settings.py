@@ -144,7 +144,12 @@ AXES_RESET_ON_SUCCESS = True
 AXES_LOCKOUT_TEMPLATE = 'lockout.html'
 
 # ── EMAIL (Gmail SMTP) ────────────────────────────────────────────────────
-EMAIL_BACKEND       = 'django.core.mail.backends.smtp.EmailBackend'
+# With credentials: send via Gmail SMTP in a background thread (never blocks a request).
+# Without them (local dev): just print emails to the console.
+if os.getenv('EMAIL_HOST_USER') and os.getenv('EMAIL_HOST_PASSWORD'):
+    EMAIL_BACKEND = 'campus_connect.mail.AsyncSMTPEmailBackend'
+else:
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 EMAIL_HOST          = 'smtp.gmail.com'
 EMAIL_PORT          = 587
 EMAIL_USE_TLS       = True

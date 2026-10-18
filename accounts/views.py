@@ -161,7 +161,7 @@ def dashboard_view(request):
     user = request.user
     context = {'user': user}
 
-    open_drives = PlacementDrive.objects.filter(status='active')
+    open_drives = PlacementDrive.objects.open()
     context['open_drives_count'] = open_drives.count()
     context['recent_drives'] = open_drives.order_by('-created_at')[:5]
 
@@ -304,7 +304,7 @@ def stats_view(request):
         my_apps = Application.objects.filter(drive__in=my_drives)
 
         context['total_drives'] = my_drives.count()
-        context['active_drives'] = my_drives.filter(status='active').count()
+        context['active_drives'] = my_drives.open().count()
         context['total_applicants'] = my_apps.count()
         context['shortlisted'] = my_apps.filter(status='shortlisted').count()
         context['selected'] = my_apps.filter(status='selected').count()

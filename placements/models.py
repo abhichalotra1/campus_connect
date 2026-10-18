@@ -1,5 +1,17 @@
 from django.db import models
+from django.utils import timezone
 from accounts.models import User
+
+
+class PlacementDriveQuerySet(models.QuerySet):
+    def open(self):
+        """Drives still accepting applications: active AND not past their deadline.
+
+        Computed at read time, so an expired drive disappears the moment its deadline
+        passes without needing a job to flip its stored status.
+        """
+        return self.filter(status='active', deadline__gte=timezone.localdate())
+
 
 class PlacementDrive(models.Model):
     JOB_TYPE_CHOICES = (
@@ -47,8 +59,15 @@ class PlacementDrive(models.Model):
     status          = models.CharField(max_length=10, choices=STATUS_CHOICES, default='active')
     created_at      = models.DateTimeField(auto_now_add=True)
 
+    objects = PlacementDriveQuerySet.as_manager()
+
     def __str__(self):
         return f"{self.company} - {self.role}"
+
+    @property
+    def is_open(self):
+        """True while the drive is active and its deadline has not passed."""
+        return self.status == 'active' and self.deadline >= timezone.localdate()
 
     # Helper property to easily display the formatted salary in templates
     @property

@@ -128,7 +128,7 @@
           <span><i class="fa-solid fa-indian-rupee-sign"></i> {{ drive.formatted_salary }}</span>
           <span><i class="fa-solid fa-users"></i> {{ drive.application_set.count }} Applicants</span>
           <span><i class="fa-solid fa-calendar"></i> Deadline: {{ drive.deadline|date:"M d, Y" }}</span>
-          {% if drive.status == 'active' %}
+          {% if drive.is_open %}
             <span class="tag tag-active">Active</span>
           {% else %}
             <span class="tag tag-closed">Closed</span>

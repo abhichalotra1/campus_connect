@@ -57,6 +57,8 @@ python manage.py shell -c "from accounts.models import User; User.objects.filter
 
 ## Deploy on Render
 
+Full checklist: see [DEPLOY.md](DEPLOY.md).
+
 - Build command: `./build.sh`
 - Start command: `gunicorn campus_connect.wsgi`
 - Set the environment variables above in the Render dashboard.
