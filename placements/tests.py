@@ -42,7 +42,7 @@ class PlacementSecurityTests(TestCase):
         self.login('rec_a')
         resp = self.client.post(reverse('schedule_interview', args=[self.app.pk]),
                                 {'scheduled_at': '2030-01-01T10:00', 'location': 'Room 1'})
-        self.assertRedirects(resp, reverse('recruiter_applicants'), fetch_redirect_response=False)
+        self.assertRedirects(resp, f"{reverse('recruiter_applicants')}?drive={self.drive.pk}", fetch_redirect_response=False)
         self.assertEqual(Interview.objects.count(), 1)
 
     def test_admin_can_schedule_interview(self):
@@ -126,3 +126,45 @@ class PlacementSecurityTests(TestCase):
         self.client.post(reverse('update_application', args=[self.app.pk]), {'status': 'shortlisted'})
         self.app.refresh_from_db()
         self.assertEqual(self.app.status, 'shortlisted')
+
+
+class InterviewValidationTests(TestCase):
+    def setUp(self):
+        self.rec = make_user('rec', 'recruiter')
+        stu = make_user('stu', 'student')
+        drive = PlacementDrive.objects.create(
+            posted_by=self.rec, company='Acme', role='Dev', description='d', location='X',
+            job_type='full_time', deadline=timezone.now().date() + timedelta(days=5))
+        self.app = Application.objects.create(student=stu, drive=drive)
+        self.client.force_login(self.rec)
+
+    def test_past_interview_time_rejected(self):
+        resp = self.client.post(reverse('schedule_interview', args=[self.app.pk]),
+                                {'scheduled_at': '2001-01-01T10:00'})
+        self.assertEqual(resp.status_code, 200)
+        self.assertFalse(Interview.objects.exists())
+
+
+class RegistrationValidationTests(TestCase):
+    def post(self, **over):
+        data = {'username': 'newuser', 'email': 'new@example.com', 'password1': 'Str0ng!Pass-77',
+                'password2': 'Str0ng!Pass-77', 'first_name': 'N', 'last_name': 'U', 'role': 'student'}
+        data.update(over)
+        return self.client.post(reverse('register'), data)
+
+    def test_valid_registration(self):
+        self.assertEqual(self.post().status_code, 302)
+        self.assertTrue(User.objects.filter(username='newuser').exists())
+
+    def test_weak_password_rejected(self):
+        self.assertEqual(self.post(password1='12345678', password2='12345678').status_code, 200)
+        self.assertFalse(User.objects.filter(username='newuser').exists())
+
+    def test_duplicate_email_rejected(self):
+        make_user('other', 'student')
+        self.post(email='other@example.com')
+        self.assertFalse(User.objects.filter(username='newuser').exists())
+
+    def test_admin_role_cannot_be_self_assigned(self):
+        self.post(role='admin')
+        self.assertEqual(User.objects.get(username='newuser').role, 'student')

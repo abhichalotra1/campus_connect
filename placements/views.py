@@ -1,18 +1,22 @@
 import json
 from django.http import JsonResponse
 from django.utils import timezone
-from django.utils.dateparse import parse_datetime
-from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 from accounts.decorators import verified_recruiter_required
 from accounts.models import User 
 from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import ValidationError
+from django.utils.dateparse import parse_date, parse_datetime
+from django.utils.http import url_has_allowed_host_and_scheme
+import math
 
 # ── MODELS IMPORT ──
 from .models import PlacementDrive, Application, Interview, Bookmark
 from students.models import StudentProfile
+from students.validators import validate_image_size
 from notifications.views import send_notification
 from campus_connect.email_utils import (
     send_application_email,
@@ -168,36 +172,92 @@ def post_drive_view(request):
         return redirect('drive_list')
 
     if request.method == 'POST':
-        try:
-            min_cgpa      = float(request.POST.get('min_cgpa', 0.0))
-            salary_amount = float(request.POST.get('salary_amount', 0.0))
-        except (ValueError, TypeError):
-            messages.error(request, 'Please enter valid numbers for CGPA and Salary.')
+        drive, errors = _build_drive_from_post(request)
+        if errors:
+            for err in errors:
+                messages.error(request, err)
             return render(request, 'placements/post_drive.html')
-
-        if 'company_logo' not in request.FILES:
-            messages.error(request, 'Company Logo is compulsory!')
-            return render(request, 'placements/post_drive.html')
-
-        PlacementDrive.objects.create(
-            posted_by       = request.user,
-            company         = request.POST.get('company'),
-            company_logo    = request.FILES['company_logo'],
-            role            = request.POST.get('role'),
-            description     = request.POST.get('description'),
-            location        = request.POST.get('location'),
-            salary_amount   = salary_amount,
-            salary_type     = request.POST.get('salary_type'),
-            job_type        = request.POST.get('job_type'),
-            eligible_branch = request.POST.get('eligible_branch'),
-            min_cgpa        = min_cgpa,
-            skills_required = request.POST.get('skills_required', ''),
-            deadline        = request.POST.get('deadline'),
-        )
+        drive.save()
         messages.success(request, 'Placement drive posted successfully!')
         return redirect('recruiter_dashboard')
 
     return render(request, 'placements/post_drive.html')
+
+
+def _parse_finite_float(raw):
+    """Return a finite float, or None if raw is not one (rejects 'nan'/'inf')."""
+    try:
+        value = float(raw)
+    except (TypeError, ValueError):
+        return None
+    return value if math.isfinite(value) else None
+
+
+def _build_drive_from_post(request):
+    """Validate the post-drive form. Returns (unsaved PlacementDrive, [error strings])."""
+    post = request.POST
+    errors = []
+
+    text = {name: post.get(name, '').strip() for name in ('company', 'role', 'description', 'location')}
+    skills = post.get('skills_required', '').strip()
+    job_type = post.get('job_type', '')
+    branch = post.get('eligible_branch', '')
+    salary_type = post.get('salary_type', '')
+
+    min_cgpa = _parse_finite_float(post.get('min_cgpa', '0') or '0')
+    if min_cgpa is None or not 0 <= min_cgpa <= 10:
+        errors.append('Minimum CGPA must be a number between 0 and 10.')
+        min_cgpa = 0.0
+
+    raw_salary = post.get('salary_amount', '').strip()
+    if salary_type == 'not_disclosed' and raw_salary == '':
+        salary = 0.0  # keeps formatted_salary showing "Not Disclosed"
+    else:
+        salary = _parse_finite_float(raw_salary)
+        if salary is None or salary < 0:
+            errors.append('Enter a valid salary amount (0 or more).')
+            salary = 0.0
+
+    deadline = None
+    raw_deadline = post.get('deadline', '').strip()
+    try:
+        deadline = parse_date(raw_deadline)  # None if wrong format, ValueError if impossible date
+    except ValueError:
+        deadline = None
+    if deadline is None:
+        errors.append('Enter a valid application deadline.')
+    elif deadline < timezone.now().date():
+        errors.append('The deadline cannot be in the past.')
+
+    logo = request.FILES.get('company_logo')
+    if logo is None:
+        errors.append('Company Logo is compulsory!')
+
+    drive = PlacementDrive(
+        posted_by=request.user, company_logo=logo, salary_amount=salary, salary_type=salary_type,
+        job_type=job_type, eligible_branch=branch, min_cgpa=min_cgpa, skills_required=skills,
+        deadline=deadline, **text,
+    )
+
+    # Let the model check required text, lengths and the choice fields. Fields already
+    # reported above are excluded so the user doesn't see the same problem twice.
+    exclude = ['posted_by', 'min_cgpa', 'salary_amount', 'deadline', 'company_logo', 'status']
+    try:
+        drive.full_clean(exclude=exclude)
+    except ValidationError as exc:
+        for field, msgs in exc.message_dict.items():
+            label = PlacementDrive._meta.get_field(field).verbose_name.capitalize() if field != '__all__' else ''
+            for msg in msgs:
+                errors.append(f'{label}: {msg}' if label else msg)
+
+    if logo is not None:
+        try:
+            validate_image_size(logo)
+        except ValidationError as exc:
+            errors.extend(exc.messages)
+
+    return drive, errors
+
 
 @login_required
 def my_interviews_view(request):
@@ -235,15 +295,36 @@ def schedule_interview_view(request, app_id):
         return redirect('recruiter_applicants')
 
     if request.method == 'POST':
-        scheduled_at = parse_datetime(request.POST.get('scheduled_at', '').strip())
+        location     = request.POST.get('location', '').strip()
+        meeting_link = request.POST.get('meeting_link', '').strip()
+        notes        = request.POST.get('notes', '').strip()
+
+        try:
+            scheduled_at = parse_datetime(request.POST.get('scheduled_at', '').strip())
+        except ValueError:
+            scheduled_at = None
+
+        error = None
         if scheduled_at is None:
-            messages.error(request, 'Please choose a valid date and time for the interview.')
+            error = 'Please choose a valid interview date and time.'
+        else:
+            if timezone.is_naive(scheduled_at):
+                scheduled_at = timezone.make_aware(scheduled_at)
+            if scheduled_at <= timezone.now():
+                error = 'The interview time must be in the future.'
+
+        if error is None:
+            interview = Interview(application=application, scheduled_at=scheduled_at, location=location,
+                                  meeting_link=meeting_link, notes=notes, status='scheduled')
+            try:
+                interview.full_clean(exclude=['application'])
+            except ValidationError as exc:
+                error = ' '.join(f'{f.replace("_", " ").title()}: {m}'
+                                 for f, msgs in exc.message_dict.items() for m in msgs)
+
+        if error:
+            messages.error(request, error)
             return render(request, 'placements/schedule_interview.html', {'application': application})
-        if timezone.is_naive(scheduled_at):
-            scheduled_at = timezone.make_aware(scheduled_at)
-        location     = request.POST.get('location', '')
-        meeting_link = request.POST.get('meeting_link', '')
-        notes        = request.POST.get('notes', '')
 
         Interview.objects.update_or_create(
             application=application,
@@ -274,7 +355,9 @@ def schedule_interview_view(request, app_id):
         )
 
         messages.success(request, 'Interview scheduled successfully!')
-        return redirect('admin_dashboard' if request.user.role == 'admin' else 'recruiter_applicants')
+        if request.user.role == 'admin':
+            return redirect('admin_dashboard')
+        return redirect(f"{reverse('recruiter_applicants')}?drive={application.drive_id}")
 
     return render(request, 'placements/schedule_interview.html', {
         'application': application
