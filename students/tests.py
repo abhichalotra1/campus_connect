@@ -88,6 +88,31 @@ class CloudinaryStorageTests(SimpleTestCase):
         self.assertEqual(self.storage.cloud_url('resumes/abc.pdf'),
                          'https://res.cloudinary.com/democloud/raw/upload/v1/resumes/abc.pdf')
 
+    def test_windows_style_backslash_names_are_handled(self):
+        """Django on Windows builds 'resumes\\cv.pdf'; it must still be a private raw upload."""
+        name = self.storage.generate_filename('resumes\\My CV.pdf')
+        self.assertEqual(name, 'resumes/My_CV.pdf')
+        self.assertTrue(self.storage.is_private('resumes\\x.pdf'))
+        self.assertRegex(self.storage.get_available_name('resumes\\x.pdf'), r'^resumes/[0-9a-f]{32}\.pdf$')
+        self.assertEqual(self.storage.url('company_logos\\a.png'),
+                         'https://res.cloudinary.com/democloud/image/upload/v1/company_logos/a.png')
+        self.assertEqual(self.storage.url('resumes\\a.pdf'), '/students/resume/resumes/a.pdf')
+
+    def test_windows_style_upload_goes_to_raw_endpoint(self):
+        holder = {}
+
+        def fake_request(method, url, fields=None, headers=None, **kw):
+            f = dict((k, v) for k, v in fields if k != 'file')
+            holder.update(url=url, public_id=f['public_id'])
+            return FakeResponse({'public_id': f['public_id'], 'format': 'pdf', 'version': 1,
+                                 'resource_type': 'raw', 'type': 'upload', 'signature': 'x'})
+
+        with mock.patch('cloudinary.uploader._http.request', fake_request):
+            saved = self.storage.save(self.storage.generate_filename('resumes\\cv.pdf'),
+                                      SimpleUploadedFile('cv.pdf', b'%PDF-1.4 x'))
+        self.assertTrue(holder['url'].endswith('/raw/upload'))
+        self.assertRegex(saved, r'^resumes/[0-9a-f]{32}\.pdf$')
+
     def test_exists_is_false_so_names_are_never_reused(self):
         self.assertFalse(self.storage.exists('resumes/abc.pdf'))
 

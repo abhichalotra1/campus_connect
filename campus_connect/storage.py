@@ -36,8 +36,13 @@ class CloudinaryMediaStorage(Storage):
 
     # ── helpers ──────────────────────────────────────────────────────────
     @staticmethod
-    def is_private(name):
-        return name.startswith(PRIVATE_PREFIXES)
+    def _norm(name):
+        """Cloudinary ids always use forward slashes; Django on Windows builds names with backslashes."""
+        return str(name).replace('\\', '/')
+
+    @classmethod
+    def is_private(cls, name):
+        return cls._norm(name).startswith(PRIVATE_PREFIXES)
 
     @staticmethod
     def _public_id_and_format(name):
@@ -45,13 +50,19 @@ class CloudinaryMediaStorage(Storage):
         return stem, ext.lstrip('.')
 
     # ── Storage API ──────────────────────────────────────────────────────
+    def generate_filename(self, filename):
+        # Django's default uses os.path (backslashes on Windows); keep names POSIX everywhere.
+        folder, name = posixpath.split(self._norm(filename))
+        return posixpath.join(folder, self.get_valid_name(name))
+
     def get_available_name(self, name, max_length=None):
         # Always a fresh random name: never collides, never guessable, ignores the user's filename.
-        folder, filename = posixpath.split(name)
+        folder, filename = posixpath.split(self._norm(name))
         ext = posixpath.splitext(filename)[1].lower()
         return posixpath.join(folder, f'{uuid.uuid4().hex}{ext}')
 
     def _save(self, name, content):
+        name = self._norm(name)
         if hasattr(content, 'seek'):
             content.seek(0)
         if self.is_private(name):
@@ -72,6 +83,7 @@ class CloudinaryMediaStorage(Storage):
         return False  # names are unique, so Django never needs to rename
 
     def url(self, name):
+        name = self._norm(name)
         if self.is_private(name):
             return reverse('resume_download', kwargs={'name': name})
         public_id, fmt = self._public_id_and_format(name)
@@ -80,12 +92,14 @@ class CloudinaryMediaStorage(Storage):
 
     def cloud_url(self, name):
         """Direct Cloudinary URL. Only ever handed out after a permission check."""
+        name = self._norm(name)
         if self.is_private(name):
             return cloudinary.utils.cloudinary_url(
                 name, resource_type='raw', type='upload', secure=True)[0]
         return self.url(name)
 
     def delete(self, name):
+        name = self._norm(name)
         try:
             if self.is_private(name):
                 cloudinary.uploader.destroy(name, resource_type='raw', invalidate=True)
