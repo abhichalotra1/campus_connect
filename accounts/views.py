@@ -12,6 +12,7 @@ from django.db.models import Count, Q
 from django.db.models.functions import TruncMonth
 
 from .audit import log_action
+from .decorators import is_verified_recruiter
 from .models import User
 from placements.models import PlacementDrive, Application, Interview
 from students.models import StudentProfile, RecruiterProfile
@@ -393,6 +394,9 @@ def export_students_csv(request):
 def search_students_view(request):
     if request.user.role not in ['recruiter', 'admin']:
         return redirect('dashboard')
+    # Browsing every student's contact details and resume needs an approved recruiter account
+    if request.user.role == 'recruiter' and not is_verified_recruiter(request.user):
+        return redirect('verification_status')
 
     students = StudentProfile.objects.select_related('user').all()
     branch   = request.GET.get('branch', '')

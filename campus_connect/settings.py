@@ -109,10 +109,12 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 STORAGES = {
-    # Uploads. Replaced in the media-storage step (Cloudinary or persistent disk).
+    # Uploads: local disk for development, Cloudinary whenever CLOUDINARY_URL is set.
     'default': {'BACKEND': 'django.core.files.storage.FileSystemStorage'},
     'staticfiles': {'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage'},
 }
+if os.getenv('CLOUDINARY_URL'):
+    STORAGES['default'] = {'BACKEND': 'campus_connect.storage.CloudinaryMediaStorage'}
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 

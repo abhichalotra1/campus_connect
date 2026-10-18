@@ -1,7 +1,9 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.core.exceptions import ValidationError
+from django.core.exceptions import PermissionDenied, ValidationError
+from django.shortcuts import get_object_or_404
+from accounts.decorators import is_verified_recruiter
 from .models import StudentProfile, RecruiterProfile
 from placements.models import PlacementDrive, Application
 
@@ -138,3 +140,24 @@ def edit_profile_view(request):
         return render(request, 'students/edit_admin_profile.html')
 
     return redirect('dashboard')
+
+
+@login_required
+def resume_download_view(request, name):
+    """Hand out a resume link only to people who may see it.
+
+    Allowed: the student themself, admins, and approved recruiters. Everyone else gets 403.
+    The browser is redirected to the file's real location (Cloudinary in production, the
+    local /media/ file in development); the direct link is never put in a page.
+    """
+    profile = get_object_or_404(StudentProfile.objects.select_related('user'), resume=name)
+    user = request.user
+    if not (user == profile.user or user.role == 'admin' or is_verified_recruiter(user)):
+        raise PermissionDenied
+
+    cloud_url = getattr(profile.resume.storage, 'cloud_url', None)
+    target = cloud_url(profile.resume.name) if cloud_url else profile.resume.url
+    response = redirect(target)
+    response['Cache-Control'] = 'private, no-store'
+    return response
+
