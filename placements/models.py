@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils import timezone
 from accounts.models import User
+from students.validators import validate_image
 
 
 class PlacementDriveQuerySet(models.QuerySet):
@@ -44,7 +45,8 @@ class PlacementDrive(models.Model):
 
     posted_by       = models.ForeignKey(User, on_delete=models.CASCADE)
     company         = models.CharField(max_length=100)
-    company_logo    = models.ImageField(upload_to='company_logos/', blank=True, null=True, help_text="Upload company logo")
+    company_logo    = models.ImageField(upload_to='company_logos/', blank=True, null=True, help_text="Upload company logo",
+                                        validators=[validate_image])
     role            = models.CharField(max_length=100)
     description     = models.TextField()
     location        = models.CharField(max_length=100)    

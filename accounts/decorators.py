@@ -49,3 +49,12 @@ def student_required(view_func):
             return redirect('dashboard')
         return view_func(request, *args, **kwargs)
     return wrapper
+
+
+def is_verified_recruiter(user):
+    """True for an authenticated recruiter whose account an admin has approved."""
+    if not user.is_authenticated or user.role != 'recruiter':
+        return False
+    profile = getattr(user, 'recruiterprofile', None)  # missing profile -> None
+    return bool(profile and profile.is_verified)
+

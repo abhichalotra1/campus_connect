@@ -1,4 +1,5 @@
 import os
+import sys
 from datetime import timedelta
 from pathlib import Path
 
@@ -51,6 +52,7 @@ MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
+    'campus_connect.middleware.StorageErrorMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'allauth.account.middleware.AccountMiddleware',
     'axes.middleware.AxesMiddleware',  # keep last
@@ -109,10 +111,15 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 STORAGES = {
-    # Uploads. Replaced in the media-storage step (Cloudinary or persistent disk).
+    # Uploads: local disk for development, Cloudinary whenever CLOUDINARY_URL is set.
     'default': {'BACKEND': 'django.core.files.storage.FileSystemStorage'},
     'staticfiles': {'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage'},
 }
+# Never let `manage.py test` touch the real Cloudinary account, even if the developer's
+# .env contains CLOUDINARY_URL. Tests that need Cloudinary opt in with override_settings.
+RUNNING_TESTS = len(sys.argv) > 1 and sys.argv[1] == 'test'
+if os.getenv('CLOUDINARY_URL') and not RUNNING_TESTS:
+    STORAGES['default'] = {'BACKEND': 'campus_connect.storage.CloudinaryMediaStorage'}
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 

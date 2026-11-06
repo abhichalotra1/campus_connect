@@ -209,3 +209,57 @@ class DriveExpiryTests(TestCase):
         self.live.refresh_from_db()
         self.assertEqual(self.expired.status, 'closed')
         self.assertEqual(self.live.status, 'active')
+
+
+class DriveLogoValidationTests(TestCase):
+    def setUp(self):
+        from students.models import RecruiterProfile
+        self.rec = make_user('rec', 'recruiter')
+        RecruiterProfile.objects.create(user=self.rec, company_name='Acme', verification_status='approved')
+        self.client.force_login(self.rec)
+
+    def data(self, logo):
+        return {
+            'company': 'Acme', 'role': 'Dev', 'description': 'Build things', 'location': 'Delhi',
+            'job_type': 'full_time', 'eligible_branch': PlacementDrive.BRANCH_CHOICES[0][0],
+            'min_cgpa': '6', 'salary_type': 'not_disclosed', 'salary_amount': '',
+            'skills_required': 'python', 'deadline': (timezone.localdate() + timedelta(days=9)).isoformat(),
+            'company_logo': logo,
+        }
+
+    def test_docx_logo_is_rejected_on_post(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        resp = self.client.post(reverse('post_drive'), self.data(
+            SimpleUploadedFile('brief.docx', b'PK\x03\x04 fake', content_type='application/msword')))
+        self.assertContains(resp, 'Image must be a JPG, PNG, GIF or WebP file.')
+        self.assertFalse(PlacementDrive.objects.exists())
+
+    def test_oversized_logo_is_rejected_on_post(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        from students.tests import png_bytes
+        big = SimpleUploadedFile('big.png', png_bytes() + b'0' * (2 * 1024 * 1024), content_type='image/png')
+        resp = self.client.post(reverse('post_drive'), self.data(big))
+        self.assertContains(resp, 'smaller than 2 MB')
+        self.assertFalse(PlacementDrive.objects.exists())
+
+    def test_real_logo_is_accepted(self):
+        import tempfile
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        from django.test import override_settings
+        from students.tests import png_bytes
+        with tempfile.TemporaryDirectory() as tmp, override_settings(MEDIA_ROOT=tmp):
+            resp = self.client.post(reverse('post_drive'), self.data(
+                SimpleUploadedFile('logo.png', png_bytes(), content_type='image/png')))
+            self.assertEqual(resp.status_code, 302)
+        self.assertTrue(PlacementDrive.objects.get().company_logo)
+
+    def test_docx_logo_is_rejected_on_edit(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        drive = PlacementDrive.objects.create(
+            posted_by=self.rec, company='Acme', role='Dev', description='d', location='X',
+            job_type='full_time', deadline=timezone.localdate() + timedelta(days=5))
+        resp = self.client.post(reverse('edit_drive', args=[drive.pk]), {
+            'company': 'Changed', 'company_logo': SimpleUploadedFile('x.docx', b'PK fake')})
+        self.assertContains(resp, 'Image must be a JPG, PNG, GIF or WebP file.')
+        drive.refresh_from_db()
+        self.assertEqual(drive.company, 'Acme')   # nothing was saved

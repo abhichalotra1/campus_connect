@@ -1,9 +1,26 @@
+from django.db import models
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.core.exceptions import ValidationError
+from django.core.exceptions import PermissionDenied, ValidationError
+from django.shortcuts import get_object_or_404
+from accounts.decorators import is_verified_recruiter
 from .models import StudentProfile, RecruiterProfile
 from placements.models import PlacementDrive, Application
+
+
+def _discard_unsaved_files(instance):
+    """Put back the saved files after a rejected upload.
+
+    Otherwise the re-rendered form would show the rejected file as the "current" one,
+    with a link to something that was never stored.
+    """
+    saved = type(instance).objects.filter(pk=instance.pk).first()
+    for field in instance._meta.get_fields():
+        if isinstance(field, models.FileField):
+            current = getattr(instance, field.name)
+            if current and not current._committed:
+                setattr(instance, field.name, getattr(saved, field.name) if saved else None)
 
 
 def _save_validated(request, profile):
@@ -11,6 +28,7 @@ def _save_validated(request, profile):
     try:
         profile.full_clean()
     except ValidationError as e:
+        _discard_unsaved_files(profile)
         for field, errors in e.message_dict.items():
             label = '' if field == '__all__' else field.replace('_', ' ').title() + ': '
             for err in errors:
@@ -138,3 +156,24 @@ def edit_profile_view(request):
         return render(request, 'students/edit_admin_profile.html')
 
     return redirect('dashboard')
+
+
+@login_required
+def resume_download_view(request, name):
+    """Hand out a resume link only to people who may see it.
+
+    Allowed: the student themself, admins, and approved recruiters. Everyone else gets 403.
+    The browser is redirected to the file's real location (Cloudinary in production, the
+    local /media/ file in development); the direct link is never put in a page.
+    """
+    profile = get_object_or_404(StudentProfile.objects.select_related('user'), resume=name)
+    user = request.user
+    if not (user == profile.user or user.role == 'admin' or is_verified_recruiter(user)):
+        raise PermissionDenied
+
+    cloud_url = getattr(profile.resume.storage, 'cloud_url', None)
+    target = cloud_url(profile.resume.name) if cloud_url else profile.resume.url
+    response = redirect(target)
+    response['Cache-Control'] = 'private, no-store'
+    return response
+

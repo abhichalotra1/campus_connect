@@ -13,3 +13,4 @@ class AccountsConfig(AppConfig):
 
     def ready(self):
         import accounts.signals  # noqa — registers the post_save signal
+        from . import checks  # noqa — registers the upload-storage system check
