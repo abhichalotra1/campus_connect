@@ -1,4 +1,5 @@
 import os
+import sys
 from datetime import timedelta
 from pathlib import Path
 
@@ -114,7 +115,10 @@ STORAGES = {
     'default': {'BACKEND': 'django.core.files.storage.FileSystemStorage'},
     'staticfiles': {'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage'},
 }
-if os.getenv('CLOUDINARY_URL'):
+# Never let `manage.py test` touch the real Cloudinary account, even if the developer's
+# .env contains CLOUDINARY_URL. Tests that need Cloudinary opt in with override_settings.
+RUNNING_TESTS = len(sys.argv) > 1 and sys.argv[1] == 'test'
+if os.getenv('CLOUDINARY_URL') and not RUNNING_TESTS:
     STORAGES['default'] = {'BACKEND': 'campus_connect.storage.CloudinaryMediaStorage'}
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

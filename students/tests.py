@@ -359,3 +359,10 @@ class StorageFailureTests(TransactionTestCase):
         with mock.patch('cloudinary.uploader._http.request', fake_request):
             CloudinaryMediaStorage().save('profile_pics/a.png', SimpleUploadedFile('a.png', png_bytes()))
         self.assertEqual(seen.get('timeout'), 20)
+
+
+class TestEnvironmentIsolationTests(SimpleTestCase):
+    def test_tests_never_use_real_cloudinary_storage(self):
+        """A developer's CLOUDINARY_URL must not leak into the test run (it would upload real files)."""
+        from django.conf import settings
+        self.assertNotIn('Cloudinary', settings.STORAGES['default']['BACKEND'])
