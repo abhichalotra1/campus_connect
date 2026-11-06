@@ -6,7 +6,7 @@ from django.core.exceptions import PermissionDenied, ValidationError
 from django.shortcuts import get_object_or_404
 from accounts.decorators import is_verified_recruiter
 from .models import StudentProfile, RecruiterProfile
-from placements.models import PlacementDrive, Application
+from placements.models import PlacementDrive
 
 
 def _discard_unsaved_files(instance):

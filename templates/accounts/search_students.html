@@ -196,7 +196,7 @@
   </form>
 </div>
 
-<div class="results-count">Found <strong>{{ students|length }}</strong> students</div>
+<div class="results-count">Found <strong>{{ page_obj.paginator.count }}</strong> students</div>
 
 <div class="students-grid">
   {% for profile in students %}
@@ -250,4 +250,5 @@
   {% endfor %}
 </div>
 
+{% include 'partials/pagination.html' %}
 {% endblock %}

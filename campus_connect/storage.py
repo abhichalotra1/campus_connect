@@ -108,10 +108,10 @@ class CloudinaryMediaStorage(Storage):
         name = self._norm(name)
         try:
             if self.is_private(name):
-                cloudinary.uploader.destroy(name, resource_type='raw', invalidate=True)
+                cloudinary.uploader.destroy(name, resource_type='raw', invalidate=True, timeout=UPLOAD_TIMEOUT)
             else:
                 public_id, _ = self._public_id_and_format(name)
-                cloudinary.uploader.destroy(public_id, resource_type='image', invalidate=True)
+                cloudinary.uploader.destroy(public_id, resource_type='image', invalidate=True, timeout=UPLOAD_TIMEOUT)
         except Exception:
             logger.exception('Cloudinary delete failed for %s', name)
 

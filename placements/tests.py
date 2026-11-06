@@ -263,3 +263,179 @@ class DriveLogoValidationTests(TestCase):
         self.assertContains(resp, 'Image must be a JPG, PNG, GIF or WebP file.')
         drive.refresh_from_db()
         self.assertEqual(drive.company, 'Acme')   # nothing was saved
+
+
+# ───────────────────────── Drive form (post + edit) ─────────────────────────
+class DriveFormTests(TestCase):
+    def setUp(self):
+        from students.models import RecruiterProfile
+        self.rec = make_user('rec', 'recruiter')
+        RecruiterProfile.objects.create(user=self.rec, company_name='Acme', verification_status='approved')
+        self.client.force_login(self.rec)
+        self.drive = PlacementDrive.objects.create(
+            posted_by=self.rec, company='Acme', role='Dev', description='d', location='Delhi',
+            job_type='full_time', eligible_branch='CSE', min_cgpa=6.0, salary_type='lpa', salary_amount=8.0,
+            deadline=timezone.localdate() + timedelta(days=5))
+
+    def edit(self, **over):
+        data = {'company': 'Acme', 'role': 'Dev', 'description': 'd', 'location': 'Delhi',
+                'job_type': 'full_time', 'eligible_branch': 'CSE', 'min_cgpa': '6', 'salary_type': 'lpa',
+                'salary_amount': '8', 'skills_required': 'python',
+                'deadline': (timezone.localdate() + timedelta(days=5)).isoformat()}
+        data.update(over)
+        return self.client.post(reverse('edit_drive', args=[self.drive.pk]), data)
+
+    def test_valid_edit_is_saved(self):
+        resp = self.edit(role='Senior Dev', min_cgpa='7.5')
+        self.assertRedirects(resp, reverse('recruiter_dashboard'), fetch_redirect_response=False)
+        self.drive.refresh_from_db()
+        self.assertEqual((self.drive.role, self.drive.min_cgpa), ('Senior Dev', 7.5))
+
+    def test_garbage_deadline_does_not_crash_and_saves_nothing(self):
+        for bad in ('not-a-date', '2026-13-45', ''):
+            resp = self.edit(deadline=bad, role='Hacked')
+            self.assertEqual(resp.status_code, 200, bad)
+            self.assertContains(resp, 'Deadline')
+        self.drive.refresh_from_db()
+        self.assertEqual(self.drive.role, 'Dev')
+
+    def test_past_deadline_rejected_on_edit(self):
+        resp = self.edit(deadline=(timezone.localdate() - timedelta(days=1)).isoformat())
+        self.assertContains(resp, 'The deadline cannot be in the past.')
+
+    def test_unchanged_past_deadline_can_still_be_edited(self):
+        PlacementDrive.objects.filter(pk=self.drive.pk).update(deadline=timezone.localdate() - timedelta(days=3))
+        self.drive.refresh_from_db()
+        resp = self.edit(deadline=self.drive.deadline.isoformat(), role='Renamed')
+        self.assertEqual(resp.status_code, 302)
+        self.drive.refresh_from_db()
+        self.assertEqual(self.drive.role, 'Renamed')
+
+    def test_bad_numbers_rejected(self):
+        for field, value in (('min_cgpa', 'nan'), ('min_cgpa', '11'), ('min_cgpa', '-1'), ('min_cgpa', 'abc'),
+                             ('salary_amount', 'inf'), ('salary_amount', '-5'), ('salary_amount', 'abc')):
+            resp = self.edit(**{field: value})
+            self.assertEqual(resp.status_code, 200, (field, value))
+        self.drive.refresh_from_db()
+        self.assertEqual((self.drive.min_cgpa, self.drive.salary_amount), (6.0, 8.0))
+
+    def test_invalid_choices_rejected(self):
+        self.assertEqual(self.edit(job_type='astronaut').status_code, 200)
+        self.assertEqual(self.edit(eligible_branch='XYZ').status_code, 200)
+        self.assertEqual(self.edit(salary_type='bitcoin').status_code, 200)
+
+    def test_blank_required_text_rejected(self):
+        self.assertEqual(self.edit(company='   ').status_code, 200)
+        self.drive.refresh_from_db()
+        self.assertEqual(self.drive.company, 'Acme')
+
+    def test_not_disclosed_salary_may_be_blank(self):
+        resp = self.edit(salary_type='not_disclosed', salary_amount='')
+        self.assertEqual(resp.status_code, 302)
+        self.drive.refresh_from_db()
+        self.assertEqual(self.drive.salary_amount, 0.0)
+
+    def test_blank_salary_rejected_when_type_needs_one(self):
+        self.assertEqual(self.edit(salary_type='lpa', salary_amount='').status_code, 200)
+
+    def test_blank_min_cgpa_means_no_minimum(self):
+        self.edit(min_cgpa='')
+        self.drive.refresh_from_db()
+        self.assertEqual(self.drive.min_cgpa, 0.0)
+
+    def test_other_recruiter_cannot_edit(self):
+        other = make_user('other', 'recruiter')
+        self.client.force_login(other)
+        self.edit(role='Stolen')
+        self.drive.refresh_from_db()
+        self.assertEqual(self.drive.role, 'Dev')
+
+    def test_post_requires_logo_and_valid_fields(self):
+        resp = self.client.post(reverse('post_drive'), {
+            'company': 'New', 'role': 'R', 'description': 'd', 'location': 'L', 'job_type': 'full_time',
+            'eligible_branch': 'ALL', 'min_cgpa': '0', 'salary_type': 'lpa', 'salary_amount': '5',
+            'deadline': (timezone.localdate() + timedelta(days=3)).isoformat()})
+        self.assertContains(resp, 'Company logo')
+        self.assertEqual(PlacementDrive.objects.count(), 1)
+
+    def test_post_with_past_deadline_rejected(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        from students.tests import png_bytes
+        resp = self.client.post(reverse('post_drive'), {
+            'company': 'New', 'role': 'R', 'description': 'd', 'location': 'L', 'job_type': 'full_time',
+            'eligible_branch': 'ALL', 'min_cgpa': '0', 'salary_type': 'lpa', 'salary_amount': '5',
+            'deadline': (timezone.localdate() - timedelta(days=1)).isoformat(),
+            'company_logo': SimpleUploadedFile('l.png', png_bytes(), content_type='image/png')})
+        self.assertContains(resp, 'The deadline cannot be in the past.')
+        self.assertEqual(PlacementDrive.objects.count(), 1)
+
+
+# ───────────────────────────── Pagination ─────────────────────────────
+class PaginationTests(TestCase):
+    def setUp(self):
+        self.rec = make_user('rec', 'recruiter')
+        self.student = make_user('stu', 'student')
+        StudentProfile.objects.create(user=self.student, branch='CSE', cgpa=8.0)
+        today = timezone.localdate()
+        for i in range(30):
+            PlacementDrive.objects.create(
+                posted_by=self.rec, company=f'Company{i:02d}', role='Dev', description='d', location='X',
+                job_type='full_time', deadline=today + timedelta(days=5),
+                eligible_branch='CSE' if i % 2 == 0 else 'ECE')
+        self.client.force_login(self.student)
+
+    def test_first_page_has_12_of_30(self):
+        resp = self.client.get(reverse('drive_list'))
+        self.assertEqual(len(resp.context['drives']), 12)
+        self.assertEqual(resp.context['page_obj'].paginator.num_pages, 3)
+        self.assertContains(resp, 'Page 1 of 3')
+
+    def test_every_drive_appears_exactly_once_across_pages(self):
+        seen = []
+        for page in (1, 2, 3):
+            seen += [d.pk for d in self.client.get(reverse('drive_list'), {'page': page}).context['drives']]
+        self.assertEqual(len(seen), 30)
+        self.assertEqual(len(set(seen)), 30)
+
+    def test_bad_page_numbers_do_not_crash(self):
+        self.assertEqual(self.client.get(reverse('drive_list'), {'page': 'abc'}).context['page_obj'].number, 1)
+        self.assertEqual(self.client.get(reverse('drive_list'), {'page': '999'}).context['page_obj'].number, 3)
+        self.assertEqual(self.client.get(reverse('drive_list'), {'page': '-4'}).status_code, 200)
+
+    def test_filters_survive_in_page_links(self):
+        resp = self.client.get(reverse('drive_list'), {'branch': 'CSE'})
+        self.assertEqual(resp.context['page_obj'].paginator.count, 15)
+        resp = self.client.get(reverse('drive_list'), {'branch': 'CSE', 'page': 1})
+        self.assertEqual(resp.context['page_obj'].paginator.num_pages, 2)
+        self.assertContains(resp, 'branch=CSE&amp;page=2')
+
+    def test_no_pagination_bar_for_short_lists(self):
+        PlacementDrive.objects.filter(pk__gt=PlacementDrive.objects.order_by('pk')[4].pk).delete()
+        self.assertNotContains(self.client.get(reverse('drive_list')), 'Page 1 of')
+
+    def test_search_students_paginates_and_counts_all(self):
+        from students.models import RecruiterProfile
+        admin = make_user('boss', 'admin')
+        for i in range(25):
+            u = make_user(f's{i:02d}', 'student')
+            StudentProfile.objects.create(user=u, branch='CSE', cgpa=7.0)
+        self.client.force_login(admin)
+        resp = self.client.get(reverse('search_students'))
+        self.assertEqual(len(resp.context['students']), 12)
+        self.assertContains(resp, 'Found <strong>26</strong> students')
+
+    def test_my_applications_paginates(self):
+        for d in PlacementDrive.objects.all()[:14]:
+            Application.objects.create(student=self.student, drive=d)
+        resp = self.client.get(reverse('my_applications'))
+        self.assertEqual(len(resp.context['applications']), 10)
+        self.assertContains(resp, 'Page 1 of 2')
+
+    def test_recruiter_applicants_paginates_and_shows_true_total(self):
+        drive = PlacementDrive.objects.first()
+        for i in range(25):
+            Application.objects.create(student=make_user(f'a{i:02d}', 'student'), drive=drive)
+        self.client.force_login(drive.posted_by)
+        resp = self.client.get(reverse('recruiter_applicants'), {'drive': drive.pk})
+        self.assertEqual(len(resp.context['applications']), 20)
+        self.assertContains(resp, '25 total applicants')

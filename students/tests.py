@@ -366,3 +366,109 @@ class TestEnvironmentIsolationTests(SimpleTestCase):
         """A developer's CLOUDINARY_URL must not leak into the test run (it would upload real files)."""
         from django.conf import settings
         self.assertNotIn('Cloudinary', settings.STORAGES['default']['BACKEND'])
+
+
+# ───────────────────────── Orphaned-file cleanup ─────────────────────────
+class FileCleanupTests(TestCase):
+    """Replaced / deleted uploads must not pile up in storage."""
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmp.cleanup)
+        self._override = override_settings(MEDIA_ROOT=self._tmp.name)
+        self._override.enable()
+        self.addCleanup(self._override.disable)
+        self.user = make_user('stu', 'student')
+
+    def path(self, name):
+        return os.path.join(self._tmp.name, name)
+
+    def make_profile(self):
+        profile = StudentProfile(user=self.user, branch='CSE')
+        profile.resume = SimpleUploadedFile('cv.pdf', b'%PDF-1.4 one', content_type='application/pdf')
+        profile.save()
+        return profile
+
+    def test_replacing_a_resume_deletes_the_old_file(self):
+        profile = self.make_profile()
+        old = profile.resume.name
+        self.assertTrue(os.path.exists(self.path(old)))
+        profile.resume = SimpleUploadedFile('cv2.pdf', b'%PDF-1.4 two', content_type='application/pdf')
+        with self.captureOnCommitCallbacks(execute=True):
+            profile.save()
+        self.assertNotEqual(profile.resume.name, old)
+        self.assertFalse(os.path.exists(self.path(old)))
+        self.assertTrue(os.path.exists(self.path(profile.resume.name)))
+
+    def test_saving_without_changing_the_file_keeps_it(self):
+        profile = self.make_profile()
+        name = profile.resume.name
+        profile.branch = 'ECE'
+        profile.save()
+        self.assertEqual(StudentProfile.objects.get(pk=profile.pk).resume.name, name)
+        self.assertTrue(os.path.exists(self.path(name)))
+
+    def test_clearing_a_file_deletes_it(self):
+        profile = self.make_profile()
+        name = profile.resume.name
+        profile.resume = None
+        with self.captureOnCommitCallbacks(execute=True):
+            profile.save()
+        self.assertFalse(os.path.exists(self.path(name)))
+
+    def test_deleting_the_row_deletes_its_files(self):
+        profile = self.make_profile()
+        name = profile.resume.name
+        with self.captureOnCommitCallbacks(execute=True):
+            profile.delete()
+        self.assertFalse(os.path.exists(self.path(name)))
+
+    def test_rejected_upload_deletes_nothing(self):
+        profile = self.make_profile()
+        name = profile.resume.name
+        self.client.force_login(self.user)
+        with self.captureOnCommitCallbacks(execute=True):
+            self.client.post(reverse('edit_profile'), {
+                'branch': 'CSE', 'resume': SimpleUploadedFile('bad.docx', b'PK fake')})
+        self.assertTrue(os.path.exists(self.path(name)))
+        self.assertEqual(StudentProfile.objects.get(pk=profile.pk).resume.name, name)
+
+    def test_deleting_a_drive_removes_its_logo(self):
+        from placements.models import PlacementDrive
+        from django.utils import timezone
+        rec = make_user('rec', 'recruiter')
+        drive = PlacementDrive(posted_by=rec, company='A', role='R', description='d', location='L',
+                               job_type='full_time', deadline=timezone.localdate())
+        drive.company_logo = SimpleUploadedFile('l.png', png_bytes(), content_type='image/png')
+        drive.save()
+        name = drive.company_logo.name
+        self.assertTrue(os.path.exists(self.path(name)))
+        with self.captureOnCommitCallbacks(execute=True):
+            drive.delete()
+        self.assertFalse(os.path.exists(self.path(name)))
+
+
+@override_settings(STORAGES=CLOUD_STORAGES)
+class CloudinaryCleanupTests(TestCase):
+    def test_replacing_a_resume_destroys_the_old_cloudinary_file(self):
+        cloudinary.config(cloud_name='democloud', api_key='k', api_secret='s')
+
+        def fake_request(method, url, fields=None, headers=None, **kw):
+            f = dict((k, v) for k, v in fields if k != 'file')
+            return FakeResponse({'public_id': f['public_id'], 'format': 'pdf', 'version': 1,
+                                 'resource_type': 'raw', 'type': 'upload', 'signature': 'x'})
+
+        user = make_user('stu', 'student')
+        with mock.patch('cloudinary.uploader._http.request', fake_request), \
+                mock.patch('cloudinary.uploader.destroy') as destroy:
+            profile = StudentProfile(user=user, branch='CSE')
+            profile.resume = SimpleUploadedFile('a.pdf', b'%PDF-1.4 a', content_type='application/pdf')
+            profile.save()
+            old = profile.resume.name
+            profile.resume = SimpleUploadedFile('b.pdf', b'%PDF-1.4 b', content_type='application/pdf')
+            with self.captureOnCommitCallbacks(execute=True):
+                profile.save()
+        destroy.assert_called_once()
+        self.assertEqual(destroy.call_args.args[0], old)
+        self.assertEqual(destroy.call_args.kwargs['resource_type'], 'raw')
+        self.assertNotEqual(profile.resume.name, old)

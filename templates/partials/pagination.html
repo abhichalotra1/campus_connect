@@ -1,0 +1,11 @@
+{% if page_obj and page_obj.paginator.num_pages > 1 %}
+<nav aria-label="Pagination" style="display:flex;align-items:center;justify-content:center;gap:14px;margin:28px 0 8px;font-size:14px;">
+  {% if page_obj.has_previous %}
+    <a href="?{% if page_query %}{{ page_query }}&amp;{% endif %}page={{ page_obj.previous_page_number }}" style="padding:8px 14px;border:1px solid rgba(128,128,128,.45);border-radius:8px;text-decoration:none;color:inherit;">&larr; Previous</a>
+  {% endif %}
+  <span style="opacity:.75;">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+  {% if page_obj.has_next %}
+    <a href="?{% if page_query %}{{ page_query }}&amp;{% endif %}page={{ page_obj.next_page_number }}" style="padding:8px 14px;border:1px solid rgba(128,128,128,.45);border-radius:8px;text-decoration:none;color:inherit;">Next &rarr;</a>
+  {% endif %}
+</nav>
+{% endif %}
