@@ -8,9 +8,10 @@ from django.core.validators import validate_email
 from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
-from django.db.models import Count, Q
+from django.db.models import Count
 from django.db.models.functions import TruncMonth
 
+from campus_connect.pagination import paginate
 from .audit import log_action
 from .decorators import is_verified_recruiter
 from .models import User
@@ -398,7 +399,7 @@ def search_students_view(request):
     if request.user.role == 'recruiter' and not is_verified_recruiter(request.user):
         return redirect('verification_status')
 
-    students = StudentProfile.objects.select_related('user').all()
+    students = StudentProfile.objects.select_related('user').order_by('user__first_name', 'user__last_name', 'pk')
     branch   = request.GET.get('branch', '')
     skill    = request.GET.get('skill', '')
     min_cgpa = request.GET.get('min_cgpa', '')
@@ -413,8 +414,12 @@ def search_students_view(request):
         except ValueError:
             pass
 
+    students, page_query = paginate(request, students, per_page=12)
+
     return render(request, 'accounts/search_students.html', {
         'students': students,
+        'page_obj': students,
+        'page_query': page_query,
         'branch':   branch,
         'skill':    skill,
         'min_cgpa': min_cgpa,

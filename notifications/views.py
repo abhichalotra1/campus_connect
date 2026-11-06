@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
+from campus_connect.pagination import paginate
 from .models import Notification
 
 @login_required
@@ -9,8 +10,11 @@ def notification_list_view(request):
         user=request.user
     ).order_by('-created_at')
 
+    page, page_query = paginate(request, notifications, per_page=20)
     return render(request, 'notifications/notifications.html', {
-        'notifications': notifications
+        'notifications': page,
+        'page_obj': page,
+        'page_query': page_query,
     })
 @login_required
 def mark_all_read_view(request):

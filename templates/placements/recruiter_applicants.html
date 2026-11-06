@@ -171,7 +171,7 @@
 {% if selected_drive %}
   <div class="drive-info-bar">
     <h5 class="drive-info-title">{{ selected_drive.role }} - {{ selected_drive.company }}</h5>
-    <span class="drive-info-count">{{ applications|length }} total applicants</span>
+    <span class="drive-info-count">{{ total_applicants }} total applicants</span>
   </div>
 
   {% if applications %}
@@ -322,4 +322,5 @@ function closeModal() {
   }
 }
 </script>
+{% include 'partials/pagination.html' %}
 {% endblock %}
