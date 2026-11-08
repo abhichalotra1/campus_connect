@@ -228,13 +228,13 @@
             {% csrf_token %}
             <input type="hidden" name="action" value="approve">
             <input type="text" name="admin_remark" class="form-input" placeholder="Optional remark...">
-            <button type="submit" class="btn-approve" onclick="submitWithLoading(this,'Approving...')"><i class="fas fa-check"></i> Approve</button>
+            <button type="submit" class="btn-approve" data-loading-text="Approving..."><i class="fas fa-check"></i> Approve</button>
           </form>
           <form method="POST" action="{% url 'admin_verify_recruiter' recruiter.pk %}">
             {% csrf_token %}
             <input type="hidden" name="action" value="reject">
             <input type="text" name="admin_remark" class="form-input" placeholder="Reason for rejection...">
-            <button type="submit" class="btn-reject" onclick="submitWithLoading(this,'Rejecting...')"><i class="fas fa-times"></i> Reject</button>
+            <button type="submit" class="btn-reject" data-loading-text="Rejecting..."><i class="fas fa-times"></i> Reject</button>
           </form>
         </div>
       </div>
@@ -268,9 +268,9 @@
             <form method="POST" action="{% url 'admin_toggle_drive' drive.pk %}" style="display:inline;">
               {% csrf_token %}
               {% if drive.status == 'active' %}
-                <button type="submit" class="btn-sm-action btn-close-drive" onclick="submitWithLoading(this,'Closing...')"><i class="fas fa-ban"></i> Force Close</button>
+                <button type="submit" class="btn-sm-action btn-close-drive" data-loading-text="Closing..."><i class="fas fa-ban"></i> Force Close</button>
               {% else %}
-                <button type="submit" class="btn-sm-action btn-open-drive" onclick="submitWithLoading(this,'Reopening...')"><i class="fas fa-door-open"></i> Reopen</button>
+                <button type="submit" class="btn-sm-action btn-open-drive" data-loading-text="Reopening..."><i class="fas fa-door-open"></i> Reopen</button>
               {% endif %}
             </form>
           </td>
@@ -356,9 +356,9 @@
               <form method="POST" action="{% url 'admin_toggle_user' student.pk %}">
                 {% csrf_token %}
                 {% if student.is_active %}
-                  <button type="submit" class="btn-sm-action btn-deactivate" onclick="submitWithLoading(this,'Deactivating...')"><i class="fas fa-ban"></i> Deactivate</button>
+                  <button type="submit" class="btn-sm-action btn-deactivate" data-loading-text="Deactivating..."><i class="fas fa-ban"></i> Deactivate</button>
                 {% else %}
-                  <button type="submit" class="btn-sm-action btn-reactivate" onclick="submitWithLoading(this,'Reactivating...')"><i class="fas fa-check"></i> Reactivate</button>
+                  <button type="submit" class="btn-sm-action btn-reactivate" data-loading-text="Reactivating..."><i class="fas fa-check"></i> Reactivate</button>
                 {% endif %}
               </form>
             </td>
@@ -397,9 +397,9 @@
               <form method="POST" action="{% url 'admin_toggle_user' recruiter.pk %}">
                 {% csrf_token %}
                 {% if recruiter.is_active %}
-                  <button type="submit" class="btn-sm-action btn-deactivate" onclick="submitWithLoading(this,'Deactivating...')"><i class="fas fa-ban"></i> Deactivate</button>
+                  <button type="submit" class="btn-sm-action btn-deactivate" data-loading-text="Deactivating..."><i class="fas fa-ban"></i> Deactivate</button>
                 {% else %}
-                  <button type="submit" class="btn-sm-action btn-reactivate" onclick="submitWithLoading(this,'Reactivating...')"><i class="fas fa-check"></i> Reactivate</button>
+                  <button type="submit" class="btn-sm-action btn-reactivate" data-loading-text="Reactivating..."><i class="fas fa-check"></i> Reactivate</button>
                 {% endif %}
               </form>
             </td>

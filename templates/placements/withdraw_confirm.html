@@ -96,7 +96,7 @@
     <div class="wc-actions">
       <form method="POST">
         {% csrf_token %}
-        <button type="submit" class="btn-withdraw" onclick="submitWithLoading(this, 'Withdrawing...')">
+        <button type="submit" class="btn-withdraw" data-loading-text="Withdrawing...">
           <i class="fas fa-trash"></i> Yes, Withdraw
         </button>
       </form>

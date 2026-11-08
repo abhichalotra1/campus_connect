@@ -337,28 +337,8 @@ function _setIcon(t) {
 function toggleNav() {
   document.getElementById('ccNav').classList.toggle('nav-collapse-open');
 }
-
-// ── GLOBAL LOADING STATE FOR FORMS ──
-function submitWithLoading(button, loadingText) {
-  const form = button.closest('form');
-  if (!form) return;
-
-  // Disable the button so it can't be clicked again
-  button.disabled = true;
-  
-  // Change the text to show it's loading
-  const originalText = button.innerHTML;
-  button.innerHTML = `<i class="fas fa-circle-notch fa-spin me-1"></i> ${loadingText || 'Processing...'}`;
-  
-  // Add a class to visually grey it out slightly
-  button.style.opacity = '0.7';
-
-  // Submit the form after a tiny 50ms delay so the UI updates first
-  setTimeout(() => {
-    form.submit();
-  }, 50);
-}
 </script>
+{% include "partials/form_guard.html" %}
 {% block extra_js %}{% endblock %}
 </body>
 </html>

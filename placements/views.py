@@ -1,6 +1,7 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
+from django.db import IntegrityError, transaction
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.utils import timezone
@@ -116,7 +117,13 @@ def apply_view(request, pk):
         messages.warning(request, 'You have already applied for this drive!')
         return redirect('drive_list')
 
-    Application.objects.create(student=request.user, drive=drive)
+    try:
+        with transaction.atomic():
+            Application.objects.create(student=request.user, drive=drive)
+    except IntegrityError:
+        # Double-click / two tabs: the other request already created it.
+        messages.warning(request, 'You have already applied for this drive!')
+        return redirect('drive_list')
 
     send_notification(
         user=request.user,

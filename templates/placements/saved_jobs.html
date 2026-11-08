@@ -251,7 +251,7 @@
       
       <form method="POST" action="{% url 'unsave_drive' bookmark.drive.pk %}">
         {% csrf_token %}
-        <button type="submit" onclick="submitWithLoading(this,'Removing...')" class="btn-remove">
+        <button type="submit" data-loading-text="Removing..." class="btn-remove">
           <i class="fas fa-trash"></i> Remove
         </button>
       </form>

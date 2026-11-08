@@ -155,7 +155,7 @@
       {% else %}
       <form method="POST" action="{% url 'apply' drive.pk %}">
         {% csrf_token %}
-        <button type="submit" class="btn-apply">Apply Now</button>
+        <button type="submit" class="btn-apply" data-loading-text="Applying...">Apply Now</button>
       </form>
       {% endif %}
     </div>
