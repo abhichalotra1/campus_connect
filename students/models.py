@@ -7,6 +7,7 @@ from .validators import validate_resume, validate_image
 
 
 def default_passing_year():
+    # No longer used by any field, but migration 0007 imports it by name, so it must stay.
     return timezone.now().year
 
 
@@ -21,14 +22,15 @@ class StudentProfile(models.Model):
     )
 
     user           = models.OneToOneField(User, on_delete=models.CASCADE)
-    branch         = models.CharField(max_length=10, choices=BRANCH_CHOICES)
+    # Blank until the student picks one: a silent default would make everyone look like CSE.
+    branch         = models.CharField(max_length=10, choices=BRANCH_CHOICES, blank=True)
     cgpa           = models.FloatField(
                         default=0.0,
                         validators=[MinValueValidator(0), MaxValueValidator(10)],
                      )
     roll_number    = models.CharField(max_length=20, unique=True, null=True, blank=True)
     passing_year   = models.IntegerField(
-                        default=default_passing_year,
+                        null=True, blank=True,
                         validators=[MinValueValidator(2000), MaxValueValidator(2050)],
                      )
     skills         = models.TextField(blank=True, help_text="Comma separated skills")
@@ -45,6 +47,24 @@ class StudentProfile(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.branch}"
+
+    # What a student must have filled in before they can apply to a drive.
+    # Phone number and LinkedIn are deliberately NOT required.
+    def completion_checklist(self):
+        """[(label, done), ...] for the fields required to apply."""
+        return [
+            ('Branch', bool(self.branch)),
+            ('CGPA', bool(self.cgpa and self.cgpa > 0)),
+            ('Passing year', bool(self.passing_year)),
+            ('Resume (PDF)', bool(self.resume)),
+        ]
+
+    def missing_required_fields(self):
+        return [label for label, done in self.completion_checklist() if not done]
+
+    @property
+    def is_complete(self):
+        return not self.missing_required_fields()
 
     def profile_completion(self):
         fields = [

@@ -23,6 +23,13 @@ def make_user(username, role):
     return User.objects.create_user(username=username, email=f'{username}@example.com', password=PW, role=role)
 
 
+def profile_data(**extra):
+    """A complete, valid student-profile form submission; override or add fields per test."""
+    data = {'first_name': 'Stu', 'branch': 'CSE', 'cgpa': '8.0', 'passing_year': '2027'}
+    data.update(extra)
+    return data
+
+
 class FakeResponse:
     status = 200
     headers = {}
@@ -250,7 +257,7 @@ class RejectedUploadTests(TestCase):
         self.client.force_login(self.user)
 
     def post_resume(self, upload):
-        return self.client.post(reverse('edit_profile'), {'branch': 'CSE', 'resume': upload})
+        return self.client.post(reverse('edit_profile'), profile_data(resume=upload))
 
     def test_docx_is_rejected_with_message_and_no_phantom_link(self):
         docx = SimpleUploadedFile('My Resume.docx', b'PK\x03\x04 fake', content_type=
@@ -297,7 +304,7 @@ class ImageUploadValidationTests(TestCase):
         self.client.force_login(self.user)
 
     def post_pic(self, upload):
-        return self.client.post(reverse('edit_profile'), {'branch': 'CSE', 'profile_pic': upload})
+        return self.client.post(reverse('edit_profile'), profile_data(profile_pic=upload))
 
     def test_docx_as_picture_is_rejected(self):
         resp = self.post_pic(SimpleUploadedFile('notes.docx', b'PK\x03\x04 fake', content_type='application/msword'))
@@ -305,7 +312,7 @@ class ImageUploadValidationTests(TestCase):
 
     def test_non_image_bytes_with_png_name_are_rejected(self):
         resp = self.post_pic(SimpleUploadedFile('sneaky.png', b'PK\x03\x04 this is a zip', content_type='image/png'))
-        self.assertContains(resp, 'This file is not a valid image.')
+        self.assertContains(resp, 'Image must be a JPG, PNG, GIF or WebP file.')
 
     def test_svg_is_rejected(self):
         resp = self.post_pic(SimpleUploadedFile('x.svg', b'<svg onload="alert(1)"/>', content_type='image/svg+xml'))
@@ -339,9 +346,8 @@ class StorageFailureTests(TransactionTestCase):
     def test_upload_failure_redirects_back_with_message(self):
         import cloudinary.exceptions
         with mock.patch('cloudinary.uploader.upload', side_effect=cloudinary.exceptions.Error('boom')):
-            resp = self.client.post(reverse('edit_profile'), {
-                'branch': 'CSE',
-                'profile_pic': SimpleUploadedFile('me.png', png_bytes(), content_type='image/png')})
+            resp = self.client.post(reverse('edit_profile'), profile_data(
+                profile_pic=SimpleUploadedFile('me.png', png_bytes(), content_type='image/png')))
             self.assertRedirects(resp, reverse('edit_profile'), fetch_redirect_response=False)
             page = self.client.get(reverse('edit_profile'))
         self.assertContains(page, 'We could not save your file right now')
@@ -428,8 +434,8 @@ class FileCleanupTests(TestCase):
         name = profile.resume.name
         self.client.force_login(self.user)
         with self.captureOnCommitCallbacks(execute=True):
-            self.client.post(reverse('edit_profile'), {
-                'branch': 'CSE', 'resume': SimpleUploadedFile('bad.docx', b'PK fake')})
+            self.client.post(reverse('edit_profile'), profile_data(
+                resume=SimpleUploadedFile('bad.docx', b'PK fake')))
         self.assertTrue(os.path.exists(self.path(name)))
         self.assertEqual(StudentProfile.objects.get(pk=profile.pk).resume.name, name)
 
@@ -472,3 +478,233 @@ class CloudinaryCleanupTests(TestCase):
         self.assertEqual(destroy.call_args.args[0], old)
         self.assertEqual(destroy.call_args.kwargs['resource_type'], 'raw')
         self.assertNotEqual(profile.resume.name, old)
+
+
+# ═════════════════════════ Phase D: profile completion + forms ═════════════════════════
+class ProfileCompletenessTests(TestCase):
+    def setUp(self):
+        self.user = make_user('stu', 'student')
+
+    def complete(self, **over):
+        fields = dict(user=self.user, branch='CSE', cgpa=8.0, passing_year=2027, resume='resumes/x.pdf')
+        fields.update(over)
+        return StudentProfile.objects.create(**fields)
+
+    def test_fresh_profile_is_missing_everything(self):
+        profile = StudentProfile.objects.create(user=self.user)
+        self.assertEqual(profile.missing_required_fields(), ['Branch', 'CGPA', 'Passing year', 'Resume (PDF)'])
+        self.assertFalse(profile.is_complete)
+
+    def test_new_profile_has_no_silent_defaults(self):
+        self.client.force_login(self.user)
+        self.client.get(reverse('profile'))
+        profile = StudentProfile.objects.get(user=self.user)
+        self.assertEqual(profile.branch, '')
+        self.assertIsNone(profile.passing_year)
+        self.assertEqual(profile.cgpa, 0.0)
+
+    def test_complete_profile(self):
+        profile = self.complete()
+        self.assertTrue(profile.is_complete)
+        self.assertEqual(profile.missing_required_fields(), [])
+
+    def test_each_required_field_matters(self):
+        cases = {'branch': ('', 'Branch'), 'cgpa': (0.0, 'CGPA'),
+                 'passing_year': (None, 'Passing year'), 'resume': ('', 'Resume (PDF)')}
+        for field, (empty, label) in cases.items():
+            profile = self.complete(**{field: empty})
+            self.assertEqual(profile.missing_required_fields(), [label], field)
+            profile.delete()
+
+    def test_phone_and_linkedin_are_not_required(self):
+        profile = self.complete()
+        self.assertEqual(profile.linkedin, '')
+        self.assertEqual(self.user.phone, '')
+        self.assertTrue(profile.is_complete)
+
+
+class StudentProfileFormTests(TestCase):
+    def setUp(self):
+        self.user = make_user('stu', 'student')
+        self.client.force_login(self.user)
+
+    def post(self, **over):
+        return self.client.post(reverse('edit_profile'), profile_data(**over))
+
+    def profile(self):
+        return StudentProfile.objects.get(user=self.user)
+
+    def test_valid_save_updates_profile_name_and_phone(self):
+        resp = self.post(first_name='Asha', last_name='Verma', phone='+91 98765 43210',
+                         roll_number='21CSE001', skills='python', linkedin='https://linkedin.com/in/asha')
+        self.assertRedirects(resp, reverse('profile'), fetch_redirect_response=False)
+        self.user.refresh_from_db()
+        self.assertEqual((self.user.first_name, self.user.last_name, self.user.phone), ('Asha', 'Verma', '+91 98765 43210'))
+        profile = self.profile()
+        self.assertEqual((profile.branch, profile.cgpa, profile.passing_year, profile.roll_number),
+                         ('CSE', 8.0, 2027, '21CSE001'))
+
+    def test_required_fields_cannot_be_blank(self):
+        for field in ('branch', 'cgpa', 'passing_year', 'first_name'):
+            resp = self.post(**{field: ''})
+            self.assertEqual(resp.status_code, 200, field)
+        self.assertFalse(StudentProfile.objects.filter(user=self.user, cgpa__gt=0).exists())
+
+    def test_bad_cgpa_rejected(self):
+        for bad in ('0', '-1', '10.5', '11', 'nan', 'inf', 'abc'):
+            self.assertEqual(self.post(cgpa=bad).status_code, 200, bad)
+        self.assertFalse(StudentProfile.objects.filter(user=self.user, cgpa__gt=0).exists())
+
+    def test_cgpa_boundaries_accepted(self):
+        for ok in ('0.01', '10', '7.55'):
+            self.assertEqual(self.post(cgpa=ok).status_code, 302, ok)
+
+    def test_bad_passing_year_rejected(self):
+        for bad in ('1999', '2051', 'abc', '20.5'):
+            self.assertEqual(self.post(passing_year=bad).status_code, 200, bad)
+
+    def test_branch_must_be_a_real_student_branch(self):
+        for bad in ('ALL', 'XYZ'):
+            self.assertEqual(self.post(branch=bad).status_code, 200, bad)
+
+    def test_bad_links_rejected(self):
+        self.assertEqual(self.post(linkedin='not a url').status_code, 200)
+        self.assertEqual(self.post(github='javascript:alert(1)').status_code, 200)
+
+    def test_bad_phone_rejected_but_blank_is_fine(self):
+        for bad in ('abc', '12', '1' * 20, '<script>'):
+            self.assertEqual(self.post(phone=bad).status_code, 200, bad)
+        self.assertEqual(self.post(phone='').status_code, 302)
+
+    def test_blank_roll_number_is_stored_as_null_not_the_word_none(self):
+        self.post(roll_number='')
+        self.assertIsNone(self.profile().roll_number)
+        # another student leaving it blank must not collide with the first
+        other = make_user('stu2', 'student')
+        self.client.force_login(other)
+        self.assertEqual(self.post(roll_number='').status_code, 302)
+        self.assertIsNone(StudentProfile.objects.get(user=other).roll_number)
+
+    def test_duplicate_roll_number_rejected(self):
+        self.post(roll_number='R1')
+        other = make_user('stu2', 'student')
+        self.client.force_login(other)
+        resp = self.post(roll_number='R1')
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'already exists')
+
+    def test_nothing_is_half_saved_when_profile_part_is_invalid(self):
+        self.post(first_name='Changed', cgpa='99')
+        self.user.refresh_from_db()
+        self.assertNotEqual(self.user.first_name, 'Changed')
+
+    def test_edit_page_does_not_prefill_unset_values(self):
+        resp = self.client.get(reverse('edit_profile'))
+        html = resp.content.decode()
+        self.assertNotIn('value="None"', html)
+        self.assertNotIn('value="0.0"', html)
+        self.assertIn('Select your branch', html)
+        self.assertNotIn('All Branches', html)       # not a valid student branch
+        self.assertContains(resp, 'Your profile is incomplete.')
+
+    def test_edit_page_shows_saved_values(self):
+        self.post(roll_number='21CSE009')
+        html = self.client.get(reverse('edit_profile')).content.decode()
+        self.assertIn('value="21CSE009"', html)
+        self.assertIn('value="8.0"', html)
+        self.assertIn('value="2027"', html)
+        self.assertIn('<option value="CSE" selected>', html)
+
+
+class ProfileBannerTests(TestCase):
+    def setUp(self):
+        from placements.models import PlacementDrive
+        from datetime import timedelta
+        from django.utils import timezone
+        self.user = make_user('stu', 'student')
+        self.client.force_login(self.user)
+        rec = make_user('rec', 'recruiter')
+        self.drive = PlacementDrive.objects.create(
+            posted_by=rec, company='Acme', role='Dev', description='d', location='X',
+            job_type='full_time', deadline=timezone.localdate() + timedelta(days=5))
+
+    def make_complete(self):
+        StudentProfile.objects.update_or_create(user=self.user, defaults=dict(
+            branch='CSE', cgpa=8.0, passing_year=2027, resume='resumes/x.pdf'))
+
+    def test_incomplete_student_sees_notice_everywhere_and_cannot_click_apply(self):
+        for url in (reverse('profile'), reverse('dashboard')):
+            resp = self.client.get(url)
+            self.assertContains(resp, 'Your profile is incomplete.', msg_prefix=url)
+            self.assertContains(resp, 'Branch, CGPA, Passing year, Resume (PDF)', msg_prefix=url)
+        detail = self.client.get(reverse('drive_detail', args=[self.drive.pk]))
+        self.assertContains(detail, 'Complete profile to apply')
+        self.assertNotContains(detail, 'Apply Now')
+
+    def test_complete_student_sees_no_notice_and_gets_apply_button(self):
+        self.make_complete()
+        for url in (reverse('profile'), reverse('dashboard')):
+            self.assertNotContains(self.client.get(url), 'Your profile is incomplete.', msg_prefix=url)
+        detail = self.client.get(reverse('drive_detail', args=[self.drive.pk]))
+        self.assertContains(detail, 'Apply Now')
+        self.assertNotContains(detail, 'Complete profile to apply')
+
+    def test_partial_profile_lists_only_what_is_missing(self):
+        StudentProfile.objects.create(user=self.user, branch='CSE', cgpa=8.0)
+        resp = self.client.get(reverse('profile'))
+        self.assertContains(resp, 'Passing year, Resume (PDF)')
+        self.assertNotContains(resp, 'Branch, CGPA')
+
+
+class RecruiterProfileFormTests(TestCase):
+    def setUp(self):
+        self.user = make_user('rec', 'recruiter')
+        self.client.force_login(self.user)
+
+    def post(self, **over):
+        data = {'company_name': 'Acme', 'industry': 'Technology', 'designation': 'HR',
+                'company_website': 'https://acme.example', 'company_address': 'Delhi',
+                'about': 'We build', 'linkedin': 'https://linkedin.com/company/acme'}
+        data.update(over)
+        return self.client.post(reverse('edit_profile'), data)
+
+    def test_valid_save(self):
+        self.assertRedirects(self.post(), reverse('profile'), fetch_redirect_response=False)
+        profile = RecruiterProfile.objects.get(user=self.user)
+        self.assertEqual((profile.company_name, profile.industry), ('Acme', 'Technology'))
+
+    def test_bad_values_rejected_and_nothing_saved(self):
+        for over in ({'company_website': 'nope'}, {'linkedin': 'nope'}, {'industry': 'Piracy'},
+                     {'company_name': 'x' * 101}):
+            self.assertEqual(self.post(**over).status_code, 200, over)
+        self.assertEqual(RecruiterProfile.objects.get(user=self.user).company_name, '')
+
+    def test_everything_optional(self):
+        self.assertEqual(self.post(company_name='', industry='', designation='', company_website='',
+                                   company_address='', about='', linkedin='').status_code, 302)
+
+    def test_non_image_picture_rejected(self):
+        resp = self.post(profile_pic=SimpleUploadedFile('x.docx', b'PK fake'))
+        self.assertContains(resp, 'Image must be a JPG, PNG, GIF or WebP file.')
+
+
+class UntouchedProfileMigrationTests(TestCase):
+    def test_only_untouched_profiles_are_blanked(self):
+        import importlib
+        from django.apps import apps
+        migration = importlib.import_module('students.migrations.0012_clear_untouched_profile_defaults')
+        def mk(name, **fields):
+            return StudentProfile.objects.create(user=make_user(name, 'student'), **fields)
+        untouched = mk('a', branch='CSE', passing_year=2026)
+        has_cgpa = mk('b', branch='ECE', passing_year=2026, cgpa=7.5)
+        has_skills = mk('c', branch='IT', passing_year=2026, skills='python')
+        has_resume = mk('d', branch='ME', passing_year=2026, resume='resumes/x.pdf')
+        has_roll = mk('e', branch='CE', passing_year=2026, roll_number='R9')
+        migration.clear_untouched_defaults(apps, None)
+        for p in (untouched, has_cgpa, has_skills, has_resume, has_roll):
+            p.refresh_from_db()
+        self.assertEqual((untouched.branch, untouched.passing_year), ('', None))
+        self.assertEqual((has_cgpa.branch, has_cgpa.passing_year), ('ECE', 2026))
+        self.assertEqual((has_skills.branch, has_skills.passing_year), ('IT', 2026))
+        self.assertEqual((has_resume.branch, has_resume.passing_year), ('ME', 2026))
+        self.assertEqual((has_roll.branch, has_roll.passing_year), ('CE', 2026))

@@ -150,6 +150,8 @@
 
       {% if already_applied %}
       <span class="btn-applied-badge"><i class="fas fa-check"></i> Applied</span>
+      {% elif missing_fields %}
+      <a href="{% url 'edit_profile' %}" class="btn-apply" style="text-decoration:none;display:inline-block;">Complete profile to apply</a>
       {% else %}
       <form method="POST" action="{% url 'apply' drive.pk %}">
         {% csrf_token %}

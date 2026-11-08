@@ -8,6 +8,7 @@ from django.utils.dateparse import parse_datetime
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 
+from campus_connect.forms_util import flash_form_errors
 from campus_connect.pagination import paginate
 from notifications.views import send_notification
 from students.models import StudentProfile
@@ -66,13 +67,17 @@ def drive_detail_view(request, pk):
     already_applied = Application.objects.filter(student=request.user, drive=drive).exists()
 
     is_saved = False
+    missing_fields = []
     if request.user.role == 'student':
         is_saved = Bookmark.objects.filter(student=request.user, drive=drive).exists()
+        profile = StudentProfile.objects.filter(user=request.user).first() or StudentProfile(user=request.user)
+        missing_fields = profile.missing_required_fields()
 
     return render(request, 'placements/drive_detail.html', {
         'drive':           drive,
         'already_applied': already_applied,
         'is_saved':        is_saved,
+        'missing_fields':  missing_fields,
     })
 
 
@@ -93,17 +98,19 @@ def apply_view(request, pk):
         messages.error(request, 'This drive is no longer accepting applications!')
         return redirect('drive_detail', pk=pk)
 
-    try:
-        profile = StudentProfile.objects.get(user=request.user)
-        if profile.cgpa < drive.min_cgpa:
-            messages.error(request, f'You need minimum {drive.min_cgpa} CGPA to apply!')
-            return redirect('drive_detail', pk=pk)
-        if drive.eligible_branch != 'ALL' and profile.branch != drive.eligible_branch:
-            messages.error(request, 'Your branch is not eligible for this drive!')
-            return redirect('drive_detail', pk=pk)
-    except StudentProfile.DoesNotExist:
-        messages.error(request, 'Please complete your profile before applying!')
+    # A student must have the basics filled in before applying (no profile at all counts as empty)
+    profile = StudentProfile.objects.filter(user=request.user).first() or StudentProfile(user=request.user)
+    missing = profile.missing_required_fields()
+    if missing:
+        messages.error(request, 'Complete your profile before applying. Still needed: ' + ', '.join(missing) + '.')
         return redirect('edit_profile')
+
+    if profile.cgpa < drive.min_cgpa:
+        messages.error(request, f'You need minimum {drive.min_cgpa} CGPA to apply!')
+        return redirect('drive_detail', pk=pk)
+    if drive.eligible_branch != 'ALL' and profile.branch != drive.eligible_branch:
+        messages.error(request, 'Your branch is not eligible for this drive!')
+        return redirect('drive_detail', pk=pk)
 
     if Application.objects.filter(student=request.user, drive=drive).exists():
         messages.warning(request, 'You have already applied for this drive!')
@@ -156,14 +163,6 @@ def withdraw_view(request, pk):
     return render(request, 'placements/withdraw_confirm.html', {'application': application})
 
 
-def _flash_form_errors(request, form):
-    """Show every form error as a message, labelled with the field it belongs to."""
-    for field, errors in form.errors.items():
-        label = '' if field == '__all__' else form.fields[field].label or field.replace('_', ' ').capitalize()
-        for error in errors:
-            messages.error(request, f'{label}: {error}' if label else error)
-
-
 @login_required
 def post_drive_view(request):
     if request.user.role == 'recruiter':
@@ -180,7 +179,7 @@ def post_drive_view(request):
     if request.method == 'POST':
         form = PlacementDriveForm(request.POST, request.FILES)
         if not form.is_valid():
-            _flash_form_errors(request, form)
+            flash_form_errors(request, form)
             return render(request, 'placements/post_drive.html')
         drive = form.save(commit=False)
         drive.posted_by = request.user
@@ -353,7 +352,7 @@ def edit_drive_view(request, pk):
     if request.method == 'POST':
         form = PlacementDriveForm(request.POST, request.FILES, instance=drive)
         if not form.is_valid():
-            _flash_form_errors(request, form)
+            flash_form_errors(request, form)
             # `drive` now holds the valid edits made so far; nothing has been saved
             return render(request, 'placements/edit_drive.html', {'drive': drive})
         drive = form.save()

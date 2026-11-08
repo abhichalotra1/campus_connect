@@ -1,0 +1,7 @@
+{% if missing_fields %}
+<div role="alert" style="margin:0 0 18px;padding:14px 16px;border-radius:12px;border:1px solid rgba(245,158,11,.55);background:rgba(245,158,11,.12);font-size:14px;line-height:1.55;">
+  <strong>Your profile is incomplete.</strong>
+  You can't apply to drives until you add: <strong>{{ missing_fields|join:", " }}</strong>.
+  {% if show_link %}<a href="{% url 'edit_profile' %}" style="font-weight:600;margin-left:6px;">Complete profile &rarr;</a>{% endif %}
+</div>
+{% endif %}

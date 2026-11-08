@@ -208,6 +208,7 @@
             <div class="comp-sub">{{ request.user.studentprofile.branch|default:"Branch not set" }}</div>
           </div>
         </div>
+        {% include 'partials/profile_incomplete.html' with show_link=True %}
         <div class="comp-bar-label">
           <span>Profile completion</span>
           <span>{{ profile_completion|default:"0" }}%</span>
