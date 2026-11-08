@@ -8,8 +8,6 @@ from django.core.validators import validate_email
 from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
-from django.db.models import Count
-from django.db.models.functions import TruncMonth
 
 from campus_connect.pagination import paginate
 from .audit import log_action
@@ -276,82 +274,6 @@ def update_application_status(request, pk):
         return redirect('recruiter_applicants')
     else:
         return redirect('admin_dashboard')
-
-
-@login_required
-def stats_view(request):
-    import json
-
-    user = request.user
-    context = {}
-
-    if user.role == 'student':
-        my_apps = Application.objects.filter(student=user)
-        context['total_applied'] = my_apps.count()
-        context['shortlisted'] = my_apps.filter(status='shortlisted').count()
-        context['selected'] = my_apps.filter(status='selected').count()
-        context['rejected'] = my_apps.filter(status='rejected').count()
-
-        context['status_labels'] = json.dumps(['Applied', 'Shortlisted', 'Selected', 'Rejected'])
-        context['status_data'] = json.dumps([
-            my_apps.filter(status='applied').count(),
-            context['shortlisted'],
-            context['selected'],
-            context['rejected']
-        ])
-
-    elif user.role == 'recruiter':
-        my_drives = PlacementDrive.objects.filter(posted_by=user)
-        my_apps = Application.objects.filter(drive__in=my_drives)
-
-        context['total_drives'] = my_drives.count()
-        context['active_drives'] = my_drives.open().count()
-        context['total_applicants'] = my_apps.count()
-        context['shortlisted'] = my_apps.filter(status='shortlisted').count()
-        context['selected'] = my_apps.filter(status='selected').count()
-
-        context['status_labels'] = json.dumps(['Applied', 'Shortlisted', 'Selected', 'Rejected'])
-        context['status_data'] = json.dumps([
-            my_apps.filter(status='applied').count(),
-            context['shortlisted'],
-            context['selected'],
-            my_apps.filter(status='rejected').count()
-        ])
-
-        drive_names = list(my_drives.values_list('role', flat=True))
-        drive_applicants = list(my_drives.annotate(app_count=Count('application')).values_list('app_count', flat=True))
-        context['drive_labels'] = json.dumps(drive_names)
-        context['drive_data'] = json.dumps(drive_applicants)
-
-    elif user.role == 'admin':
-        total_students = User.objects.filter(role='student').count()
-        total_apps = Application.objects.all().count()
-        selected = Application.objects.filter(status='selected').count()
-
-        context['total_students'] = total_students
-        context['total_recruiters'] = User.objects.filter(role='recruiter').count()
-        context['total_drives'] = PlacementDrive.objects.count()
-        context['total_applications'] = total_apps
-        context['selected_students'] = selected
-        context['placement_rate'] = round((selected / total_students * 100), 1) if total_students else 0
-
-        context['status_labels'] = json.dumps(['Applied', 'Shortlisted', 'Selected', 'Rejected'])
-        context['status_data'] = json.dumps([
-            Application.objects.filter(status='applied').count(),
-            Application.objects.filter(status='shortlisted').count(),
-            Application.objects.filter(status='selected').count(),
-            Application.objects.filter(status='rejected').count()
-        ])
-
-        monthly_data = Application.objects.annotate(month=TruncMonth('applied_at')).values('month').annotate(count=Count('id')).order_by('month')
-        context['monthly_labels'] = json.dumps([m['month'].strftime('%b %Y') for m in monthly_data if m['month']])
-        context['monthly_data'] = json.dumps([m['count'] for m in monthly_data])
-
-        branch_data = Application.objects.filter(status='selected').values('student__studentprofile__branch').annotate(count=Count('id')).order_by('-count')
-        context['branch_labels'] = json.dumps([b['student__studentprofile__branch'] or 'N/A' for b in branch_data])
-        context['branch_data'] = json.dumps([b['count'] for b in branch_data])
-
-    return render(request, 'accounts/stats.html', context)
 
 
 def _csv_safe(value):
