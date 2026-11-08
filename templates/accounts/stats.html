@@ -3,315 +3,429 @@
 
 {% block dashboard_content %}
 <style>
-  /* ── STATS PAGE STYLES ── */
-  .stats-header {
-    margin-bottom: 1.75rem;
+  /* ── STATS PAGE ── all colours come from the theme variables, so light and dark both work */
+  .st-hero {
+    position: relative; overflow: hidden;
+    display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 32px;
+    padding: 32px 36px; margin-bottom: 20px;
+    background: linear-gradient(135deg, var(--surface), var(--surface2));
+    border: 1px solid var(--border); border-radius: var(--radius-lg);
   }
-  .stats-title {
-    font-family: var(--font-display);
-    font-size: 26px;
-    font-weight: 800;
-    color: var(--ink);
-    margin: 0;
-    display: flex;
-    align-items: center;
-    gap: 10px;
+  .st-hero::before {
+    content: ''; position: absolute; inset: 0; pointer-events: none;
+    background:
+      radial-gradient(520px 220px at 100% 0%, var(--p-glow), transparent 70%),
+      radial-gradient(360px 200px at 0% 120%, var(--green-soft), transparent 70%);
   }
-  .stats-title i { color: var(--primary2); }
+  .st-hero > * { position: relative; }
+  .st-eyebrow {
+    display: inline-flex; align-items: center; gap: 8px;
+    font: 500 11px var(--font-mono); letter-spacing: 1.4px; text-transform: uppercase;
+    color: var(--primary2); background: var(--p-soft);
+    padding: 5px 11px; border-radius: 99px; margin-bottom: 14px;
+  }
+  .st-title {
+    font: 800 clamp(24px, 3.2vw, 34px)/1.12 var(--font-display);
+    letter-spacing: -0.8px; color: var(--ink); margin: 0 0 10px;
+  }
+  .st-insight { color: var(--ink2); font-size: 15px; line-height: 1.6; max-width: 520px; margin: 0 0 20px; }
+  .st-cta {
+    display: inline-flex; align-items: center; gap: 8px; text-decoration: none;
+    background: var(--primary); color: #fff; font-weight: 700; font-size: 13.5px;
+    padding: 10px 18px; border-radius: 10px; box-shadow: 0 6px 18px var(--p-glow);
+    transition: transform .15s, box-shadow .15s;
+  }
+  .st-cta:hover { transform: translateY(-2px); box-shadow: 0 10px 24px var(--p-glow); color: #fff; }
 
-  .stats-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 16px;
-    margin-bottom: 28px;
+  /* progress ring */
+  .st-ring { position: relative; width: 190px; height: 190px; flex-shrink: 0; }
+  .st-ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+  .st-ring circle { fill: none; stroke-width: 9; }
+  .st-ring-track { stroke: var(--bg3); }
+  .st-ring-fill {
+    stroke: url(#stRingGrad); stroke-linecap: round;
+    stroke-dasharray: 100; stroke-dashoffset: calc(100 - var(--pct));
+    animation: stRing 1.2s .25s cubic-bezier(.2,.8,.2,1) both;
   }
+  .st-ring-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .st-ring-num { font: 800 44px/1 var(--font-display); letter-spacing: -2px; color: var(--ink); }
+  .st-ring-num sup { font-size: 20px; letter-spacing: 0; color: var(--ink2); margin-left: 2px; vertical-align: top; position: relative; top: 6px; }
+  .st-ring-cap { margin-top: 6px; font: 500 10.5px var(--font-mono); letter-spacing: 1.2px; text-transform: uppercase; color: var(--ink2); }
 
-  /* Stat Card Base */
-  .stat-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
-    padding: 20px 22px;
-    position: relative;
-    overflow: hidden;
-    transition: all 0.25s ease;
+  /* KPI cards */
+  .st-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; margin-bottom: 20px; }
+  .st-kpi {
+    --accent: var(--primary2);
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
+    padding: 18px 20px 16px; transition: transform .2s, border-color .2s, box-shadow .2s;
+    animation: stUp .55s calc(var(--i, 0) * 70ms) cubic-bezier(.2,.8,.2,1) both;
   }
-  .stat-card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 3px;
+  .st-kpi:hover { transform: translateY(-3px); border-color: var(--accent); box-shadow: 0 10px 28px color-mix(in srgb, var(--accent) 18%, transparent); }
+  .st-kpi-top { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .st-kpi-ico {
+    width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; font-size: 14px;
+    color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, transparent);
   }
-  .stat-card:hover {
-    border-color: var(--border2);
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
-  }
-  .stat-card.c-p::before { background: var(--primary); }
-  .stat-card.c-g::before { background: var(--green); }
-  .stat-card.c-y::before { background: var(--yellow); }
-  .stat-card.c-r::before { background: var(--red); }
-  .stat-card.c-i::before { background: var(--ink2); }
-
-  .stat-label {
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.8px;
-    font-weight: 700;
-    color: var(--ink3);
-    font-family: var(--font-mono);
-    margin-bottom: 8px;
-  }
-  .stat-num {
-    font-family: var(--font-display);
-    font-size: 30px;
-    font-weight: 800;
-    letter-spacing: -1.2px;
-    line-height: 1;
-  }
-
-  /* Chart Layout */
-  .charts-grid {
-    display: grid;
-    grid-template-columns: 5fr 7fr;
-    gap: 20px;
-    margin-bottom: 20px;
-  }
-  .charts-grid-full {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 20px;
+  .st-kpi-label { font: 600 12.5px var(--font-body); color: var(--ink2); }
+  .st-kpi-num { font: 800 36px/1 var(--font-display); letter-spacing: -1.5px; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .st-kpi-sub { margin-top: 12px; font-size: 12px; color: var(--ink2); }
+  .st-track { height: 5px; border-radius: 9px; background: var(--bg3); overflow: hidden; margin-top: 12px; }
+  .st-track > span {
+    display: block; height: 100%; width: var(--w); border-radius: 9px; background: var(--accent);
+    transform-origin: left; animation: stGrow 1s .3s cubic-bezier(.2,.8,.2,1) both;
   }
 
-  .chart-panel {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
-    padding: 1.5rem;
-    transition: border-color 0.2s;
-  }
-  .chart-panel:hover { border-color: var(--border2); }
+  /* panels */
+  .st-grid { display: grid; grid-template-columns: 7fr 5fr; gap: 14px; margin-bottom: 14px; }
+  .st-grid.even { grid-template-columns: 1fr 1fr; }
+  .st-panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 22px 24px; min-width: 0; }
+  .st-panel-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 20px; }
+  .st-panel h2 { font: 700 15px var(--font-display); color: var(--ink); margin: 0; display: flex; align-items: center; gap: 9px; }
+  .st-panel h2 i { color: var(--primary2); font-size: 14px; }
+  .st-panel-note { font: 500 11px var(--font-mono); color: var(--ink3); letter-spacing: .4px; }
 
-  .chart-title {
-    font-family: var(--font-display);
-    font-weight: 700;
-    font-size: 15px;
-    color: var(--ink);
-    margin-bottom: 20px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
+  /* funnel */
+  .st-funnel { display: flex; flex-direction: column; gap: 14px; }
+  .st-stage-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 7px; font-size: 13px; }
+  .st-stage-top b { color: var(--ink); font-weight: 700; }
+  .st-stage-top span { color: var(--ink2); font-size: 12px; }
+  .st-stage-bar { height: 34px; border-radius: 10px; background: var(--bg3); overflow: hidden; }
+  .st-stage-bar > span {
+    display: flex; align-items: center; justify-content: flex-end; padding-right: 12px; box-sizing: border-box;
+    height: 100%; width: max(var(--w), 44px); border-radius: 10px; color: #0d0f14; font: 800 14px var(--font-display);
+    background: var(--c); transform-origin: left; animation: stGrow 1s .35s cubic-bezier(.2,.8,.2,1) both;
   }
-  .chart-title i { font-size: 16px; }
 
-  /* Responsive */
-  @media(max-width: 1100px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
-  @media(max-width: 900px) { .charts-grid { grid-template-columns: 1fr; } }
-  @media(max-width: 480px) { .stats-grid { grid-template-columns: 1fr; } }
+  /* doughnut */
+  .st-donut { position: relative; max-width: 230px; margin: 0 auto 18px; }
+  .st-donut-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; }
+  .st-donut-center b { font: 800 30px/1 var(--font-display); letter-spacing: -1px; color: var(--ink); }
+  .st-donut-center small { font: 500 10px var(--font-mono); letter-spacing: 1.2px; text-transform: uppercase; color: var(--ink2); margin-top: 4px; }
+  .st-legend { list-style: none; padding: 0; margin: 0; display: grid; gap: 9px; }
+  .st-legend li { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--ink2); }
+  .st-legend i { width: 10px; height: 10px; border-radius: 3px; background: var(--c); flex-shrink: 0; }
+  .st-legend b { margin-left: auto; color: var(--ink); font-weight: 700; font-variant-numeric: tabular-nums; }
+  .st-legend em { font-style: normal; color: var(--ink3); width: 40px; text-align: right; font-size: 12px; }
+
+  /* ranked drives */
+  .st-rank { list-style: none; margin: 0; padding: 0; display: grid; gap: 16px; }
+  .st-rank-top { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; margin-bottom: 7px; }
+  .st-rank-top b { color: var(--ink); font-weight: 600; }
+  .st-rank-top small { color: var(--ink3); margin-left: 6px; font-size: 12px; }
+  .st-rank-top span { color: var(--ink); font: 700 13px var(--font-display); }
+
+  .st-col { display: flex; flex-direction: column; }
+  .st-funnel-foot { margin-top: auto; padding-top: 22px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .st-funnel-foot > div { background: var(--bg3); border-radius: 12px; padding: 14px 16px; }
+  .st-funnel-foot b { display: block; font: 800 24px/1 var(--font-display); letter-spacing: -1px; color: var(--ink); margin-bottom: 6px; }
+  .st-funnel-foot span { font-size: 12px; color: var(--ink2); }
+
+  .st-chart-box { position: relative; height: 270px; }
+
+  /* empty */
+  .st-empty { text-align: center; padding: 42px 20px; }
+  .st-empty-ico { width: 64px; height: 64px; border-radius: 20px; display: grid; place-items: center; margin: 0 auto 16px; font-size: 24px; color: var(--primary2); background: var(--p-soft); }
+  .st-empty h3 { font: 700 18px var(--font-display); color: var(--ink); margin: 0 0 6px; }
+  .st-empty p { color: var(--ink2); font-size: 14px; max-width: 360px; margin: 0 auto 18px; }
+
+  @keyframes stUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+  @keyframes stGrow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+  @keyframes stRing { from { stroke-dashoffset: 100; } }
+
+  @media (max-width: 960px) { .st-grid, .st-grid.even { grid-template-columns: 1fr; } }
+  @media (max-width: 700px) {
+    .st-kpis { grid-template-columns: repeat(2, 1fr); }
+    .st-kpi { padding: 16px; }
+    .st-kpi-num { font-size: 30px; }
+    .st-hero { grid-template-columns: 1fr; padding: 24px 22px; text-align: center; justify-items: center; }
+    .st-ring { order: -1; width: 160px; height: 160px; }
+    .st-ring-num { font-size: 36px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .st-kpi, .st-track > span, .st-stage-bar > span, .st-ring-fill { animation: none !important; }
+  }
 </style>
 
-<div class="stats-header">
-  <h1 class="stats-title">
-    <i class="fas fa-chart-bar"></i>
-    {% if user.role == 'student' %}My Placement Statistics
-    {% elif user.role == 'recruiter' %}Recruitment Analytics
-    {% else %}Platform Overview{% endif %}
-  </h1>
-</div>
+<!-- HERO -->
+<section class="st-hero">
+  <div>
+    <span class="st-eyebrow"><i class="fas fa-chart-line"></i>
+      {% if user.role == 'student' %}Your journey{% elif user.role == 'recruiter' %}Hiring pulse{% else %}Platform pulse{% endif %}
+    </span>
+    <h1 class="st-title">
+      {% if user.role == 'student' %}My placement statistics
+      {% elif user.role == 'recruiter' %}Recruitment analytics
+      {% else %}Platform overview{% endif %}
+    </h1>
+    <p class="st-insight">{{ insight }}</p>
+    {% if user.role == 'student' %}
+      <a class="st-cta" href="{% url 'drive_list' %}"><i class="fas fa-compass"></i> Browse drives</a>
+    {% elif user.role == 'recruiter' %}
+      <a class="st-cta" href="{% url 'recruiter_applicants' %}"><i class="fas fa-users"></i> Review applicants</a>
+    {% else %}
+      <a class="st-cta" href="{% url 'admin_dashboard' %}"><i class="fas fa-gauge-high"></i> Open admin dashboard</a>
+    {% endif %}
+  </div>
 
-<!-- STAT CARDS -->
-<div class="stats-grid">
-  {% if user.role == 'student' %}
-    <div class="stat-card c-p">
-      <div class="stat-label">Applied</div>
-      <div class="stat-num" style="color:var(--primary2);">{{ total_applied|default:"0" }}</div>
+  <div class="st-ring" role="img" aria-label="{{ hero_label }} {{ hero_pct }} percent">
+    <svg viewBox="0 0 120 120">
+      <defs>
+        <linearGradient id="stRingGrad" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#6c63ff"/>
+          <stop offset="1" stop-color="#22d3a0"/>
+        </linearGradient>
+      </defs>
+      <circle class="st-ring-track" cx="60" cy="60" r="52" pathLength="100"/>
+      <circle class="st-ring-fill" cx="60" cy="60" r="52" pathLength="100" style="--pct: {{ hero_pct }};"/>
+    </svg>
+    <div class="st-ring-center">
+      <span class="st-ring-num"><span data-count="{{ hero_pct }}">{{ hero_pct }}</span><sup>%</sup></span>
+      <span class="st-ring-cap">{{ hero_label }}</span>
     </div>
-    <div class="stat-card c-y">
-      <div class="stat-label">Shortlisted</div>
-      <div class="stat-num" style="color:var(--yellow);">{{ shortlisted|default:"0" }}</div>
+  </div>
+</section>
+
+<!-- KPI CARDS -->
+<section class="st-kpis">
+  {% if user.role == 'recruiter' %}
+    <div class="st-kpi" style="--accent: var(--primary2); --i: 0;">
+      <div class="st-kpi-top"><span class="st-kpi-ico"><i class="fas fa-briefcase"></i></span><span class="st-kpi-label">Active drives</span></div>
+      <div class="st-kpi-num" data-count="{{ active_drives }}">{{ active_drives }}</div>
+      <div class="st-kpi-sub">of {{ total_drives }} posted</div>
     </div>
-    <div class="stat-card c-g">
-      <div class="stat-label">Selected</div>
-      <div class="stat-num" style="color:var(--green);">{{ selected|default:"0" }}</div>
-    </div>
-    <div class="stat-card c-r">
-      <div class="stat-label">Rejected</div>
-      <div class="stat-num" style="color:var(--red);">{{ rejected|default:"0" }}</div>
-    </div>
-  {% elif user.role == 'recruiter' %}
-    <div class="stat-card c-p">
-      <div class="stat-label">Active Drives</div>
-      <div class="stat-num" style="color:var(--primary2);">{{ active_drives|default:"0" }}</div>
-    </div>
-    <div class="stat-card c-i">
-      <div class="stat-label">Total Applicants</div>
-      <div class="stat-num" style="color:var(--ink);">{{ total_applicants|default:"0" }}</div>
-    </div>
-    <div class="stat-card c-g">
-      <div class="stat-label">Hired</div>
-      <div class="stat-num" style="color:var(--green);">{{ selected|default:"0" }}</div>
-    </div>
-  {% elif user.role == 'admin' %}
-    <div class="stat-card c-p">
-      <div class="stat-label">Students</div>
-      <div class="stat-num" style="color:var(--primary2);">{{ total_students|default:"0" }}</div>
-    </div>
-    <div class="stat-card c-i">
-      <div class="stat-label">Recruiters</div>
-      <div class="stat-num" style="color:var(--ink);">{{ total_recruiters|default:"0" }}</div>
-    </div>
-    <div class="stat-card c-y">
-      <div class="stat-label">Total Drives</div>
-      <div class="stat-num" style="color:var(--yellow);">{{ total_drives|default:"0" }}</div>
-    </div>
-    <div class="stat-card c-g">
-      <div class="stat-label">Placement Rate</div>
-      <div class="stat-num" style="color:var(--green);">{{ placement_rate }}%</div>
+    <div class="st-kpi" style="--accent: var(--ink2); --i: 1;">
+      <div class="st-kpi-top"><span class="st-kpi-ico"><i class="fas fa-users"></i></span><span class="st-kpi-label">Total applicants</span></div>
+      <div class="st-kpi-num" data-count="{{ total_applicants }}">{{ total_applicants }}</div>
+      <div class="st-kpi-sub">across all your drives</div>
     </div>
   {% endif %}
-</div>
 
-<!-- CHARTS SECTION -->
-<div class="charts-grid">
-  <!-- PIE CHART (Status) -->
-  <div class="chart-panel">
-    <h5 class="chart-title"><i class="fas fa-chart-pie" style="color:var(--primary2);"></i> Application Status</h5>
-    <canvas id="statusChart"></canvas>
-  </div>
-
-  {% if user.role == 'recruiter' %}
-  <!-- BAR CHART (Drive-wise Applicants) -->
-  <div class="chart-panel">
-    <h5 class="chart-title"><i class="fas fa-chart-bar" style="color:var(--yellow);"></i> Applicants per Drive</h5>
-    <canvas id="driveChart"></canvas>
-  </div>
+  {% if user.role == 'student' %}
+    <div class="st-kpi" style="--accent: var(--primary2); --i: 0;">
+      <div class="st-kpi-top"><span class="st-kpi-ico"><i class="fas fa-paper-plane"></i></span><span class="st-kpi-label">Applications</span></div>
+      <div class="st-kpi-num" data-count="{{ total_applied }}">{{ total_applied }}</div>
+      <div class="st-kpi-sub">{{ status_rows.0.count }} awaiting review</div>
+    </div>
   {% endif %}
 
   {% if user.role == 'admin' %}
-  <!-- BAR CHART (Branch-wise Placements) -->
-  <div class="chart-panel">
-    <h5 class="chart-title"><i class="fas fa-graduation-cap" style="color:var(--green);"></i> Branch-wise Placements</h5>
-    <canvas id="branchChart"></canvas>
-  </div>
+    <div class="st-kpi" style="--accent: var(--primary2); --i: 0;">
+      <div class="st-kpi-top"><span class="st-kpi-ico"><i class="fas fa-graduation-cap"></i></span><span class="st-kpi-label">Students</span></div>
+      <div class="st-kpi-num" data-count="{{ total_students }}">{{ total_students }}</div>
+      <div class="st-kpi-sub">{{ selected_students }} placed so far</div>
+    </div>
+    <div class="st-kpi" style="--accent: var(--ink2); --i: 1;">
+      <div class="st-kpi-top"><span class="st-kpi-ico"><i class="fas fa-building"></i></span><span class="st-kpi-label">Recruiters</span></div>
+      <div class="st-kpi-num" data-count="{{ total_recruiters }}">{{ total_recruiters }}</div>
+      <div class="st-kpi-sub">hiring on the platform</div>
+    </div>
+    <div class="st-kpi" style="--accent: var(--yellow); --i: 2;">
+      <div class="st-kpi-top"><span class="st-kpi-ico"><i class="fas fa-briefcase"></i></span><span class="st-kpi-label">Total drives</span></div>
+      <div class="st-kpi-num" data-count="{{ total_drives }}">{{ total_drives }}</div>
+      <div class="st-kpi-sub">posted to date</div>
+    </div>
+    <div class="st-kpi" style="--accent: var(--green); --i: 3;">
+      <div class="st-kpi-top"><span class="st-kpi-ico"><i class="fas fa-file-lines"></i></span><span class="st-kpi-label">Applications</span></div>
+      <div class="st-kpi-num" data-count="{{ total_applications }}">{{ total_applications }}</div>
+      <div class="st-kpi-sub">submitted by students</div>
+    </div>
+  {% else %}
+    {% for row in status_rows %}
+      {% if user.role == 'student' and row.key != 'applied' or user.role == 'recruiter' and row.key == 'shortlisted' or user.role == 'recruiter' and row.key == 'selected' %}
+      <div class="st-kpi" style="--accent: {{ row.color }}; --i: {% if user.role == 'recruiter' %}{{ forloop.counter }}{% else %}{{ forloop.counter0 }}{% endif %};">
+        <div class="st-kpi-top">
+          <span class="st-kpi-ico"><i class="fas {% if row.key == 'applied' %}fa-paper-plane{% elif row.key == 'shortlisted' %}fa-star{% elif row.key == 'selected' %}fa-trophy{% else %}fa-circle-xmark{% endif %}"></i></span>
+          <span class="st-kpi-label">{% if user.role == 'recruiter' and row.key == 'selected' %}Hired{% else %}{{ row.label }}{% endif %}</span>
+        </div>
+        <div class="st-kpi-num" data-count="{{ row.count }}">{{ row.count }}</div>
+        <div class="st-track"><span style="--w: {{ row.pct }}%;"></span></div>
+        <div class="st-kpi-sub">{{ row.pct }}% of {% if user.role == 'student' %}your applications{% else %}applications{% endif %}</div>
+      </div>
+      {% endif %}
+    {% endfor %}
   {% endif %}
-</div>
+</section>
 
-{% if user.role == 'admin' %}
-<div class="charts-grid-full">
-  <!-- LINE CHART (Monthly Trend - Admin Only) -->
-  <div class="chart-panel">
-    <h5 class="chart-title"><i class="fas fa-chart-line" style="color:var(--red);"></i> Monthly Application Trend</h5>
-    <canvas id="trendChart"></canvas>
+{% if status_total == 0 %}
+<!-- EMPTY STATE -->
+<section class="st-panel st-empty">
+  <div class="st-empty-ico"><i class="fas fa-seedling"></i></div>
+  <h3>Nothing to chart yet</h3>
+  <p>
+    {% if user.role == 'student' %}Apply to your first drive and your funnel, success rate and status breakdown will appear here.
+    {% elif user.role == 'recruiter' %}Once students start applying to your drives, your hiring funnel will show up here.
+    {% else %}Charts will fill in as soon as students start applying.{% endif %}
+  </p>
+  {% if user.role == 'student' %}<a class="st-cta" href="{% url 'drive_list' %}"><i class="fas fa-compass"></i> Browse drives</a>{% endif %}
+</section>
+{% else %}
+
+<!-- FUNNEL + STATUS -->
+<section class="st-grid">
+  <div class="st-panel st-col">
+    <div class="st-panel-head">
+      <h2><i class="fas fa-filter"></i> Application funnel</h2>
+      <span class="st-panel-note">{{ funnel.total }} total</span>
+    </div>
+    <div class="st-funnel">
+      <div>
+        <div class="st-stage-top"><b>Applied</b><span>every application</span></div>
+        <div class="st-stage-bar"><span style="--w: 100%; --c: #6c63ff;">{{ funnel.total }}</span></div>
+      </div>
+      <div>
+        <div class="st-stage-top"><b>Moved forward</b><span>{{ funnel.forward_pct }}% shortlisted or selected</span></div>
+        <div class="st-stage-bar"><span style="--w: {{ funnel.forward_pct }}%; --c: #f5c842;">{{ funnel.forward }}</span></div>
+      </div>
+      <div>
+        <div class="st-stage-top"><b>{% if user.role == 'recruiter' %}Hired{% else %}Selected{% endif %}</b><span>{{ funnel.forward_to_selected_pct }}% of those moved forward</span></div>
+        <div class="st-stage-bar"><span style="--w: {{ funnel.selected_pct }}%; --c: #22d3a0;">{{ status_rows.2.count }}</span></div>
+      </div>
+    </div>
+    <div class="st-funnel-foot">
+      <div><b>{{ funnel.forward_pct }}%</b><span>move past the first review</span></div>
+      <div><b>{{ funnel.selected_pct }}%</b><span>end in a selection</span></div>
+    </div>
   </div>
-</div>
+
+  <div class="st-panel">
+    <div class="st-panel-head"><h2><i class="fas fa-chart-pie"></i> Status mix</h2></div>
+    <div class="st-donut">
+      <canvas id="statusChart" aria-label="Application status breakdown"></canvas>
+      <div class="st-donut-center"><b>{{ status_total }}</b><small>applications</small></div>
+    </div>
+    <ul class="st-legend">
+      {% for row in status_rows %}
+      <li style="--c: {{ row.color }};"><i></i>{{ row.label }}<b>{{ row.count }}</b><em>{{ row.pct }}%</em></li>
+      {% endfor %}
+    </ul>
+  </div>
+</section>
 {% endif %}
 
+{% if user.role == 'recruiter' %}
+<section class="st-panel">
+  <div class="st-panel-head">
+    <h2><i class="fas fa-ranking-star"></i> Top drives by applicants</h2>
+    <span class="st-panel-note">up to 6 drives</span>
+  </div>
+  {% if drive_rows %}
+  <ul class="st-rank">
+    {% for d in drive_rows %}
+    <li>
+      <div class="st-rank-top"><div><b>{{ d.name }}</b><small>{{ d.company }}</small></div><span>{{ d.count }}</span></div>
+      <div class="st-track" style="margin-top:0;"><span style="--w: {{ d.pct }}%; --accent: var(--primary2);"></span></div>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <div class="st-empty" style="padding:24px 10px;"><p style="margin:0;">You haven't posted a drive yet.</p></div>
+  {% endif %}
+</section>
+{% endif %}
+
+{% if user.role == 'admin' %}
+<section class="st-grid even">
+  <div class="st-panel">
+    <div class="st-panel-head"><h2><i class="fas fa-graduation-cap"></i> Placements by branch</h2></div>
+    {% if branch_labels != '[]' %}<div class="st-chart-box"><canvas id="branchChart"></canvas></div>
+    {% else %}<div class="st-empty" style="padding:50px 10px;"><p style="margin:0;">No placements recorded yet.</p></div>{% endif %}
+  </div>
+  <div class="st-panel">
+    <div class="st-panel-head"><h2><i class="fas fa-chart-line"></i> Applications per month</h2></div>
+    {% if monthly_labels != '[]' %}<div class="st-chart-box"><canvas id="trendChart"></canvas></div>
+    {% else %}<div class="st-empty" style="padding:50px 10px;"><p style="margin:0;">No application history yet.</p></div>{% endif %}
+  </div>
+</section>
+{% endif %}
 {% endblock %}
 
 {% block extra_js %}
-<!-- Include Chart.js -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-
 <script>
-// Global Chart Settings for Dark Mode
-Chart.defaults.color = '#8b92b8';
-Chart.defaults.borderColor = 'rgba(255,255,255,0.07)';
-
-// --- STATUS PIE CHART ---
-const statusCtx = document.getElementById('statusChart').getContext('2d');
-new Chart(statusCtx, {
-    type: 'doughnut',
-    data: {
-        labels: {{ status_labels|safe }},
-        datasets: [{
-            data: {{ status_data|safe }},
-            backgroundColor: [
-                'rgba(79, 70, 229, 0.8)',  // Applied - Primary
-                'rgba(245, 200, 66, 0.8)', // Shortlisted - Yellow
-                'rgba(34, 211, 160, 0.8)',  // Selected - Green
-                'rgba(244, 63, 94, 0.8)'   // Rejected - Red
-            ],
-            borderWidth: 0
-        }]
-    },
-    options: {
-        responsive: true,
-        plugins: {
-            legend: { position: 'bottom', labels: { padding: 20, font: { family: "'Plus Jakarta Sans', sans-serif" } } }
-        }
+// ── count-up numbers ──
+(function () {
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  document.querySelectorAll('[data-count]').forEach(function (el) {
+    var target = parseInt(el.dataset.count, 10);
+    if (reduce || isNaN(target) || target === 0) return;
+    var start = null, dur = 900;
+    function tick(t) {
+      if (start === null) start = t;
+      var p = Math.min((t - start) / dur, 1);
+      el.textContent = Math.round(target * (1 - Math.pow(1 - p, 3)));
+      if (p < 1) requestAnimationFrame(tick);
     }
-});
-
-{% if user.role == 'recruiter' %}
-// --- DRIVE BAR CHART ---
-const driveCtx = document.getElementById('driveChart').getContext('2d');
-new Chart(driveCtx, {
-    type: 'bar',
-    data: {
-        labels: {{ drive_labels|safe }},
-        datasets: [{
-            label: 'Applicants',
-            data: {{ drive_data|safe }},
-            backgroundColor: 'rgba(79, 70, 229, 0.6)',
-            borderColor: 'rgba(79, 70, 229, 1)',
-            borderWidth: 1,
-            borderRadius: 6
-        }]
-    },
-    options: {
-        responsive: true,
-        scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
-        plugins: { legend: { display: false } }
-    }
-});
-{% endif %}
-
-{% if user.role == 'admin' %}
-// --- BRANCH BAR CHART ---
-const branchCtx = document.getElementById('branchChart').getContext('2d');
-new Chart(branchCtx, {
-    type: 'bar',
-    data: {
-        labels: {{ branch_labels|safe }},
-        datasets: [{
-            label: 'Students Placed',
-            data: {{ branch_data|safe }},
-            backgroundColor: 'rgba(34, 211, 160, 0.6)',
-            borderColor: 'rgba(34, 211, 160, 1)',
-            borderWidth: 1,
-            borderRadius: 6
-        }]
-    },
-    options: {
-        responsive: true,
-        scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
-        plugins: { legend: { display: false } }
-    }
-});
-
-// --- MONTHLY TREND LINE CHART ---
-const trendCtx = document.getElementById('trendChart').getContext('2d');
-new Chart(trendCtx, {
-    type: 'line',
-    data: {
-        labels: {{ monthly_labels|safe }},
-        datasets: [{
-            label: 'Applications',
-            data: {{ monthly_data|safe }},
-            borderColor: 'rgba(79, 70, 229, 1)',
-            backgroundColor: 'rgba(79, 70, 229, 0.1)',
-            fill: true,
-            tension: 0.4,
-            pointBackgroundColor: 'rgba(79, 70, 229, 1)',
-            pointRadius: 4
-        }]
-    },
-    options: {
-        responsive: true,
-        scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
-        plugins: { legend: { display: false } }
-    }
-});
-{% endif %}
+    el.textContent = '0';
+    requestAnimationFrame(tick);
+  });
+})();
 </script>
+
+{% if status_total > 0 or user.role == 'admin' %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+(function () {
+  var charts = [];
+  function css(v) { return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+
+  function build() {
+    Chart.defaults.color = css('--ink2');
+    Chart.defaults.borderColor = css('--border');
+    Chart.defaults.font.family = "'Plus Jakarta Sans', sans-serif";
+
+    var gridOpts = { grid: { color: css('--border') }, border: { display: false } };
+
+    {% if status_total > 0 %}
+    charts.push(new Chart(document.getElementById('statusChart'), {
+      type: 'doughnut',
+      data: {
+        labels: {{ status_labels|safe }},
+        datasets: [{ data: {{ status_data|safe }}, backgroundColor: {{ status_colors|safe }},
+                     borderColor: css('--surface'), borderWidth: 3, hoverOffset: 6 }]
+      },
+      options: { cutout: '72%', responsive: true, plugins: { legend: { display: false } } }
+    }));
+    {% endif %}
+
+    {% if user.role == 'admin' %}
+    var branchEl = document.getElementById('branchChart');
+    if (branchEl) charts.push(new Chart(branchEl, {
+      type: 'bar',
+      data: { labels: {{ branch_labels|safe }},
+              datasets: [{ label: 'Students placed', data: {{ branch_data|safe }},
+                           backgroundColor: '#22d3a0', borderRadius: 8, maxBarThickness: 44 }] },
+      options: { maintainAspectRatio: false, plugins: { legend: { display: false } },
+                 scales: { x: { grid: { display: false }, border: { display: false } },
+                           y: Object.assign({ beginAtZero: true, ticks: { stepSize: 1, precision: 0 } }, gridOpts) } }
+    }));
+
+    var trendEl = document.getElementById('trendChart');
+    if (trendEl) charts.push(new Chart(trendEl, {
+      type: 'line',
+      data: { labels: {{ monthly_labels|safe }},
+              datasets: [{ label: 'Applications', data: {{ monthly_data|safe }},
+                           borderColor: '#6c63ff', borderWidth: 3, tension: 0.4, fill: true,
+                           pointRadius: 4, pointBackgroundColor: '#6c63ff', pointBorderColor: css('--surface'), pointBorderWidth: 2,
+                           backgroundColor: function (c) {
+                             var a = c.chart.chartArea; if (!a) return 'rgba(108,99,255,0.15)';
+                             var g = c.chart.ctx.createLinearGradient(0, a.top, 0, a.bottom);
+                             g.addColorStop(0, 'rgba(108,99,255,0.35)'); g.addColorStop(1, 'rgba(108,99,255,0)');
+                             return g; } }] },
+      options: { maintainAspectRatio: false, plugins: { legend: { display: false } },
+                 scales: { x: { grid: { display: false }, border: { display: false } },
+                           y: Object.assign({ beginAtZero: true, ticks: { stepSize: 1, precision: 0 } }, gridOpts) } }
+    }));
+    {% endif %}
+  }
+
+  build();
+
+  // Rebuild with the right colours when the user flips light/dark.
+  new MutationObserver(function () {
+    charts.forEach(function (c) { c.destroy(); });
+    charts = [];
+    build();
+  }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+})();
+</script>
+{% endif %}
 {% endblock %}
