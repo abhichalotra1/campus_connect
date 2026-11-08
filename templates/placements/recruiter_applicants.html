@@ -308,7 +308,9 @@ function confirmStatus(selectElement, appId) {
     confirmBtn.onclick = function() {
     this.disabled = true;
     this.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Updating...';
-    document.getElementById('statusForm-' + appId).submit();
+    const sf = document.getElementById('statusForm-' + appId);
+    window.ccLockForm(sf, 'Updating status...');
+    sf.submit();
   };
 }
 

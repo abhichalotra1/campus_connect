@@ -2,9 +2,12 @@ from django.db import models
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.core.exceptions import PermissionDenied, ValidationError
+from django.core.exceptions import PermissionDenied
+from django.db import transaction
 from django.shortcuts import get_object_or_404
 from accounts.decorators import is_verified_recruiter
+from campus_connect.forms_util import flash_form_errors
+from .forms import RecruiterProfileForm, StudentProfileForm, UserNameForm
 from .models import StudentProfile, RecruiterProfile
 from placements.models import PlacementDrive
 
@@ -23,32 +26,15 @@ def _discard_unsaved_files(instance):
                 setattr(instance, field.name, getattr(saved, field.name) if saved else None)
 
 
-def _save_validated(request, profile):
-    """Run model validators, then save. Returns True on success."""
-    try:
-        profile.full_clean()
-    except ValidationError as e:
-        _discard_unsaved_files(profile)
-        for field, errors in e.message_dict.items():
-            label = '' if field == '__all__' else field.replace('_', ' ').title() + ': '
-            for err in errors:
-                messages.error(request, f'{label}{err}')
-        return False
-    profile.save()
-    return True
-
-
 @login_required
 def profile_view(request):
     user = request.user
 
     if user.role == 'student':
-        profile, _ = StudentProfile.objects.get_or_create(
-            user=user,
-            defaults={'branch': 'CSE'}
-        )
+        profile, _ = StudentProfile.objects.get_or_create(user=user)
         return render(request, 'students/profile.html', {
             'profile': profile,
+            'missing_fields': profile.missing_required_fields(),
         })
 
     elif user.role == 'recruiter':
@@ -86,61 +72,39 @@ def edit_profile_view(request):
     user = request.user
 
     if user.role == 'student':
-        profile, _ = StudentProfile.objects.get_or_create(
-            user=user,
-            defaults={'branch': 'CSE'}
-        )
+        profile, _ = StudentProfile.objects.get_or_create(user=user)
 
         if request.method == 'POST':
-            profile.branch         = request.POST.get('branch', profile.branch)
-            profile.roll_number    = request.POST.get('roll_number', profile.roll_number) or None
-            profile.skills         = request.POST.get('skills', profile.skills)
-            profile.certifications = request.POST.get('certifications', profile.certifications)
-            profile.about          = request.POST.get('about', profile.about)
-            profile.linkedin       = request.POST.get('linkedin', profile.linkedin)
-            profile.github         = request.POST.get('github', profile.github)
-
-            # Blank number fields keep the old value; anything else is validated
-            passing_year = request.POST.get('passing_year', '').strip()
-            if passing_year:
-                profile.passing_year = passing_year
-            cgpa = request.POST.get('cgpa', '').strip()
-            if cgpa:
-                profile.cgpa = cgpa
-
-            if 'resume' in request.FILES:
-                profile.resume = request.FILES['resume']
-            if 'profile_pic' in request.FILES:
-                profile.profile_pic = request.FILES['profile_pic']
-
-            if _save_validated(request, profile):
+            form = StudentProfileForm(request.POST, request.FILES, instance=profile)
+            name_form = UserNameForm(request.POST, instance=user)
+            profile_ok, name_ok = form.is_valid(), name_form.is_valid()
+            if profile_ok and name_ok:
+                with transaction.atomic():
+                    name_form.save()
+                    form.save()
                 messages.success(request, 'Profile updated successfully!')
                 return redirect('profile')
-            # On error, fall through and re-render the form with the errors
+            flash_form_errors(request, form, name_form)
+            _discard_unsaved_files(profile)
+            # fall through: the page shows the valid edits so far; nothing was saved
 
         return render(request, 'students/edit_profile.html', {
             'profile': profile,
-            'branch_choices': PlacementDrive.BRANCH_CHOICES,
+            'branch_choices': StudentProfile.BRANCH_CHOICES,
+            'missing_fields': profile.missing_required_fields(),
         })
 
     elif user.role == 'recruiter':
         profile, _ = RecruiterProfile.objects.get_or_create(user=user)
 
         if request.method == 'POST':
-            profile.company_name    = request.POST.get('company_name', profile.company_name)
-            profile.industry        = request.POST.get('industry', profile.industry)
-            profile.designation     = request.POST.get('designation', profile.designation)
-            profile.company_website = request.POST.get('company_website', profile.company_website)
-            profile.company_address = request.POST.get('company_address', profile.company_address)
-            profile.about           = request.POST.get('about', profile.about)
-            profile.linkedin        = request.POST.get('linkedin', profile.linkedin)
-
-            if 'profile_pic' in request.FILES:
-                profile.profile_pic = request.FILES['profile_pic']
-
-            if _save_validated(request, profile):
+            form = RecruiterProfileForm(request.POST, request.FILES, instance=profile)
+            if form.is_valid():
+                form.save()
                 messages.success(request, 'Recruiter profile updated successfully!')
                 return redirect('profile')
+            flash_form_errors(request, form)
+            _discard_unsaved_files(profile)
 
         return render(request, 'students/edit_recruiter_profile.html', {'profile': profile})
 

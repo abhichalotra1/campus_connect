@@ -1,0 +1,90 @@
+{% comment %}
+Shared by base.html and dashboard_base.html.
+   1. Every POST form shows a loading state and can't be double-submitted.
+      Opt out with <form data-no-loading>. Set the button text with
+      data-loading-text="Saving..." on the submit button.
+   2. Scrolling the mouse wheel over a focused number field scrolls the page
+      instead of silently changing the value.
+{% endcomment %}
+<style>
+.cc-busy-overlay {
+  position: fixed; inset: 0; z-index: 2000;
+  display: none; align-items: center; justify-content: center;
+  background: rgba(8, 10, 16, 0.55); backdrop-filter: blur(2px);
+}
+.cc-busy-overlay.show { display: flex; animation: ccBusyIn .15s .2s both; }
+.cc-busy-box {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 22px; border-radius: 12px;
+  background: var(--surface, #1a1d2a); color: var(--ink, #eef0ff);
+  border: 1px solid var(--border2, rgba(255,255,255,0.13));
+  box-shadow: 0 10px 40px rgba(0,0,0,.35); font-weight: 600;
+}
+.cc-busy-box i { color: var(--primary2, #818cf8); font-size: 1.15rem; }
+@keyframes ccBusyIn { from { opacity: 0; } to { opacity: 1; } }
+</style>
+
+<div class="cc-busy-overlay" id="ccBusy" role="status" aria-live="polite">
+  <div class="cc-busy-box"><i class="fas fa-circle-notch fa-spin"></i><span id="ccBusyText">Please wait...</span></div>
+</div>
+
+<script>
+(function () {
+  // ── Mouse wheel must not change number fields ──
+  document.addEventListener('wheel', function (e) {
+    var a = document.activeElement;
+    if (a && a.tagName === 'INPUT' && a.type === 'number' && a === e.target) a.blur();
+  }, { passive: true });
+
+  // ── Loading state + double-submit guard ──
+  var busyForms = [];
+
+  function lockForm(form, text) {
+    if (form.dataset.ccBusy) return;
+    form.dataset.ccBusy = '1';
+    busyForms.push(form);
+
+    var buttons = form.querySelectorAll('button:not([type="button"]), input[type="submit"]');
+    buttons.forEach(function (b) { b.disabled = true; });
+
+    document.getElementById('ccBusyText').textContent = text || 'Please wait...';
+    document.getElementById('ccBusy').classList.add('show');
+  }
+  window.ccLockForm = lockForm;
+
+  document.addEventListener('submit', function (e) {
+    var form = e.target;
+    if (!form || form.tagName !== 'FORM' || form.hasAttribute('data-no-loading')) return;
+    if ((form.method || '').toLowerCase() !== 'post') return;
+
+    var btn = e.submitter;
+    var text = btn && btn.getAttribute('data-loading-text');
+    var original = btn && btn.tagName === 'BUTTON' ? btn.innerHTML : null;
+
+    // Wait a tick: the browser builds the form data after this event, and
+    // other handlers may still cancel the submit.
+    setTimeout(function () {
+      if (e.defaultPrevented) return;
+      if (text && original !== null) {
+        btn.dataset.ccHtml = original;
+        btn.innerHTML = '<i class="fas fa-circle-notch fa-spin me-1"></i> ' + text;
+      }
+      lockForm(form, text);
+    }, 0);
+  });
+
+  // Back/forward cache: restore pages so buttons aren't stuck on "Saving..."
+  window.addEventListener('pageshow', function (e) {
+    if (!e.persisted) return;
+    busyForms.forEach(function (f) {
+      delete f.dataset.ccBusy;
+      f.querySelectorAll('button, input[type="submit"]').forEach(function (b) {
+        b.disabled = false;
+        if (b.dataset.ccHtml) { b.innerHTML = b.dataset.ccHtml; delete b.dataset.ccHtml; }
+      });
+    });
+    busyForms = [];
+    document.getElementById('ccBusy').classList.remove('show');
+  });
+})();
+</script>

@@ -184,10 +184,9 @@ def dashboard_view(request):
         context['interviews_count'] = interviews.count()
         context['upcoming_interviews'] = interviews[:2]
 
-        try:
-            context['profile_completion'] = user.studentprofile.profile_completion
-        except StudentProfile.DoesNotExist:
-            context['profile_completion'] = 0
+        profile = StudentProfile.objects.filter(user=user).first() or StudentProfile(user=user)
+        context['profile_completion'] = profile.profile_completion()
+        context['missing_fields'] = profile.missing_required_fields()
 
     elif user.role == 'recruiter':
         my_drives = PlacementDrive.objects.filter(posted_by=user)

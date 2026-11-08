@@ -96,7 +96,7 @@
     <form method="POST">
       {% csrf_token %}
       <div class="del-actions">
-        <button type="submit" class="btn-delete" onclick="submitWithLoading(this, 'Deleting...')">
+        <button type="submit" class="btn-delete" data-loading-text="Deleting...">
           <i class="fas fa-trash"></i> Yes, Delete Drive
         </button>
         <a href="{% url 'drive_list' %}" class="btn-cancel">

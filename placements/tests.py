@@ -439,3 +439,64 @@ class PaginationTests(TestCase):
         resp = self.client.get(reverse('recruiter_applicants'), {'drive': drive.pk})
         self.assertEqual(len(resp.context['applications']), 20)
         self.assertContains(resp, '25 total applicants')
+
+
+# ───────────────────── Applying requires a complete profile ─────────────────────
+class ApplyNeedsCompleteProfileTests(TestCase):
+    def setUp(self):
+        self.rec = make_user('rec', 'recruiter')
+        self.student = make_user('stu', 'student')
+        self.drive = PlacementDrive.objects.create(
+            posted_by=self.rec, company='Acme', role='Dev', description='d', location='X',
+            job_type='full_time', eligible_branch='CSE', min_cgpa=7.0,
+            deadline=timezone.localdate() + timedelta(days=5))
+        self.client.force_login(self.student)
+
+    def profile(self, **over):
+        fields = dict(branch='CSE', cgpa=8.0, passing_year=2027, resume='resumes/x.pdf')
+        fields.update(over)
+        StudentProfile.objects.update_or_create(user=self.student, defaults=fields)
+
+    def apply(self):
+        return self.client.post(reverse('apply', args=[self.drive.pk]))
+
+    def test_no_profile_at_all_is_sent_to_edit_profile(self):
+        resp = self.apply()
+        self.assertRedirects(resp, reverse('edit_profile'), fetch_redirect_response=False)
+        self.assertFalse(Application.objects.exists())
+
+    def test_each_missing_field_blocks_applying_and_is_named(self):
+        cases = {'branch': ('', 'Branch'), 'cgpa': (0.0, 'CGPA'), 'passing_year': (None, 'Passing year'),
+                 'resume': ('', 'Resume (PDF)')}
+        for field, (empty, label) in cases.items():
+            self.profile(**{field: empty})
+            resp = self.apply()
+            self.assertRedirects(resp, reverse('edit_profile'), fetch_redirect_response=False)
+            self.assertFalse(Application.objects.exists(), field)
+            page = self.client.get(reverse('edit_profile'))
+            self.assertContains(page, f'Still needed: {label}.')
+
+    def test_unset_branch_cannot_sneak_into_a_branch_restricted_drive(self):
+        self.profile(branch='')
+        self.apply()
+        self.assertFalse(Application.objects.exists())
+
+    def test_complete_profile_can_apply(self):
+        self.profile()
+        resp = self.apply()
+        self.assertRedirects(resp, reverse('my_applications'), fetch_redirect_response=False)
+        self.assertEqual(Application.objects.filter(student=self.student, drive=self.drive).count(), 1)
+
+    def test_eligibility_still_enforced_for_complete_profiles(self):
+        self.profile(cgpa=6.0)
+        self.apply()
+        self.assertFalse(Application.objects.exists())
+        self.profile(cgpa=8.0, branch='ECE')
+        self.apply()
+        self.assertFalse(Application.objects.exists())
+
+    def test_applying_twice_creates_one_application(self):
+        self.profile()
+        self.apply()
+        self.apply()
+        self.assertEqual(Application.objects.count(), 1)

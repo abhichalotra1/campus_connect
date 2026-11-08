@@ -1,50 +1,76 @@
 from django import forms
-from .models import StudentProfile
+from django.core.validators import RegexValidator
+
 from accounts.models import User
+from .models import RecruiterProfile, StudentProfile
+
+IMAGE_MESSAGE = 'Image must be a JPG, PNG, GIF or WebP file.'
+
+PHONE_VALIDATOR = RegexValidator(
+    r'^[+0-9][0-9 ()\-]{6,14}$',
+    'Enter a valid phone number (7 to 15 characters: digits, spaces, +, - and brackets).',
+)
 
 
 class StudentProfileForm(forms.ModelForm):
+    """Academic details, links and uploads.
+
+    Branch, CGPA and passing year are required to save (they decide which drives a student
+    can apply to). Resume is checked when applying, not when saving, so a student can fill in
+    the rest first. Phone number and LinkedIn stay optional.
+    """
+
     class Meta:
         model = StudentProfile
         fields = [
-            'profile_pic', 'branch', 'cgpa', 'roll_number',
-            'passing_year', 'skills', 'certifications',
-            'about', 'resume', 'linkedin', 'github',
+            'branch', 'cgpa', 'roll_number', 'passing_year', 'skills', 'certifications',
+            'about', 'resume', 'profile_pic', 'linkedin', 'github',
         ]
-        widgets = {
-            'branch':       forms.Select(attrs={'class': 'form-select'}),
-            'cgpa':         forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0', 'max': '10'}),
-            'roll_number':  forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g. 21CSE001'}),
-            'passing_year': forms.NumberInput(attrs={'class': 'form-control', 'min': '2020', 'max': '2030'}),
-            'skills':       forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Python, Django, React, ...'}),
-            'certifications': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'AWS Certified, Google ML, ...'}),
-            'about':        forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'Tell us about yourself...'}),
-            'linkedin':     forms.URLInput(attrs={'class': 'form-control', 'placeholder': 'https://linkedin.com/in/...'}),
-            'github':       forms.URLInput(attrs={'class': 'form-control', 'placeholder': 'https://github.com/...'}),
-            'resume':       forms.FileInput(attrs={'class': 'form-control', 'accept': '.pdf,.doc,.docx'}),
-            'profile_pic':  forms.FileInput(attrs={'class': 'form-control', 'accept': 'image/*'}),
+        labels = {
+            'cgpa': 'CGPA', 'passing_year': 'Passing year', 'roll_number': 'Roll number',
+            'profile_pic': 'Profile picture', 'linkedin': 'LinkedIn', 'github': 'GitHub',
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for name in ('branch', 'cgpa', 'passing_year'):
+            self.fields[name].required = True
+        self.fields['profile_pic'].error_messages['invalid_image'] = IMAGE_MESSAGE
 
-class UserBasicForm(forms.ModelForm):
+    def clean_cgpa(self):
+        value = self.cleaned_data['cgpa']
+        if not 0 < value <= 10:
+            raise forms.ValidationError('Enter your CGPA as a number between 0.01 and 10.')
+        return value
+
+
+class UserNameForm(forms.ModelForm):
+    """The name and phone fields shown at the top of the student profile page."""
+
     class Meta:
         model = User
-        fields = ['first_name', 'last_name', 'email', 'phone']
-        widgets = {
-            'first_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'First Name'}),
-            'last_name':  forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Last Name'}),
-            'email':      forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Email'}),
-            'phone':      forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Phone Number'}),
-        }
+        fields = ['first_name', 'last_name', 'phone']
+        labels = {'first_name': 'First name', 'last_name': 'Last name', 'phone': 'Phone number'}
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['first_name'].required = True
+        self.fields['phone'].validators.append(PHONE_VALIDATOR)
 
 
 class RecruiterProfileForm(forms.ModelForm):
     class Meta:
-        model = User
-        fields = ['first_name', 'last_name', 'email', 'phone']
-        widgets = {
-            'first_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'First Name'}),
-            'last_name':  forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Last Name'}),
-            'email':      forms.EmailInput(attrs={'class': 'form-control'}),
-            'phone':      forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Phone Number'}),
+        model = RecruiterProfile
+        fields = [
+            'company_name', 'industry', 'designation', 'company_website',
+            'company_address', 'about', 'linkedin', 'profile_pic',
+        ]
+        labels = {
+            'company_name': 'Company name', 'company_website': 'Company website',
+            'company_address': 'Company address', 'profile_pic': 'Profile picture',
+            'linkedin': 'LinkedIn',
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['profile_pic'].error_messages['invalid_image'] = IMAGE_MESSAGE
