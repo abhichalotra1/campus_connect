@@ -5,13 +5,16 @@ from django.contrib import messages
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
+from django.db.models import Count, Q
 from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 
+from campus_connect.forms_util import flash_form_errors
 from campus_connect.pagination import paginate
 from .audit import log_action
 from .decorators import is_verified_recruiter
+from .forms import VerificationRequestForm
 from .models import User
 from placements.models import PlacementDrive, Application, Interview
 from students.models import StudentProfile, RecruiterProfile
@@ -209,39 +212,134 @@ def dashboard_view(request):
     return render(request, 'dashboard.html', context)
 
 
+ADMIN_TABS = ('pending', 'applications', 'drives', 'students', 'recruiters')
+ADMIN_PAGE_SIZE = 15
+_ADMIN_DASH_PATH = '/accounts/admin-dashboard/'
+
+
+def _admin_back(request):
+    """Send the admin back to the exact tab, filter and page they acted from."""
+    target = request.POST.get('next', '')
+    if (target.startswith(_ADMIN_DASH_PATH)
+            and url_has_allowed_host_and_scheme(
+                target, allowed_hosts={request.get_host()}, require_https=request.is_secure())):
+        return redirect(target)
+    return redirect('admin_dashboard')
+
+
+def _search(queryset, text, *fields):
+    """Every word typed must appear in at least one of the fields (so "john smith" works)."""
+    for word in text.split()[:5]:
+        condition = Q()
+        for field in fields:
+            condition |= Q(**{f'{field}__icontains': word})
+        queryset = queryset.filter(condition)
+    return queryset
+
+
 @login_required
 def admin_dashboard_view(request):
     if request.user.role != 'admin':
         messages.error(request, 'Access denied!')
         return redirect('dashboard')
 
-    students   = User.objects.filter(role='student')
-    recruiters = User.objects.filter(role='recruiter').select_related('recruiterprofile')
-    drives     = PlacementDrive.objects.all().order_by('-created_at')
-    apps       = Application.objects.all().order_by('-applied_at')
+    today = timezone.localdate()
 
-    total_students    = students.count()
-    total_recruiters  = recruiters.count()
-    total_drives      = drives.count()
-    total_apps        = apps.count()
-    selected_students = apps.filter(status='selected').count()
+    # The overview numbers are a handful of cheap COUNT queries; the big lists below are
+    # loaded one tab and one page at a time, so the page stays fast however much data grows.
+    people = User.objects.aggregate(
+        students=Count('pk', filter=Q(role='student')),
+        recruiters=Count('pk', filter=Q(role='recruiter')),
+    )
+    pending_users = User.objects.filter(role='recruiter', recruiterprofile__verification_status='pending')
+    counts = {
+        'students': people['students'],
+        'recruiters': people['recruiters'],
+        'drives': PlacementDrive.objects.count(),
+        'applications': Application.objects.count(),
+        'pending': pending_users.count(),
+    }
+    # Distinct students: one student selected in two drives is still one placed student.
+    placed_students = Application.objects.filter(status='selected').values('student').distinct().count()
+    placement_rate = round(placed_students * 100 / counts['students']) if counts['students'] else 0
 
-    pending_recruiters = User.objects.filter(
-        role='recruiter',
-        recruiterprofile__verification_status='pending'
-    ).select_related('recruiterprofile')
+    tab = request.GET.get('tab', '')
+    if tab not in ADMIN_TABS:
+        tab = 'pending' if counts['pending'] else 'applications'
+    q = request.GET.get('q', '').strip()[:100]
+    status = request.GET.get('status', '')
+    state = request.GET.get('state', '')
+
+    if tab == 'pending':
+        queryset = pending_users.select_related('recruiterprofile').order_by(
+            'recruiterprofile__verification_requested_at', 'pk')
+        queryset = _search(queryset, q, 'username', 'email', 'first_name', 'last_name',
+                           'recruiterprofile__company_name')
+        status = state = ''
+
+    elif tab == 'applications':
+        if status not in [key for key, _ in Application.STATUS_CHOICES]:
+            status = ''
+        queryset = Application.objects.select_related('student', 'drive').order_by('-applied_at', '-pk')
+        if status:
+            queryset = queryset.filter(status=status)
+        queryset = _search(queryset, q, 'student__username', 'student__first_name', 'student__last_name',
+                           'student__email', 'drive__company', 'drive__role')
+        state = ''
+
+    elif tab == 'drives':
+        drives = PlacementDrive.objects.all()
+        if state == 'open':
+            drives = drives.open()
+        elif state == 'closed':
+            drives = drives.filter(status='closed')
+        elif state == 'expired':
+            drives = drives.filter(status='active', deadline__lt=today)
+        else:
+            state = ''
+        queryset = drives.select_related('posted_by').annotate(app_count=Count('application')).order_by(
+            '-created_at', '-pk')
+        queryset = _search(queryset, q, 'company', 'role', 'location')
+        status = ''
+
+    elif tab == 'students':
+        queryset = User.objects.filter(role='student').select_related('studentprofile').order_by(
+            '-date_joined', '-pk')
+        if state in ('active', 'inactive'):
+            queryset = queryset.filter(is_active=(state == 'active'))
+        else:
+            state = ''
+        queryset = _search(queryset, q, 'username', 'first_name', 'last_name', 'email',
+                           'studentprofile__roll_number')
+        status = ''
+
+    else:  # recruiters
+        queryset = User.objects.filter(role='recruiter').select_related('recruiterprofile').order_by(
+            '-date_joined', '-pk')
+        if state == 'inactive':
+            queryset = queryset.filter(is_active=False)
+        elif state == 'not_requested':
+            queryset = queryset.filter(
+                Q(recruiterprofile__isnull=True) | Q(recruiterprofile__verification_status='not_requested'))
+        elif state in ('approved', 'pending', 'rejected'):
+            queryset = queryset.filter(recruiterprofile__verification_status=state)
+        else:
+            state = ''
+        queryset = _search(queryset, q, 'username', 'first_name', 'last_name', 'email',
+                           'recruiterprofile__company_name')
+        status = ''
+
+    rows, page_query = paginate(request, queryset, per_page=ADMIN_PAGE_SIZE)
 
     return render(request, 'accounts/admin_dashboard.html', {
-        'students':           students,
-        'recruiters':         recruiters,
-        'drives':             drives,
-        'apps':               apps,
-        'total_students':     total_students,
-        'total_recruiters':   total_recruiters,
-        'total_drives':       total_drives,
-        'total_apps':         total_apps,
-        'selected_students':  selected_students,
-        'pending_recruiters': pending_recruiters,
+        'tab': tab, 'q': q, 'status': status, 'state': state,
+        'rows': rows, 'page_obj': rows, 'page_query': page_query,
+        'counts': counts,
+        'open_drives': PlacementDrive.objects.open().count(),
+        'placed_students': placed_students,
+        'placement_rate': placement_rate,
+        'status_choices': Application.STATUS_CHOICES,
+        'next_url': request.get_full_path(),
     })
 
 
@@ -273,7 +371,7 @@ def update_application_status(request, pk):
     if request.user.role == 'recruiter':
         return redirect('recruiter_applicants')
     else:
-        return redirect('admin_dashboard')
+        return _admin_back(request)
 
 
 def _csv_safe(value):
@@ -368,17 +466,17 @@ def request_verification_view(request):
         return redirect('dashboard')
 
     if request.method == 'POST':
-        profile.company_name              = request.POST.get('company_name', '')
-        profile.designation               = request.POST.get('designation', '')
-        profile.industry                  = request.POST.get('industry', '')
-        profile.company_website           = request.POST.get('company_website', '')
-        profile.verification_note         = request.POST.get('verification_note', '')
-        profile.verification_status       = 'pending'
-        profile.verification_requested_at = timezone.now()
-        profile.save()
+        form = VerificationRequestForm(request.POST, instance=profile)
+        if form.is_valid():
+            profile = form.save(commit=False)
+            profile.verification_status       = 'pending'
+            profile.verification_requested_at = timezone.now()
+            profile.save()
 
-        messages.success(request, 'Verification request submitted! We will review it shortly.')
-        return redirect('verification_status')
+            messages.success(request, 'Verification request submitted! We will review it shortly.')
+            return redirect('verification_status')
+        flash_form_errors(request, form)
+        # fall through: the page shows the valid edits so far; nothing was saved
 
     return render(request, 'accounts/request_verification.html', {'profile': profile})
 
@@ -394,7 +492,10 @@ def admin_verify_recruiter(request, user_id):
 
     if request.method == 'POST':
         action       = request.POST.get('action')
-        admin_remark = request.POST.get('admin_remark', '')
+        admin_remark = request.POST.get('admin_remark', '').strip()[:500]
+        if action == 'reject' and not admin_remark:
+            messages.error(request, 'Please give a reason for rejecting, so the recruiter knows what to fix.')
+            return _admin_back(request)
         profile.admin_remark = admin_remark
 
         if action == 'approve':
@@ -424,7 +525,7 @@ def admin_verify_recruiter(request, user_id):
             log_action(request, 'recruiter_rejected', recruiter_user.username, admin_remark)
             messages.warning(request, f'{recruiter_user.username} verification rejected.')
 
-    return redirect('admin_dashboard')
+    return _admin_back(request)
 
 
 # ── ADMIN DRIVE MODERATION ────────────────────────────────────────────────
@@ -447,7 +548,7 @@ def admin_toggle_drive_status(request, drive_id):
 
         drive.save()
 
-    return redirect('admin_dashboard')
+    return _admin_back(request)
 
 
 # ── ADMIN USER MANAGEMENT (SOFT DELETE) ───────────────────────────────────
@@ -463,7 +564,7 @@ def admin_toggle_user_status(request, user_id):
     # Prevent admin from deactivating themselves
     if target_user == request.user:
         messages.error(request, "You cannot deactivate your own account!")
-        return redirect('admin_dashboard')
+        return _admin_back(request)
 
     if request.method == 'POST':
         # Toggle the is_active status
@@ -477,4 +578,4 @@ def admin_toggle_user_status(request, user_id):
         else:
             messages.warning(request, f'User {target_user.username} has been deactivated. They can no longer log in.')
 
-    return redirect('admin_dashboard')
+    return _admin_back(request)

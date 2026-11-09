@@ -110,12 +110,13 @@ def edit_profile_view(request):
 
     elif user.role == 'admin':
         if request.method == 'POST':
-            user.first_name = request.POST.get('first_name', user.first_name)
-            user.last_name  = request.POST.get('last_name', user.last_name)
-            user.phone      = request.POST.get('phone', user.phone)
-            user.save()
-            messages.success(request, 'Profile updated successfully!')
-            return redirect('profile')
+            form = UserNameForm(request.POST, instance=user)
+            if form.is_valid():
+                form.save()
+                messages.success(request, 'Profile updated successfully!')
+                return redirect('profile')
+            flash_form_errors(request, form)
+            # fall through: the page shows the valid edits so far; nothing was saved
 
         return render(request, 'students/edit_admin_profile.html')
 

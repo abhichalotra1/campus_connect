@@ -170,6 +170,13 @@ def withdraw_view(request, pk):
     return render(request, 'placements/withdraw_confirm.html', {'application': application})
 
 
+def _after_drive_change(request):
+    """Where to go after posting, editing or deleting a drive: admins land on their Drives tab."""
+    if request.user.role == 'admin':
+        return redirect(f"{reverse('admin_dashboard')}?tab=drives")
+    return redirect('recruiter_dashboard')
+
+
 @login_required
 def post_drive_view(request):
     if request.user.role == 'recruiter':
@@ -192,7 +199,7 @@ def post_drive_view(request):
         drive.posted_by = request.user
         drive.save()
         messages.success(request, 'Placement drive posted successfully!')
-        return redirect('recruiter_dashboard')
+        return _after_drive_change(request)
 
     return render(request, 'placements/post_drive.html')
 
@@ -364,7 +371,7 @@ def edit_drive_view(request, pk):
             return render(request, 'placements/edit_drive.html', {'drive': drive})
         drive = form.save()
         messages.success(request, f'Drive "{drive.role}" updated successfully!')
-        return redirect('recruiter_dashboard')
+        return _after_drive_change(request)
 
     return render(request, 'placements/edit_drive.html', {'drive': drive})
 
@@ -380,7 +387,7 @@ def delete_drive_view(request, pk):
     if request.method == 'POST':
         drive.delete()
         messages.success(request, f'Drive "{drive.role}" has been deleted.')
-        return redirect('recruiter_dashboard')
+        return _after_drive_change(request)
 
     return render(request, 'placements/delete_drive_confirm.html', {'drive': drive})
 
