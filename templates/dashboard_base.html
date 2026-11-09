@@ -235,7 +235,7 @@ body { font-family: var(--font-body); background: var(--bg); color: var(--ink); 
       Admin Panel
     </a>
     {% endif %}
-    {% if user.role == 'recruiter' %}
+    {% if user.role == 'recruiter' or user.role == 'admin' %}
     <a class="nav-item {% if request.resolver_match.url_name == 'post_drive' %}active{% endif %}" href="{% url 'post_drive' %}">
       <div class="nav-icon"><i class="fa-solid fa-plus"></i></div>
       Post a Drive

@@ -3,415 +3,517 @@
 
 {% block dashboard_content %}
 <style>
-  /* ── ADMIN DASHBOARD STYLES ── */
-  .ad-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 16px;
-    margin-bottom: 1.75rem;
-  }
-  .ad-title {
-    font-family: var(--font-display); font-size: 26px; font-weight: 800;
-    color: var(--ink); margin: 0;
-  }
-  .ad-subtitle { color: var(--ink2); font-size: 14px; margin-top: 4px; }
+  /* ── ADMIN PANEL ── every colour comes from the theme variables, so light and dark both work */
+  .ad-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; }
+  .ad-title { font: 800 clamp(24px, 3vw, 30px)/1.1 var(--font-display); letter-spacing: -0.8px; color: var(--ink); margin: 0 0 6px; }
+  .ad-sub { color: var(--ink2); font-size: 14px; margin: 0; }
   .ad-actions { display: flex; gap: 8px; flex-wrap: wrap; }
-  
-  .btn-export {
-    font-size: 13px; font-weight: 600; text-decoration: none; padding: 7px 14px;
-    border-radius: 9px; display: inline-flex; align-items: center; gap: 6px; transition: all 0.18s;
+  .ad-btn {
+    display: inline-flex; align-items: center; gap: 8px; text-decoration: none; cursor: pointer;
+    font: 700 13px var(--font-body); padding: 9px 15px; border-radius: 10px; white-space: nowrap;
+    border: 1px solid var(--border2); background: var(--surface); color: var(--ink2);
+    transition: transform .15s, border-color .15s, color .15s, background .15s;
   }
-  .btn-export-csv { color: var(--green); border: 1px solid rgba(34,211,160,0.3); background: var(--green-soft); }
-  .btn-export-csv:hover { background: var(--green); color: #fff; }
-  .btn-search { color: #fff; background: var(--primary); border: none; }
-  .btn-search:hover { background: var(--primary2); box-shadow: 0 4px 12px var(--p-glow); }
+  .ad-btn:hover { color: var(--ink); border-color: var(--primary2); transform: translateY(-1px); }
+  .ad-btn.primary { background: var(--primary); border-color: var(--primary); color: #fff; box-shadow: 0 6px 18px var(--p-glow); }
+  .ad-btn.primary:hover { color: #fff; background: var(--primary2); }
+  .ad-btn.sm { padding: 6px 11px; font-size: 12px; border-radius: 8px; }
+  .ad-btn.ok { background: var(--green-soft); border-color: rgba(34,211,160,.35); color: var(--green); }
+  .ad-btn.ok:hover { background: var(--green); color: #0d0f14; }
+  .ad-btn.bad { background: var(--red-soft); border-color: rgba(244,63,94,.35); color: var(--red); }
+  .ad-btn.bad:hover { background: var(--red); color: #fff; }
+  .ad-btn:disabled { opacity: .55; cursor: not-allowed; transform: none; }
 
-  /* Stats Grid */
-  .stats-grid {
-    display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin-bottom: 2rem;
+  /* KPIs */
+  .ad-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 18px; }
+  .ad-kpi {
+    --accent: var(--primary2);
+    position: relative; overflow: hidden; background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); padding: 18px 20px;
+    animation: adUp .5s calc(var(--i, 0) * 60ms) cubic-bezier(.2,.8,.2,1) both;
   }
-  .stat-card {
-    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
-    padding: 1.25rem; text-align: center; transition: all 0.25s;
-  }
-  .stat-card:hover { border-color: var(--border2); transform: translateY(-2px); }
-  .stat-icon { font-size: 22px; margin-bottom: 10px; display: block; }
-  .stat-num { font-family: var(--font-display); font-size: 28px; font-weight: 800; color: var(--ink); }
-  .stat-label { font-size: 13px; color: var(--ink2); margin-top: 4px; }
+  .ad-kpi::before { content: ''; position: absolute; inset: 0; pointer-events: none;
+    background: radial-gradient(160px 100px at 100% 0%, color-mix(in srgb, var(--accent) 15%, transparent), transparent 75%); }
+  .ad-kpi > * { position: relative; }
+  .ad-kpi-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .ad-kpi-label { font: 500 11px var(--font-mono); letter-spacing: 1px; text-transform: uppercase; color: var(--ink2); }
+  .ad-kpi-ico { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; font-size: 14px;
+    color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, transparent); }
+  .ad-kpi-num { font: 800 34px/1 var(--font-display); letter-spacing: -1.5px; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .ad-kpi-sub { margin-top: 10px; font-size: 12px; color: var(--ink2); }
 
-  /* Panel Component */
-  .panel {
-    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
-    padding: 1.5rem; margin-bottom: 1.5rem; overflow: hidden;
-  }
-  .panel-warn { border-color: rgba(245,158,11,0.35); }
-  .panel-head {
-    display: flex; align-items: center; gap: 10px; margin-bottom: 1.25rem;
-    padding-bottom: 1rem; border-bottom: 1px solid var(--border);
-  }
-  .panel-title {
-    font-family: var(--font-display); font-weight: 700; color: var(--ink); margin: 0; font-size: 16px;
-    display: flex; align-items: center; gap: 8px;
-  }
-  .panel-badge {
-    background: rgba(245,158,11,0.15); color: #f59e0b; font-size: 11px; font-weight: 700;
-    padding: 2px 10px; border-radius: 20px; font-family: var(--font-mono);
-  }
-  .panel-badge-indigo { background: var(--p-soft); color: var(--primary2); }
+  /* alert */
+  .ad-alert { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 18px; padding: 14px 18px;
+    border-radius: var(--radius-lg); background: var(--yellow-soft); border: 1px solid rgba(245,200,66,.35); color: var(--ink); font-size: 14px; }
+  .ad-alert i { color: var(--yellow); font-size: 18px; }
+  .ad-alert a { margin-left: auto; color: var(--ink); font-weight: 700; text-decoration: none; }
+  .ad-alert a:hover { color: var(--primary2); }
 
-  /* Verification Cards */
-  .verify-card {
-    background: var(--bg2); border: 1px solid var(--border); border-radius: 14px;
-    padding: 1.25rem; margin-bottom: 12px;
-  }
-  .verify-card:last-child { margin-bottom: 0; }
-  .verify-inner { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
-  .verify-name { font-weight: 700; color: var(--ink); font-size: 15px; }
-  .verify-email { font-size: 13px; color: var(--ink2); margin-top: 2px; }
-  .verify-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
-  .tag { padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
-  .tag-primary { background: var(--p-soft); color: var(--primary2); }
-  .tag-surface { background: var(--surface2); color: var(--ink2); }
-  .tag-time { color: var(--ink3); font-size: 12px; display: inline-flex; align-items: center; gap: 4px; }
-  .verify-note { font-size: 13px; color: var(--ink2); margin-top: 10px; font-style: italic; opacity: 0.8; }
-  
-  .verify-actions { display: flex; flex-direction: column; gap: 8px; min-width: 220px; flex-shrink: 0; }
-  .form-input {
-    background: var(--bg3) !important; border: 1px solid var(--border2) !important; color: var(--ink) !important;
-    border-radius: 8px !important; font-family: var(--font-body) !important; font-size: 13px !important;
-    padding: 6px 10px !important; width: 100%; transition: all 0.18s !important; margin-bottom: 4px;
-  }
-  .form-input:focus { border-color: var(--primary) !important; box-shadow: 0 0 0 2px var(--p-soft) !important; }
-  .form-input::placeholder { color: var(--ink3) !important; }
-  
-  .btn-approve, .btn-reject {
-    width: 100%; padding: 7px 14px; border-radius: 8px; font-size: 13px; font-weight: 700;
-    cursor: pointer; border: none; transition: all 0.18s; display: inline-flex; align-items: center; justify-content: center; gap: 5px;
-  }
-  .btn-approve { background: var(--green); color: #fff; }
-  .btn-approve:hover { background: #1ed98a; box-shadow: 0 4px 10px rgba(30,217,138,0.3); }
-  .btn-reject { background: var(--red-soft); color: var(--red); border: 1px solid rgba(244,63,94,0.3); }
-  .btn-reject:hover { background: var(--red); color: #fff; }
+  /* tabs */
+  .ad-tabs { display: flex; gap: 4px; padding: 4px; margin-bottom: 14px; overflow-x: auto; scrollbar-width: none;
+    background: var(--bg2); border: 1px solid var(--border); border-radius: 14px; }
+  .ad-tabs::-webkit-scrollbar { display: none; }
+  .ad-tab { display: inline-flex; align-items: center; gap: 8px; padding: 9px 14px; border-radius: 10px; white-space: nowrap;
+    color: var(--ink2); text-decoration: none; font: 600 13px var(--font-body); transition: background .15s, color .15s; }
+  .ad-tab:hover { color: var(--ink); background: var(--surface); }
+  .ad-tab.active { background: var(--surface); color: var(--ink); box-shadow: 0 1px 8px rgba(0,0,0,.18); }
+  .ad-tab.active i { color: var(--primary2); }
+  .ad-count { font: 600 11px var(--font-mono); padding: 2px 8px; border-radius: 99px; background: var(--bg3); color: var(--ink2); }
+  .ad-tab.active .ad-count { background: var(--p-soft); color: var(--primary2); }
+  .ad-count.hot { background: var(--yellow); color: #0d0f14; }
 
-  /* Custom Tables */
-  .cc-table { width: 100%; border-collapse: collapse; font-size: 14px; }
-  .cc-table thead tr { border-bottom: 1px solid var(--border2); }
-  .cc-table th {
-    font-size: 11px; color: var(--ink3); text-transform: uppercase; letter-spacing: 0.5px;
-    font-weight: 600; padding: 10px 12px; text-align: left;
+  /* toolbar */
+  .ad-tools { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+  .ad-search { position: relative; flex: 1 1 260px; }
+  .ad-search i { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); color: var(--ink3); font-size: 13px; }
+  .ad-input, .ad-select {
+    width: 100%; background: var(--surface); border: 1px solid var(--border2); border-radius: 10px; color: var(--ink);
+    font: 500 13.5px var(--font-body); padding: 10px 14px; outline: none; transition: border-color .15s, box-shadow .15s;
   }
-  .cc-table td { padding: 12px; color: var(--ink2); border-bottom: 1px solid var(--border); vertical-align: middle; }
-  .cc-table tbody tr:hover { background: var(--bg3); }
-  .cc-table tbody tr:last-child td { border-bottom: none; }
-  .cc-table .text-bold { color: var(--ink); font-weight: 600; }
-  .cc-table .text-muted { color: var(--ink3); font-size: 13px; }
-  .cc-table .row-deactivated { opacity: 0.5; }
+  .ad-search .ad-input { padding-left: 36px; }
+  .ad-input:focus, .ad-select:focus { border-color: var(--primary2); box-shadow: 0 0 0 3px var(--p-soft); }
+  .ad-select { width: auto; min-width: 150px; cursor: pointer; }
 
-  /* Table Actions */
-  .btn-sm-action {
-    font-size: 12px; font-weight: 700; padding: 5px 12px; border-radius: 7px;
-    cursor: pointer; transition: all 0.18s; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; border: none;
+  /* table */
+  .ad-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+  .ad-scroll { overflow-x: auto; }
+  .ad-table { width: 100%; border-collapse: collapse; min-width: 720px; }
+  .ad-table th { text-align: left; padding: 12px 18px; font: 500 11px var(--font-mono); letter-spacing: 1px; text-transform: uppercase;
+    color: var(--ink3); background: var(--bg2); border-bottom: 1px solid var(--border); white-space: nowrap; }
+  .ad-table td { padding: 14px 18px; border-bottom: 1px solid var(--border); font-size: 13.5px; color: var(--ink2); vertical-align: middle; }
+  .ad-table tr:last-child td { border-bottom: none; }
+  .ad-table tbody tr { transition: background .12s; }
+  .ad-table tbody tr:hover { background: var(--bg3); }
+  .ad-table tr.off td { opacity: .55; }
+  .ad-who { display: flex; align-items: center; gap: 12px; min-width: 0; }
+  .ad-av { width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0; display: grid; place-items: center;
+    background: var(--p-soft); color: var(--primary2); font: 700 13px var(--font-display); }
+  .ad-name { color: var(--ink); font-weight: 600; font-size: 13.5px; line-height: 1.3; }
+  .ad-meta { font-size: 12px; color: var(--ink3); margin-top: 2px; }
+  .ad-strong { color: var(--ink); font-weight: 600; }
+  .ad-row-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .ad-row-actions form { margin: 0; display: inline-flex; gap: 6px; align-items: center; }
+  .ad-select-sm { background: var(--bg2); border: 1px solid var(--border2); border-radius: 8px; color: var(--ink); font: 600 12px var(--font-body); padding: 6px 8px; cursor: pointer; }
+
+  /* badges */
+  .ad-badge { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 99px; font: 600 11px var(--font-mono); white-space: nowrap; }
+  .ad-badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  .ad-badge.ok   { background: var(--green-soft);  color: var(--green); }
+  .ad-badge.warn { background: var(--yellow-soft); color: var(--yellow); }
+  .ad-badge.bad  { background: var(--red-soft);    color: var(--red); }
+  .ad-badge.info { background: var(--p-soft);      color: var(--primary2); }
+  .ad-badge.mute { background: var(--bg3);         color: var(--ink2); }
+
+  /* pending verification cards */
+  .ad-verify { padding: 20px; border-bottom: 1px solid var(--border); display: grid; grid-template-columns: 1fr auto; gap: 20px; align-items: start; }
+  .ad-verify:last-child { border-bottom: none; }
+  .ad-verify-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  .ad-tag { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 8px; font-size: 12px; background: var(--bg3); color: var(--ink2); }
+  .ad-tag a { color: var(--primary2); text-decoration: none; }
+  .ad-note { margin-top: 12px; padding: 10px 14px; border-left: 3px solid var(--primary2); background: var(--bg2); border-radius: 0 8px 8px 0; font-size: 13px; color: var(--ink2); font-style: italic; }
+  .ad-verify-forms { display: grid; gap: 8px; min-width: 300px; }
+  .ad-verify-forms form { display: flex; gap: 8px; }
+  .ad-verify-forms .ad-input { padding: 8px 12px; font-size: 12.5px; }
+
+  .ad-empty { text-align: center; padding: 48px 20px; color: var(--ink2); }
+  .ad-empty-ico { width: 60px; height: 60px; border-radius: 18px; margin: 0 auto 14px; display: grid; place-items: center; font-size: 22px; color: var(--primary2); background: var(--p-soft); }
+  .ad-empty h3 { font: 700 17px var(--font-display); color: var(--ink); margin: 0 0 6px; }
+  .ad-empty p { font-size: 13.5px; margin: 0 0 14px; }
+
+  /* confirm dialog */
+  .ad-dialog { border: 1px solid var(--border2); border-radius: 16px; padding: 0; background: var(--surface); color: var(--ink); max-width: 420px; width: calc(100% - 32px); box-shadow: 0 24px 60px rgba(0,0,0,.45); }
+  .ad-dialog::backdrop { background: rgba(8,10,16,.6); backdrop-filter: blur(2px); }
+  .ad-dialog-body { padding: 24px 24px 8px; }
+  .ad-dialog h3 { font: 700 17px var(--font-display); margin: 0 0 8px; }
+  .ad-dialog p { margin: 0; color: var(--ink2); font-size: 14px; line-height: 1.55; }
+  .ad-dialog-foot { display: flex; justify-content: flex-end; gap: 8px; padding: 18px 24px 22px; }
+
+  @keyframes adUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+  @media (max-width: 760px) {
+    .ad-verify { grid-template-columns: 1fr; }
+    .ad-verify-forms { min-width: 0; }
+    .ad-kpis { grid-template-columns: repeat(2, 1fr); }
+    .ad-kpi-num { font-size: 28px; }
+    .ad-kpi:last-child:nth-child(odd) { grid-column: 1 / -1; }
+    .ad-select { flex: 1; }
   }
-  .btn-close-drive { color: var(--red); background: var(--red-soft); border: 1px solid rgba(244,63,94,0.3); }
-  .btn-close-drive:hover { background: var(--red); color: #fff; }
-  .btn-open-drive { color: var(--green); background: var(--green-soft); border: 1px solid rgba(34,211,160,0.3); }
-  .btn-open-drive:hover { background: var(--green); color: #fff; }
-  .btn-deactivate { color: var(--red); background: var(--red-soft); border: 1px solid rgba(244,63,94,0.3); }
-  .btn-deactivate:hover { background: var(--red); color: #fff; }
-  .btn-reactivate { color: var(--green); background: var(--green-soft); border: 1px solid rgba(34,211,160,0.3); }
-  .btn-reactivate:hover { background: var(--green); color: #fff; }
-  
-
-  .status-badge { padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; white-space: nowrap; }
-  .badge-active { background: var(--green-soft); color: var(--green); }
-  .badge-closed { background: var(--red-soft); color: var(--red); }
-  .badge-applied { background: var(--p-soft); color: var(--primary2); }
-  .badge-shortlisted { background: rgba(245,158,11,0.12); color: #f59e0b; }
-  .badge-selected { background: var(--green-soft); color: var(--green); }
-  .badge-rejected { background: var(--red-soft); color: var(--red); }
-  .badge-pending { background: rgba(245,158,11,0.12); color: #f59e0b; }
-  .badge-unverified { background: var(--surface2); color: var(--ink3); }
-
-  .action-group { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
-  .form-select-sm {
-    background: var(--bg2) !important; border: 1px solid var(--border2) !important; color: var(--ink) !important;
-    border-radius: 8px !important; font-family: var(--font-body) !important; font-size: 13px !important;
-    padding: 5px 8px !important; min-width: 110px;
-  }
-  .form-select-sm:focus { border-color: var(--primary) !important; box-shadow: 0 0 0 2px var(--p-soft) !important; }
-  .btn-update {
-    background: var(--primary); color: #fff; border: none; padding: 5px 12px; border-radius: 8px;
-    font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.18s;
-  }
-  .btn-update:hover { background: var(--primary2); }
-  .link-schedule { font-size: 12px; color: var(--green); text-decoration: none; font-weight: 600; }
-  .link-schedule:hover { color: #1ed98a; }
-
-  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
-  .empty-row { text-align: center; color: var(--ink3); padding: 2rem !important; }
-
-  @media(max-width: 1100px) { .stats-grid { grid-template-columns: repeat(3, 1fr); } .grid-2 { grid-template-columns: 1fr; } }
-  @media(max-width: 768px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } .verify-inner { flex-direction: column; } .verify-actions { width: 100%; min-width: unset; } }
-  @media(max-width: 480px) { .stats-grid { grid-template-columns: 1fr; } }
+  @media (prefers-reduced-motion: reduce) { .ad-kpi { animation: none !important; } }
 </style>
 
-<!-- Header -->
-<div class="ad-header">
+<!-- HEADER -->
+<div class="ad-head">
   <div>
-    <h1 class="ad-title">Admin Dashboard</h1>
-    <p class="ad-subtitle">Full platform overview and controls.</p>
+    <h1 class="ad-title">Admin Panel</h1>
+    <p class="ad-sub">Moderate recruiters, drives and applications in one place.</p>
   </div>
   <div class="ad-actions">
-    <a href="{% url 'export_students' %}" class="btn-export btn-export-csv"><i class="fas fa-download"></i> Export CSV</a>
-    <a href="{% url 'search_students' %}" class="btn-export btn-search"><i class="fas fa-search"></i> Search Students</a>
+    <a href="{% url 'post_drive' %}" class="ad-btn primary"><i class="fas fa-plus"></i> Post a Drive</a>
+    <a href="{% url 'stats' %}" class="ad-btn"><i class="fas fa-chart-line"></i> Statistics</a>
+    <a href="{% url 'search_students' %}" class="ad-btn"><i class="fas fa-search"></i> Search Students</a>
+    <a href="{% url 'export_students' %}" class="ad-btn"><i class="fas fa-download"></i> Export CSV</a>
   </div>
 </div>
 
-<!-- Stats -->
-<div class="stats-grid">
-  <div class="stat-card">
-    <span class="stat-icon" style="color:var(--primary2);"><i class="fas fa-user-graduate"></i></span>
-    <div class="stat-num">{{ total_students }}</div>
-    <div class="stat-label">Students</div>
+<!-- KPIs -->
+<section class="ad-kpis">
+  <div class="ad-kpi" style="--accent: var(--primary2); --i: 0;">
+    <div class="ad-kpi-top"><span class="ad-kpi-label">Students</span><span class="ad-kpi-ico"><i class="fas fa-graduation-cap"></i></span></div>
+    <div class="ad-kpi-num" data-count="{{ counts.students }}">{{ counts.students }}</div>
+    <div class="ad-kpi-sub">{{ placed_students }} placed &middot; {{ placement_rate }}%</div>
   </div>
-  <div class="stat-card">
-    <span class="stat-icon" style="color:var(--green);"><i class="fas fa-building"></i></span>
-    <div class="stat-num">{{ total_recruiters }}</div>
-    <div class="stat-label">Recruiters</div>
+  <div class="ad-kpi" style="--accent: var(--ink2); --i: 1;">
+    <div class="ad-kpi-top"><span class="ad-kpi-label">Recruiters</span><span class="ad-kpi-ico"><i class="fas fa-building"></i></span></div>
+    <div class="ad-kpi-num" data-count="{{ counts.recruiters }}">{{ counts.recruiters }}</div>
+    <div class="ad-kpi-sub">{{ counts.pending }} awaiting verification</div>
   </div>
-  <div class="stat-card">
-    <span class="stat-icon" style="color:#f59e0b;"><i class="fas fa-briefcase"></i></span>
-    <div class="stat-num">{{ total_drives }}</div>
-    <div class="stat-label">Drives</div>
+  <div class="ad-kpi" style="--accent: var(--yellow); --i: 2;">
+    <div class="ad-kpi-top"><span class="ad-kpi-label">Drives</span><span class="ad-kpi-ico"><i class="fas fa-briefcase"></i></span></div>
+    <div class="ad-kpi-num" data-count="{{ counts.drives }}">{{ counts.drives }}</div>
+    <div class="ad-kpi-sub">{{ open_drives }} open right now</div>
   </div>
-  <div class="stat-card">
-    <span class="stat-icon" style="color:var(--red);"><i class="fas fa-trophy"></i></span>
-    <div class="stat-num">{{ selected_students }}</div>
-    <div class="stat-label">Selected</div>
+  <div class="ad-kpi" style="--accent: var(--green); --i: 3;">
+    <div class="ad-kpi-top"><span class="ad-kpi-label">Applications</span><span class="ad-kpi-ico"><i class="fas fa-file-lines"></i></span></div>
+    <div class="ad-kpi-num" data-count="{{ counts.applications }}">{{ counts.applications }}</div>
+    <div class="ad-kpi-sub">across all drives</div>
   </div>
-  <div class="stat-card">
-    <span class="stat-icon" style="color:var(--primary2);"><i class="fas fa-file-alt"></i></span>
-    <div class="stat-num">{{ total_apps }}</div>
-    <div class="stat-label">Applications</div>
+  <div class="ad-kpi" style="--accent: var(--red); --i: 4;">
+    <div class="ad-kpi-top"><span class="ad-kpi-label">Placed students</span><span class="ad-kpi-ico"><i class="fas fa-trophy"></i></span></div>
+    <div class="ad-kpi-num" data-count="{{ placed_students }}">{{ placed_students }}</div>
+    <div class="ad-kpi-sub">unique students selected</div>
   </div>
-</div>
+</section>
 
-<!-- ── PENDING VERIFICATION ── -->
-{% if pending_recruiters %}
-<div class="panel panel-warn">
-  <div class="panel-head">
-    <i class="fas fa-shield-alt" style="color:#f59e0b; font-size:18px;"></i>
-    <h5 class="panel-title">Pending Verifications <span class="panel-badge">{{ pending_recruiters|length }}</span></h5>
-  </div>
-  <div>
-    {% for recruiter in pending_recruiters %}
-    <div class="verify-card">
-      <div class="verify-inner">
-        <div>
-          <div class="verify-name">{{ recruiter.get_full_name|default:recruiter.username }}</div>
-          <div class="verify-email">{{ recruiter.email }}</div>
-          <div class="verify-tags">
-            {% with recruiter.recruiterprofile as rp %}
-              {% if rp.company_name %}<span class="tag tag-primary"><i class="fas fa-building" style="margin-right:4px;"></i>{{ rp.company_name }}</span>{% endif %}
-              {% if rp.designation %}<span class="tag tag-surface">{{ rp.designation }}</span>{% endif %}
-              {% if rp.verification_requested_at %}<span class="tag-time"><i class="fas fa-clock"></i>{{ rp.verification_requested_at|date:"d M Y" }}</span>{% endif %}
-            {% endwith %}
-          </div>
-          {% if recruiter.recruiterprofile.verification_note %}
-          <div class="verify-note">"{{ recruiter.recruiterprofile.verification_note }}"</div>
-          {% endif %}
-        </div>
-        <div class="verify-actions">
-          <form method="POST" action="{% url 'admin_verify_recruiter' recruiter.pk %}">
-            {% csrf_token %}
-            <input type="hidden" name="action" value="approve">
-            <input type="text" name="admin_remark" class="form-input" placeholder="Optional remark...">
-            <button type="submit" class="btn-approve" data-loading-text="Approving..."><i class="fas fa-check"></i> Approve</button>
-          </form>
-          <form method="POST" action="{% url 'admin_verify_recruiter' recruiter.pk %}">
-            {% csrf_token %}
-            <input type="hidden" name="action" value="reject">
-            <input type="text" name="admin_remark" class="form-input" placeholder="Reason for rejection...">
-            <button type="submit" class="btn-reject" data-loading-text="Rejecting..."><i class="fas fa-times"></i> Reject</button>
-          </form>
-        </div>
-      </div>
-    </div>
-    {% endfor %}
-  </div>
+{% if counts.pending and tab != 'pending' %}
+<div class="ad-alert">
+  <i class="fas fa-shield-halved"></i>
+  <span><b>{{ counts.pending }}</b> recruiter{{ counts.pending|pluralize }} waiting for verification.</span>
+  <a href="?tab=pending">Review now &rarr;</a>
 </div>
 {% endif %}
 
-<!-- ── MANAGE DRIVES ── -->
-<div class="panel">
-  <div class="panel-head">
-    <i class="fas fa-briefcase" style="color:#f59e0b; font-size:18px;"></i>
-    <h5 class="panel-title">Platform Drives <span class="panel-badge panel-badge-indigo">{{ drives.count }}</span></h5>
-  </div>
-  <div style="overflow-x:auto;">
-    <table class="cc-table">
-      <thead><tr><th>Company</th><th>Role</th><th>Posted By</th><th>Deadline</th><th>Status</th><th>Action</th></tr></thead>
-      <tbody>
-        {% for drive in drives %}
-        <tr>
-          <td class="text-bold">{{ drive.company }}</td>
-          <td>{{ drive.role }}</td>
-          <td class="text-muted">{{ drive.posted_by.username }}</td>
-          <td class="text-muted">{{ drive.deadline|date:"d M Y" }}</td>
-          <td>
-            {% if drive.is_open %}<span class="status-badge badge-active">Active</span>
-            {% else %}<span class="status-badge badge-closed">Closed</span>{% endif %}
-          </td>
-          <td>
-            <form method="POST" action="{% url 'admin_toggle_drive' drive.pk %}" style="display:inline;">
-              {% csrf_token %}
-              {% if drive.status == 'active' %}
-                <button type="submit" class="btn-sm-action btn-close-drive" data-loading-text="Closing..."><i class="fas fa-ban"></i> Force Close</button>
-              {% else %}
-                <button type="submit" class="btn-sm-action btn-open-drive" data-loading-text="Reopening..."><i class="fas fa-door-open"></i> Reopen</button>
-              {% endif %}
-            </form>
-          </td>
-        </tr>
-        {% empty %}
-        <tr><td colspan="6" class="empty-row">No drives posted yet.</td></tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-</div>
+<!-- TABS -->
+<nav class="ad-tabs" aria-label="Admin sections">
+  <a class="ad-tab {% if tab == 'pending' %}active{% endif %}" href="?tab=pending"><i class="fas fa-shield-halved"></i> Verifications <span class="ad-count {% if counts.pending %}hot{% endif %}">{{ counts.pending }}</span></a>
+  <a class="ad-tab {% if tab == 'applications' %}active{% endif %}" href="?tab=applications"><i class="fas fa-file-lines"></i> Applications <span class="ad-count">{{ counts.applications }}</span></a>
+  <a class="ad-tab {% if tab == 'drives' %}active{% endif %}" href="?tab=drives"><i class="fas fa-briefcase"></i> Drives <span class="ad-count">{{ counts.drives }}</span></a>
+  <a class="ad-tab {% if tab == 'students' %}active{% endif %}" href="?tab=students"><i class="fas fa-graduation-cap"></i> Students <span class="ad-count">{{ counts.students }}</span></a>
+  <a class="ad-tab {% if tab == 'recruiters' %}active{% endif %}" href="?tab=recruiters"><i class="fas fa-building"></i> Recruiters <span class="ad-count">{{ counts.recruiters }}</span></a>
+</nav>
 
-<!-- ── ALL APPLICATIONS ── -->
-<div class="panel">
-  <div class="panel-head">
-    <i class="fas fa-file-alt" style="color:var(--primary2); font-size:18px;"></i>
-    <h5 class="panel-title">All Applications</h5>
+<!-- SEARCH + FILTER -->
+<form method="get" class="ad-tools">
+  <input type="hidden" name="tab" value="{{ tab }}">
+  <div class="ad-search">
+    <i class="fas fa-search"></i>
+    <input class="ad-input" type="search" name="q" value="{{ q }}" maxlength="100"
+           placeholder="{% if tab == 'applications' %}Search student, company or role...{% elif tab == 'drives' %}Search company, role or location...{% elif tab == 'pending' or tab == 'recruiters' %}Search name, email or company...{% else %}Search name, email or roll number...{% endif %}">
   </div>
-  <div style="overflow-x:auto;">
-    <table class="cc-table">
-      <thead><tr><th>Student</th><th>Company</th><th>Role</th><th>Applied On</th><th>Status</th><th>Action</th></tr></thead>
-      <tbody>
-        {% for app in apps %}
-        <tr>
-          <td class="text-bold">{{ app.student.get_full_name }}</td>
-          <td>{{ app.drive.company }}</td>
-          <td>{{ app.drive.role }}</td>
-          <td class="text-muted">{{ app.applied_at|date:"d M Y" }}</td>
-          <td>
-            {% if app.status == 'applied' %}<span class="status-badge badge-applied">Applied</span>
-            {% elif app.status == 'shortlisted' %}<span class="status-badge badge-shortlisted">Shortlisted</span>
-            {% elif app.status == 'selected' %}<span class="status-badge badge-selected">Selected</span>
-            {% elif app.status == 'rejected' %}<span class="status-badge badge-rejected">Rejected</span>{% endif %}
-          </td>
-          <td>
-            <form method="POST" action="{% url 'update_application' app.pk %}">
-              {% csrf_token %}
-              <div class="action-group">
-                <select name="status" class="form-select-sm">
-                  <option value="applied" {% if app.status == 'applied' %}selected{% endif %}>Applied</option>
-                  <option value="shortlisted" {% if app.status == 'shortlisted' %}selected{% endif %}>Shortlisted</option>
-                  <option value="selected" {% if app.status == 'selected' %}selected{% endif %}>Selected</option>
-                  <option value="rejected" {% if app.status == 'rejected' %}selected{% endif %}>Rejected</option>
-                </select>
-                <button type="submit" class="btn-update">Update</button>
-              </div>
-            </form>
-            <div class="action-group" style="margin-top:8px;">
-              <a href="/placements/schedule/{{ app.pk }}/" class="link-schedule"><i class="fas fa-calendar" style="margin-right:4px;"></i>Schedule</a>
-            </div>
-          </td>
-        </tr>
-        {% empty %}
-        <tr><td colspan="6" class="empty-row">No applications yet.</td></tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-</div>
+  {% if tab == 'applications' %}
+  <select class="ad-select" name="status" onchange="this.form.submit()" aria-label="Filter by status">
+    <option value="">All statuses</option>
+    {% for value, label in status_choices %}<option value="{{ value }}" {% if status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+  </select>
+  {% elif tab == 'drives' %}
+  <select class="ad-select" name="state" onchange="this.form.submit()" aria-label="Filter drives">
+    <option value="">All drives</option>
+    <option value="open" {% if state == 'open' %}selected{% endif %}>Open</option>
+    <option value="expired" {% if state == 'expired' %}selected{% endif %}>Deadline passed</option>
+    <option value="closed" {% if state == 'closed' %}selected{% endif %}>Closed by admin/recruiter</option>
+  </select>
+  {% elif tab == 'students' %}
+  <select class="ad-select" name="state" onchange="this.form.submit()" aria-label="Filter students">
+    <option value="">All students</option>
+    <option value="active" {% if state == 'active' %}selected{% endif %}>Active</option>
+    <option value="inactive" {% if state == 'inactive' %}selected{% endif %}>Deactivated</option>
+  </select>
+  {% elif tab == 'recruiters' %}
+  <select class="ad-select" name="state" onchange="this.form.submit()" aria-label="Filter recruiters">
+    <option value="">All recruiters</option>
+    <option value="approved" {% if state == 'approved' %}selected{% endif %}>Verified</option>
+    <option value="pending" {% if state == 'pending' %}selected{% endif %}>Pending</option>
+    <option value="rejected" {% if state == 'rejected' %}selected{% endif %}>Rejected</option>
+    <option value="not_requested" {% if state == 'not_requested' %}selected{% endif %}>Not requested</option>
+    <option value="inactive" {% if state == 'inactive' %}selected{% endif %}>Deactivated</option>
+  </select>
+  {% endif %}
+  <button type="submit" class="ad-btn">Search</button>
+  {% if q or status or state %}<a class="ad-btn" href="?tab={{ tab }}"><i class="fas fa-xmark"></i> Clear</a>{% endif %}
+</form>
 
-<!-- ── STUDENTS & RECRUITERS ── -->
-<div class="grid-2">
+<!-- RESULTS -->
+<section class="ad-card">
 
-  <!-- Students -->
-  <div class="panel">
-    <div class="panel-head">
-      <i class="fas fa-user-graduate" style="color:var(--primary2); font-size:18px;"></i>
-      <h5 class="panel-title">Students</h5>
+{% if tab == 'pending' %}
+  {% for recruiter in rows %}
+  {% with rp=recruiter.recruiterprofile %}
+  <div class="ad-verify">
+    <div>
+      <div class="ad-who">
+        <div class="ad-av">{{ recruiter.get_full_name|default:recruiter.username|slice:":1"|upper }}</div>
+        <div>
+          <div class="ad-name">{{ recruiter.get_full_name|default:recruiter.username }}</div>
+          <div class="ad-meta">{{ recruiter.email }}{% if recruiter.phone %} &middot; {{ recruiter.phone }}{% endif %}</div>
+        </div>
+      </div>
+      <div class="ad-verify-tags">
+        {% if rp.company_name %}<span class="ad-tag"><i class="fas fa-building"></i> {{ rp.company_name }}</span>{% endif %}
+        {% if rp.designation %}<span class="ad-tag"><i class="fas fa-id-badge"></i> {{ rp.designation }}</span>{% endif %}
+        {% if rp.industry %}<span class="ad-tag"><i class="fas fa-industry"></i> {{ rp.industry }}</span>{% endif %}
+        {% if rp.company_website|slice:":4" == "http" %}<span class="ad-tag"><i class="fas fa-globe"></i> <a href="{{ rp.company_website }}" target="_blank" rel="noopener noreferrer">{{ rp.company_website|truncatechars:34 }}</a></span>{% endif %}
+        {% if rp.verification_requested_at %}<span class="ad-tag"><i class="fas fa-clock"></i> {{ rp.verification_requested_at|date:"d M Y" }}</span>{% endif %}
+      </div>
+      {% if rp.verification_note %}<div class="ad-note">{{ rp.verification_note|truncatechars:400 }}</div>{% endif %}
     </div>
-    <div style="overflow-x:auto;">
-      <table class="cc-table">
-        <thead><tr><th>Name</th><th>Email</th><th>Status</th><th>Action</th></tr></thead>
-        <tbody>
-          {% for student in students %}
-          <tr class="{% if not student.is_active %}row-deactivated{% endif %}">
-            <td class="text-bold">{{ student.get_full_name }}</td>
-            <td class="text-muted">{{ student.email }}</td>
-            <td>
-              {% if student.is_active %}<span class="status-badge badge-active">Active</span>
-              {% else %}<span class="status-badge badge-closed">Deactivated</span>{% endif %}
-            </td>
-            <td>
-              <form method="POST" action="{% url 'admin_toggle_user' student.pk %}">
-                {% csrf_token %}
-                {% if student.is_active %}
-                  <button type="submit" class="btn-sm-action btn-deactivate" data-loading-text="Deactivating..."><i class="fas fa-ban"></i> Deactivate</button>
-                {% else %}
-                  <button type="submit" class="btn-sm-action btn-reactivate" data-loading-text="Reactivating..."><i class="fas fa-check"></i> Reactivate</button>
-                {% endif %}
-              </form>
-            </td>
-          </tr>
-          {% empty %}
-          <tr><td colspan="4" class="empty-row">No students yet.</td></tr>
-          {% endfor %}
-        </tbody>
-      </table>
+    <div class="ad-verify-forms">
+      <form method="post" action="{% url 'admin_verify_recruiter' recruiter.pk %}">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ next_url }}">
+        <input type="hidden" name="action" value="approve">
+        <input class="ad-input" type="text" name="admin_remark" maxlength="500" placeholder="Optional remark">
+        <button type="submit" class="ad-btn ok sm" data-loading-text="Approving..."><i class="fas fa-check"></i> Approve</button>
+      </form>
+      <form method="post" action="{% url 'admin_verify_recruiter' recruiter.pk %}"
+            data-confirm="Reject {{ recruiter.get_full_name|default:recruiter.username }}? They will see your reason and can send a new request after fixing it."
+            data-confirm-label="Reject">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ next_url }}">
+        <input type="hidden" name="action" value="reject">
+        <input class="ad-input" type="text" name="admin_remark" maxlength="500" placeholder="Reason (required)" required>
+        <button type="submit" class="ad-btn bad sm" data-loading-text="Rejecting..."><i class="fas fa-xmark"></i> Reject</button>
+      </form>
     </div>
   </div>
+  {% endwith %}
+  {% empty %}
+  <div class="ad-empty"><div class="ad-empty-ico"><i class="fas fa-circle-check"></i></div>
+    <h3>{% if q %}No match for "{{ q }}"{% else %}All caught up{% endif %}</h3>
+    <p>{% if q %}Try a different name, email or company.{% else %}No recruiters are waiting for verification.{% endif %}</p></div>
+  {% endfor %}
 
-  <!-- Recruiters -->
-  <div class="panel">
-    <div class="panel-head">
-      <i class="fas fa-building" style="color:var(--green); font-size:18px;"></i>
-      <h5 class="panel-title">Recruiters</h5>
-    </div>
-    <div style="overflow-x:auto;">
-      <table class="cc-table">
-        <thead><tr><th>Name</th><th>Email</th><th>Verification</th><th>Action</th></tr></thead>
-        <tbody>
-          {% for recruiter in recruiters %}
-          <tr class="{% if not recruiter.is_active %}row-deactivated{% endif %}">
-            <td class="text-bold">{{ recruiter.get_full_name|default:recruiter.username }}</td>
-            <td class="text-muted">{{ recruiter.email }}</td>
-            <td>
-              {% with recruiter.recruiterprofile as rp %}
-                {% if rp.is_verified %}<span class="status-badge badge-active">Verified</span>
-                {% elif rp.verification_status == 'pending' %}<span class="status-badge badge-pending">Pending</span>
-                {% elif rp.verification_status == 'rejected' %}<span class="status-badge badge-rejected">Rejected</span>
-                {% else %}<span class="status-badge badge-unverified">Not Requested</span>{% endif %}
-              {% endwith %}
-            </td>
-            <td>
-              <form method="POST" action="{% url 'admin_toggle_user' recruiter.pk %}">
-                {% csrf_token %}
-                {% if recruiter.is_active %}
-                  <button type="submit" class="btn-sm-action btn-deactivate" data-loading-text="Deactivating..."><i class="fas fa-ban"></i> Deactivate</button>
-                {% else %}
-                  <button type="submit" class="btn-sm-action btn-reactivate" data-loading-text="Reactivating..."><i class="fas fa-check"></i> Reactivate</button>
-                {% endif %}
-              </form>
-            </td>
-          </tr>
-          {% empty %}
-          <tr><td colspan="4" class="empty-row">No recruiters yet.</td></tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
+{% elif tab == 'applications' %}
+  {% if rows %}
+  <div class="ad-scroll"><table class="ad-table">
+    <thead><tr><th>Student</th><th>Drive</th><th>Applied</th><th>Status</th><th>Action</th></tr></thead>
+    <tbody>
+    {% for app in rows %}
+      <tr>
+        <td><div class="ad-who"><div class="ad-av">{{ app.student.get_full_name|default:app.student.username|slice:":1"|upper }}</div>
+          <div><div class="ad-name">{{ app.student.get_full_name|default:app.student.username }}</div><div class="ad-meta">{{ app.student.email }}</div></div></div></td>
+        <td><div class="ad-strong">{{ app.drive.role }}</div><div class="ad-meta">{{ app.drive.company }}</div></td>
+        <td>{{ app.applied_at|date:"d M Y" }}</td>
+        <td>{% if app.status == 'selected' %}<span class="ad-badge ok">Selected</span>
+            {% elif app.status == 'shortlisted' %}<span class="ad-badge warn">Shortlisted</span>
+            {% elif app.status == 'rejected' %}<span class="ad-badge bad">Rejected</span>
+            {% else %}<span class="ad-badge mute">Applied</span>{% endif %}</td>
+        <td><div class="ad-row-actions">
+          <form method="post" action="{% url 'update_application' app.pk %}">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ next_url }}">
+            <select name="status" class="ad-select-sm" aria-label="New status">
+              {% for value, label in status_choices %}<option value="{{ value }}" {% if app.status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+            </select>
+            <button type="submit" class="ad-btn sm" data-loading-text="Saving...">Update</button>
+          </form>
+          <a class="ad-btn sm" href="{% url 'schedule_interview' app.pk %}"><i class="fas fa-calendar"></i> Schedule</a>
+        </div></td>
+      </tr>
+    {% endfor %}
+    </tbody></table></div>
+  {% else %}
+  <div class="ad-empty"><div class="ad-empty-ico"><i class="fas fa-file-lines"></i></div>
+    <h3>{% if q or status %}No applications match{% else %}No applications yet{% endif %}</h3>
+    <p>{% if q or status %}Try clearing the search or filter.{% else %}They will show up here as soon as students apply.{% endif %}</p></div>
+  {% endif %}
+
+{% elif tab == 'drives' %}
+  {% if rows %}
+  <div class="ad-scroll"><table class="ad-table">
+    <thead><tr><th>Drive</th><th>Posted by</th><th>Deadline</th><th>Applicants</th><th>Status</th><th>Action</th></tr></thead>
+    <tbody>
+    {% for drive in rows %}
+      <tr>
+        <td><a href="{% url 'drive_detail' drive.pk %}" style="text-decoration:none;"><div class="ad-name">{{ drive.role }}</div></a><div class="ad-meta">{{ drive.company }}{% if drive.location %} &middot; {{ drive.location }}{% endif %}</div></td>
+        <td>{{ drive.posted_by.get_full_name|default:drive.posted_by.username }}</td>
+        <td>{{ drive.deadline|date:"d M Y" }}</td>
+        <td class="ad-strong">{{ drive.app_count }}</td>
+        <td>{% if drive.is_open %}<span class="ad-badge ok">Open</span>
+            {% elif drive.status == 'closed' %}<span class="ad-badge bad">Closed</span>
+            {% else %}<span class="ad-badge mute">Deadline passed</span>{% endif %}</td>
+        <td><div class="ad-row-actions">
+          <a class="ad-btn sm" href="{% url 'edit_drive' drive.pk %}"><i class="fas fa-pen"></i> Edit</a>
+          {% if drive.status == 'active' %}
+          <form method="post" action="{% url 'admin_toggle_drive' drive.pk %}"
+                data-confirm="Close {{ drive.role }} at {{ drive.company }}? Students will no longer be able to apply."
+                data-confirm-label="Close drive">
+            {% csrf_token %}<input type="hidden" name="next" value="{{ next_url }}">
+            <button type="submit" class="ad-btn bad sm" data-loading-text="Closing..."><i class="fas fa-lock"></i> Close</button>
+          </form>
+          {% else %}
+          <form method="post" action="{% url 'admin_toggle_drive' drive.pk %}">
+            {% csrf_token %}<input type="hidden" name="next" value="{{ next_url }}">
+            <button type="submit" class="ad-btn ok sm" data-loading-text="Reopening..."><i class="fas fa-lock-open"></i> Reopen</button>
+          </form>
+          {% endif %}
+        </div></td>
+      </tr>
+    {% endfor %}
+    </tbody></table></div>
+  {% else %}
+  <div class="ad-empty"><div class="ad-empty-ico"><i class="fas fa-briefcase"></i></div>
+    <h3>{% if q or state %}No drives match{% else %}No drives yet{% endif %}</h3>
+    <p>{% if q or state %}Try clearing the search or filter.{% else %}Post the first one to get students applying.{% endif %}</p>
+    {% if not q and not state %}<a class="ad-btn primary" href="{% url 'post_drive' %}"><i class="fas fa-plus"></i> Post a Drive</a>{% endif %}</div>
+  {% endif %}
+
+{% elif tab == 'students' %}
+  {% if rows %}
+  <div class="ad-scroll"><table class="ad-table">
+    <thead><tr><th>Student</th><th>Branch</th><th>CGPA</th><th>Profile</th><th>Joined</th><th>Status</th><th>Action</th></tr></thead>
+    <tbody>
+    {% for student in rows %}
+      <tr class="{% if not student.is_active %}off{% endif %}">
+        <td><div class="ad-who"><div class="ad-av">{{ student.get_full_name|default:student.username|slice:":1"|upper }}</div>
+          <div><div class="ad-name">{{ student.get_full_name|default:student.username }}</div><div class="ad-meta">{{ student.email }}</div></div></div></td>
+        <td>{{ student.studentprofile.branch|default:"—" }}</td>
+        <td>{% if student.studentprofile.cgpa %}{{ student.studentprofile.cgpa }}{% else %}—{% endif %}</td>
+        <td>{% if student.studentprofile.is_complete %}<span class="ad-badge ok">Complete</span>{% else %}<span class="ad-badge warn">Incomplete</span>{% endif %}</td>
+        <td>{{ student.date_joined|date:"d M Y" }}</td>
+        <td>{% if student.is_active %}<span class="ad-badge ok">Active</span>{% else %}<span class="ad-badge bad">Deactivated</span>{% endif %}</td>
+        <td><div class="ad-row-actions">
+          {% if student.studentprofile.resume %}<a class="ad-btn sm" href="{{ student.studentprofile.resume.url }}" target="_blank" rel="noopener"><i class="fas fa-file-pdf"></i> Resume</a>{% endif %}
+          {% if student.is_active %}
+          <form method="post" action="{% url 'admin_toggle_user' student.pk %}"
+                data-confirm="Deactivate {{ student.get_full_name|default:student.username }}? They will be signed out and can no longer log in."
+                data-confirm-label="Deactivate">
+            {% csrf_token %}<input type="hidden" name="next" value="{{ next_url }}">
+            <button type="submit" class="ad-btn bad sm" data-loading-text="Working..."><i class="fas fa-user-slash"></i> Deactivate</button>
+          </form>
+          {% else %}
+          <form method="post" action="{% url 'admin_toggle_user' student.pk %}">
+            {% csrf_token %}<input type="hidden" name="next" value="{{ next_url }}">
+            <button type="submit" class="ad-btn ok sm" data-loading-text="Working..."><i class="fas fa-user-check"></i> Reactivate</button>
+          </form>
+          {% endif %}
+        </div></td>
+      </tr>
+    {% endfor %}
+    </tbody></table></div>
+  {% else %}
+  <div class="ad-empty"><div class="ad-empty-ico"><i class="fas fa-graduation-cap"></i></div>
+    <h3>{% if q or state %}No students match{% else %}No students yet{% endif %}</h3>
+    <p>{% if q or state %}Try clearing the search or filter.{% else %}Students appear here after they register.{% endif %}</p></div>
+  {% endif %}
+
+{% else %}
+  {% if rows %}
+  <div class="ad-scroll"><table class="ad-table">
+    <thead><tr><th>Recruiter</th><th>Company</th><th>Verification</th><th>Joined</th><th>Status</th><th>Action</th></tr></thead>
+    <tbody>
+    {% for recruiter in rows %}
+      {% with rp=recruiter.recruiterprofile %}
+      <tr class="{% if not recruiter.is_active %}off{% endif %}">
+        <td><div class="ad-who"><div class="ad-av">{{ recruiter.get_full_name|default:recruiter.username|slice:":1"|upper }}</div>
+          <div><div class="ad-name">{{ recruiter.get_full_name|default:recruiter.username }}</div><div class="ad-meta">{{ recruiter.email }}</div></div></div></td>
+        <td>{{ rp.company_name|default:"—" }}</td>
+        <td>{% if rp.verification_status == 'approved' %}<span class="ad-badge ok">Verified</span>
+            {% elif rp.verification_status == 'pending' %}<span class="ad-badge warn">Pending</span>
+            {% elif rp.verification_status == 'rejected' %}<span class="ad-badge bad">Rejected</span>
+            {% else %}<span class="ad-badge mute">Not requested</span>{% endif %}</td>
+        <td>{{ recruiter.date_joined|date:"d M Y" }}</td>
+        <td>{% if recruiter.is_active %}<span class="ad-badge ok">Active</span>{% else %}<span class="ad-badge bad">Deactivated</span>{% endif %}</td>
+        <td><div class="ad-row-actions">
+          {% if recruiter.is_active %}
+          <form method="post" action="{% url 'admin_toggle_user' recruiter.pk %}"
+                data-confirm="Deactivate {{ recruiter.get_full_name|default:recruiter.username }}? They will be signed out and can no longer log in."
+                data-confirm-label="Deactivate">
+            {% csrf_token %}<input type="hidden" name="next" value="{{ next_url }}">
+            <button type="submit" class="ad-btn bad sm" data-loading-text="Working..."><i class="fas fa-user-slash"></i> Deactivate</button>
+          </form>
+          {% else %}
+          <form method="post" action="{% url 'admin_toggle_user' recruiter.pk %}">
+            {% csrf_token %}<input type="hidden" name="next" value="{{ next_url }}">
+            <button type="submit" class="ad-btn ok sm" data-loading-text="Working..."><i class="fas fa-user-check"></i> Reactivate</button>
+          </form>
+          {% endif %}
+        </div></td>
+      </tr>
+      {% endwith %}
+    {% endfor %}
+    </tbody></table></div>
+  {% else %}
+  <div class="ad-empty"><div class="ad-empty-ico"><i class="fas fa-building"></i></div>
+    <h3>{% if q or state %}No recruiters match{% else %}No recruiters yet{% endif %}</h3>
+    <p>{% if q or state %}Try clearing the search or filter.{% else %}Recruiters appear here after they register.{% endif %}</p></div>
+  {% endif %}
+{% endif %}
+
+</section>
+
+{% include "partials/pagination.html" %}
+
+<!-- CONFIRM DIALOG -->
+<dialog class="ad-dialog" id="adConfirm" aria-labelledby="adConfirmTitle">
+  <div class="ad-dialog-body">
+    <h3 id="adConfirmTitle">Are you sure?</h3>
+    <p id="adConfirmText"></p>
   </div>
+  <div class="ad-dialog-foot">
+    <button type="button" class="ad-btn" id="adConfirmNo">Cancel</button>
+    <button type="button" class="ad-btn bad" id="adConfirmYes">Confirm</button>
+  </div>
+</dialog>
+{% endblock %}
 
-</div>
+{% block extra_js %}
+<script>
+(function () {
+  // ── confirm dialog for risky actions: <form data-confirm="..." data-confirm-label="..."> ──
+  var dlg = document.getElementById('adConfirm');
+  var text = document.getElementById('adConfirmText');
+  var yes = document.getElementById('adConfirmYes');
+  var no = document.getElementById('adConfirmNo');
+  var pending = null;
 
+  document.addEventListener('submit', function (e) {
+    var form = e.target;
+    if (!form.hasAttribute || !form.hasAttribute('data-confirm') || form.dataset.confirmed) return;
+    if (typeof dlg.showModal !== 'function') {            // very old browser: plain confirm()
+      if (!window.confirm(form.getAttribute('data-confirm'))) e.preventDefault();
+      return;
+    }
+    e.preventDefault();
+    e.stopImmediatePropagation();                         // keep the loading overlay for after the choice
+    pending = form;
+    text.textContent = form.getAttribute('data-confirm');
+    yes.textContent = form.getAttribute('data-confirm-label') || 'Confirm';
+    dlg.showModal();
+  }, true);
+
+  no.addEventListener('click', function () { pending = null; dlg.close(); });
+  dlg.addEventListener('click', function (e) { if (e.target === dlg) { pending = null; dlg.close(); } });
+  yes.addEventListener('click', function () {
+    var form = pending; pending = null; dlg.close();
+    if (!form) return;
+    form.dataset.confirmed = '1';
+    if (window.ccLockForm) window.ccLockForm(form, 'Working...');
+    form.submit();
+  });
+
+  // ── count-up numbers ──
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  document.querySelectorAll('.ad-kpi-num[data-count]').forEach(function (el) {
+    var target = parseInt(el.dataset.count, 10);
+    if (reduce || isNaN(target) || target === 0) return;
+    var start = null, dur = 800;
+    function tick(t) {
+      if (start === null) start = t;
+      var p = Math.min((t - start) / dur, 1);
+      el.textContent = Math.round(target * (1 - Math.pow(1 - p, 3)));
+      if (p < 1) requestAnimationFrame(tick);
+    }
+    el.textContent = '0';
+    requestAnimationFrame(tick);
+  });
+})();
+</script>
 {% endblock %}
