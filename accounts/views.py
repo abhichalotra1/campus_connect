@@ -13,7 +13,8 @@ from django.views.decorators.http import require_POST
 from campus_connect.forms_util import flash_form_errors
 from campus_connect.pagination import paginate
 from .audit import log_action
-from .decorators import is_verified_recruiter
+from .notify import notify_admins
+from .decorators import admin_required, is_verified_recruiter
 from .forms import VerificationRequestForm
 from .models import User
 from placements.models import PlacementDrive, Application, Interview
@@ -237,12 +238,8 @@ def _search(queryset, text, *fields):
     return queryset
 
 
-@login_required
+@admin_required
 def admin_dashboard_view(request):
-    if request.user.role != 'admin':
-        messages.error(request, 'Access denied!')
-        return redirect('dashboard')
-
     today = timezone.localdate()
 
     # The overview numbers are a handful of cheap COUNT queries; the big lists below are
@@ -355,18 +352,31 @@ def update_application_status(request, pk):
         status = request.POST.get('status')
 
         if status in ['applied', 'shortlisted', 'rejected', 'selected']:
-            app.status = status
-            app.save()
+            if status == app.status:
+                # Nothing changed: don't notify or email the student a second time
+                messages.info(request, f'Application is already marked {status}.')
+            else:
+                old_status = app.status
+                app.status = status
+                app.save()
+                log_action(request, 'application_status_changed',
+                           f'{app.student.username} -> {app.drive.company} / {app.drive.role}',
+                           f'{old_status} -> {status}')
 
-            send_notification(
-                user=app.student,
-                title=f'Application Update - {app.drive.company}',
-                message=f'Your application for {app.drive.role} at {app.drive.company} has been {status}!',
-                notif_type=status if status in ['shortlisted', 'rejected', 'selected'] else 'general'
-            )
+                if status == 'applied':
+                    note = (f'Your application for {app.drive.role} at {app.drive.company} '
+                            'has been moved back to under review.')
+                else:
+                    note = f'Your application for {app.drive.role} at {app.drive.company} has been {status}!'
+                send_notification(
+                    user=app.student,
+                    title=f'Application Update - {app.drive.company}',
+                    message=note,
+                    notif_type=status if status in ['shortlisted', 'rejected', 'selected'] else 'general'
+                )
 
-            send_status_update_email(app.student, app.drive, status)
-            messages.success(request, f'Application status updated to {status}!')
+                send_status_update_email(app.student, app.drive, status)
+                messages.success(request, f'Application status updated to {status}!')
 
     if request.user.role == 'recruiter':
         return redirect('recruiter_applicants')
@@ -380,11 +390,8 @@ def _csv_safe(value):
     return "'" + text if text[:1] in ('=', '+', '-', '@', '\t', '\r') else text
 
 
-@login_required
+@admin_required
 def export_students_csv(request):
-    if request.user.role != 'admin':
-        return redirect('dashboard')
-
     import csv
     from django.http import HttpResponse
 
@@ -472,6 +479,11 @@ def request_verification_view(request):
             profile.verification_status       = 'pending'
             profile.verification_requested_at = timezone.now()
             profile.save()
+            notify_admins(
+                'New verification request',
+                f'{profile.company_name or request.user.username} ({request.user.username}) '
+                'asked to be verified as a recruiter.',
+                'general')
 
             messages.success(request, 'Verification request submitted! We will review it shortly.')
             return redirect('verification_status')
@@ -481,12 +493,8 @@ def request_verification_view(request):
     return render(request, 'accounts/request_verification.html', {'profile': profile})
 
 
-@login_required
+@admin_required
 def admin_verify_recruiter(request, user_id):
-    if request.user.role != 'admin':
-        messages.error(request, 'Access denied.')
-        return redirect('dashboard')
-
     recruiter_user = get_object_or_404(User, pk=user_id, role='recruiter')
     profile, _     = RecruiterProfile.objects.get_or_create(user=recruiter_user)
 
@@ -530,35 +538,36 @@ def admin_verify_recruiter(request, user_id):
 
 # ── ADMIN DRIVE MODERATION ────────────────────────────────────────────────
 
-@login_required
+@admin_required
 def admin_toggle_drive_status(request, drive_id):
-    if request.user.role != 'admin':
-        messages.error(request, 'Access denied.')
-        return redirect('dashboard')
-
     drive = get_object_or_404(PlacementDrive, pk=drive_id)
 
     if request.method == 'POST':
+        label = f'{drive.company} - {drive.role}'
         if drive.status == 'active':
             drive.status = 'closed'
-            messages.warning(request, f'Drive "{drive.company} - {drive.role}" has been forcefully closed.')
+            messages.warning(request, f'Drive "{label}" has been forcefully closed.')
+            action = 'drive_closed'
         else:
             drive.status = 'active'
-            messages.success(request, f'Drive "{drive.company} - {drive.role}" has been reopened.')
+            action = 'drive_reopened'
+            if drive.deadline < timezone.localdate():
+                messages.warning(
+                    request, f'Drive "{label}" was reopened, but its deadline ({drive.deadline:%d %b %Y}) '
+                             'has passed, so students still cannot apply. Edit the drive to set a new deadline.')
+            else:
+                messages.success(request, f'Drive "{label}" has been reopened.')
 
         drive.save()
+        log_action(request, action, label, f'Drive #{drive.pk}')
 
     return _admin_back(request)
 
 
 # ── ADMIN USER MANAGEMENT (SOFT DELETE) ───────────────────────────────────
 
-@login_required
+@admin_required
 def admin_toggle_user_status(request, user_id):
-    if request.user.role != 'admin':
-        messages.error(request, 'Access denied.')
-        return redirect('dashboard')
-
     target_user = get_object_or_404(User, pk=user_id)
 
     # Prevent admin from deactivating themselves
@@ -567,15 +576,33 @@ def admin_toggle_user_status(request, user_id):
         return _admin_back(request)
 
     if request.method == 'POST':
-        # Toggle the is_active status
+        deactivating = target_user.is_active
+
+        # Admins can't lock each other out; this also guarantees one admin always remains
+        if deactivating and target_user.role == 'admin':
+            messages.error(request, 'Admin accounts cannot be deactivated here. '
+                                    'Change the role in Django admin first if you really need to.')
+            return _admin_back(request)
+
         target_user.is_active = not target_user.is_active
         target_user.save()
+
+        closed = 0
+        if deactivating and target_user.role == 'recruiter':
+            # A deactivated recruiter can't manage their drives, so stop new applications
+            closed = PlacementDrive.objects.filter(
+                posted_by=target_user, status='active').update(status='closed')
+
         log_action(request, 'user_activated' if target_user.is_active else 'user_deactivated',
-                   target_user.username)
+                   target_user.username,
+                   f'{closed} active drive(s) closed' if closed else '')
 
         if target_user.is_active:
-            messages.success(request, f'User {target_user.username} has been reactivated.')
+            messages.success(request, f'User {target_user.username} has been reactivated. '
+                                      'Their closed drives stay closed; reopen them if needed.')
         else:
-            messages.warning(request, f'User {target_user.username} has been deactivated. They can no longer log in.')
+            extra = f' {closed} active drive(s) were closed.' if closed else ''
+            messages.warning(request, f'User {target_user.username} has been deactivated. '
+                                      f'They can no longer log in.{extra}')
 
     return _admin_back(request)

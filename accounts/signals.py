@@ -7,7 +7,7 @@ Triggers welcome email automatically when a new user registers.
 import logging
 
 from django.db import transaction
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 from .models import User
 
@@ -29,3 +29,10 @@ def send_welcome_on_register(sender, instance, created, **kwargs):
     if created and instance.email:
         # Wait for the DB commit; the email backend delivers in the background
         transaction.on_commit(lambda: _send_welcome(instance))
+
+
+@receiver(pre_save, sender=User)
+def superuser_is_admin(sender, instance, **kwargs):
+    """`createsuperuser` leaves role='student', which locks the owner out of the admin panel."""
+    if instance.is_superuser and instance.role != 'admin':
+        instance.role = 'admin'

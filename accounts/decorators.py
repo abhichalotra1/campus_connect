@@ -18,6 +18,19 @@ def recruiter_required(view_func):
     return wrapper
 
 
+def admin_required(view_func):
+    """Allow only logged-in admins (one place for the rule instead of copy-pasted checks)."""
+    @wraps(view_func)
+    def wrapper(request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return redirect('login')
+        if request.user.role != 'admin':
+            messages.error(request, 'Access denied.')
+            return redirect('dashboard')
+        return view_func(request, *args, **kwargs)
+    return wrapper
+
+
 def verified_recruiter_required(view_func):
     """Allow only logged-in AND verified recruiters."""
     @wraps(view_func)

@@ -354,6 +354,7 @@
             <button type="submit" class="ad-btn ok sm" data-loading-text="Reopening..."><i class="fas fa-lock-open"></i> Reopen</button>
           </form>
           {% endif %}
+          {% if not drive.app_count %}<a class="ad-btn bad sm" href="{% url 'delete_drive' drive.pk %}"><i class="fas fa-trash"></i> Delete</a>{% endif %}
         </div></td>
       </tr>
     {% endfor %}
@@ -424,7 +425,7 @@
         <td><div class="ad-row-actions">
           {% if recruiter.is_active %}
           <form method="post" action="{% url 'admin_toggle_user' recruiter.pk %}"
-                data-confirm="Deactivate {{ recruiter.get_full_name|default:recruiter.username }}? They will be signed out and can no longer log in."
+                data-confirm="Deactivate {{ recruiter.get_full_name|default:recruiter.username }}? They can no longer log in and their open drives will be closed."
                 data-confirm-label="Deactivate">
             {% csrf_token %}<input type="hidden" name="next" value="{{ next_url }}">
             <button type="submit" class="ad-btn bad sm" data-loading-text="Working..."><i class="fas fa-user-slash"></i> Deactivate</button>
