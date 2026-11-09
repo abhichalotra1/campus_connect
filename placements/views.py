@@ -11,8 +11,9 @@ from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 
 from accounts.audit import log_action
+from accounts.decorators import is_verified_recruiter
 from accounts.notify import notify_admins
-from campus_connect.forms_util import flash_form_errors
+from campus_connect.forms_util import discard_unsaved_files, flash_form_errors
 from campus_connect.pagination import paginate
 from notifications.views import send_notification
 from students.models import StudentProfile
@@ -164,9 +165,8 @@ def withdraw_view(request, pk):
         drive   = application.drive
         student = request.user
 
-        send_withdrawal_email(student, drive)
-
         application.delete()
+        send_withdrawal_email(student, drive)  # only after the withdrawal really happened
         messages.success(request, f'Application for {drive.company} withdrawn successfully.')
         return redirect('my_applications')
 
@@ -183,11 +183,8 @@ def _after_drive_change(request):
 @login_required
 def post_drive_view(request):
     if request.user.role == 'recruiter':
-        try:
-            if not request.user.recruiterprofile.is_verified:
-                messages.error(request, 'You must be a verified recruiter to post drives.')
-                return redirect('verification_status')
-        except Exception:
+        if not is_verified_recruiter(request.user):
+            messages.error(request, 'You must be a verified recruiter to post drives.')
             return redirect('verification_status')
     elif request.user.role != 'admin':
         messages.error(request, 'Only recruiters can post jobs!')
@@ -215,6 +212,8 @@ def post_drive_view(request):
 
 @login_required
 def my_interviews_view(request):
+    if request.user.role != 'student':
+        return redirect('dashboard')
     now = timezone.now()
     
     # 1. Upcoming interviews: scheduled_at is greater than or equal to right now
@@ -337,7 +336,7 @@ def recruiter_applicants_view(request):
         applications   = Application.objects.filter(drive=selected_drive).select_related(
             'student', 'student__studentprofile').order_by('-applied_at')
 
-    total_applicants = len(applications) if isinstance(applications, list) else applications.count()
+    total_applicants = applications.count() if selected_drive else 0
     page, page_query = (paginate(request, applications, per_page=20) if selected_drive else (applications, ''))
 
     return render(request, 'placements/recruiter_applicants.html', {
@@ -377,6 +376,7 @@ def edit_drive_view(request, pk):
         if not form.is_valid():
             flash_form_errors(request, form)
             # `drive` now holds the valid edits made so far; nothing has been saved
+            discard_unsaved_files(drive)
             return render(request, 'placements/edit_drive.html', {'drive': drive})
         drive = form.save()
         messages.success(request, f'Drive "{drive.role}" updated successfully!')

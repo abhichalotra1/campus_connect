@@ -1,4 +1,3 @@
-from django.db import models
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -6,24 +5,10 @@ from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 from accounts.decorators import is_verified_recruiter
-from campus_connect.forms_util import flash_form_errors
+from campus_connect.forms_util import discard_unsaved_files, flash_form_errors
 from .forms import RecruiterProfileForm, StudentProfileForm, UserNameForm
 from .models import StudentProfile, RecruiterProfile
 from placements.models import PlacementDrive
-
-
-def _discard_unsaved_files(instance):
-    """Put back the saved files after a rejected upload.
-
-    Otherwise the re-rendered form would show the rejected file as the "current" one,
-    with a link to something that was never stored.
-    """
-    saved = type(instance).objects.filter(pk=instance.pk).first()
-    for field in instance._meta.get_fields():
-        if isinstance(field, models.FileField):
-            current = getattr(instance, field.name)
-            if current and not current._committed:
-                setattr(instance, field.name, getattr(saved, field.name) if saved else None)
 
 
 @login_required
@@ -85,7 +70,7 @@ def edit_profile_view(request):
                 messages.success(request, 'Profile updated successfully!')
                 return redirect('profile')
             flash_form_errors(request, form, name_form)
-            _discard_unsaved_files(profile)
+            discard_unsaved_files(profile)
             # fall through: the page shows the valid edits so far; nothing was saved
 
         return render(request, 'students/edit_profile.html', {
@@ -104,7 +89,7 @@ def edit_profile_view(request):
                 messages.success(request, 'Recruiter profile updated successfully!')
                 return redirect('profile')
             flash_form_errors(request, form)
-            _discard_unsaved_files(profile)
+            discard_unsaved_files(profile)
 
         return render(request, 'students/edit_recruiter_profile.html', {'profile': profile})
 

@@ -56,7 +56,8 @@ urlpatterns = [
     path('dashboard/', account_views.dashboard_view, name='dashboard'),
 ]
 
-urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+if settings.DEBUG:  # local development only; production files live on Cloudinary
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 handler403 = 'campus_connect.views.custom_403'
 handler404 = 'campus_connect.views.custom_404'
 handler500 = 'campus_connect.views.custom_500'

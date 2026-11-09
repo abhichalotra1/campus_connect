@@ -63,7 +63,7 @@ Full checklist: see [DEPLOY.md](DEPLOY.md).
 - Start command: `gunicorn campus_connect.wsgi`
 - Set the environment variables above in the Render dashboard.
 
-Known limitation: uploaded files (resumes, logos, profile pictures) are stored on the server disk and are lost on redeploy until persistent media storage is added. This is on the fix list.
+Uploaded files (resumes, logos, profile pictures) are stored on Cloudinary when `CLOUDINARY_URL` is set. Without it they go to the server's disk, which Render erases on every redeploy, so set it before going live (see [DEPLOY.md](DEPLOY.md)).
 
 ## Project layout
 

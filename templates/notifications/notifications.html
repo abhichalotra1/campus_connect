@@ -176,6 +176,9 @@
     font-weight: 700;
     white-space: nowrap;
     padding: 6px 10px;
+    border: 0;
+    cursor: pointer;
+    font-family: inherit;
     border-radius: 6px;
     background: var(--p-soft);
     transition: all 0.15s;
@@ -260,9 +263,12 @@
     
     {% if not notification.is_read %}
     <div class="noti-right">
-      <a href="{% url 'mark_read' notification.pk %}" class="btn-read">
-        <i class="fas fa-check"></i> Read
-      </a>
+      <form method="POST" action="{% url 'mark_read' notification.pk %}" data-no-loading>
+        {% csrf_token %}
+        <button type="submit" class="btn-read">
+          <i class="fas fa-check"></i> Read
+        </button>
+      </form>
     </div>
     {% endif %}
     

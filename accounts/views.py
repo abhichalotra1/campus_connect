@@ -5,6 +5,7 @@ from django.contrib import messages
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
+from django.db import IntegrityError, transaction
 from django.db.models import Count, Q
 from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
@@ -103,15 +104,22 @@ def register_view(request):
             form['password1'] = form['password2'] = ''
             return render(request, 'accounts/register.html', {'form': form})
 
-        User.objects.create_user(
-            username=form['username'],
-            email=form['email'],
-            password=form['password1'],
-            first_name=form['first_name'],
-            last_name=form['last_name'],
-            phone=form['phone'],
-            role=form['role'],
-        )
+        try:
+            with transaction.atomic():
+                User.objects.create_user(
+                    username=form['username'],
+                    email=form['email'],
+                    password=form['password1'],
+                    first_name=form['first_name'],
+                    last_name=form['last_name'],
+                    phone=form['phone'],
+                    role=form['role'],
+                )
+        except IntegrityError:
+            # Two sign-ups with the same username at the same moment: the other one won.
+            messages.error(request, 'That username was just taken. Please choose another.')
+            form['password1'] = form['password2'] = ''
+            return render(request, 'accounts/register.html', {'form': form})
 
         messages.success(request, 'Account created! Please login.')
         return redirect('login')
@@ -341,6 +349,7 @@ def admin_dashboard_view(request):
 
 
 @login_required
+@require_POST
 def update_application_status(request, pk):
     app = get_object_or_404(Application, pk=pk)
 
@@ -494,6 +503,7 @@ def request_verification_view(request):
 
 
 @admin_required
+@require_POST
 def admin_verify_recruiter(request, user_id):
     recruiter_user = get_object_or_404(User, pk=user_id, role='recruiter')
     profile, _     = RecruiterProfile.objects.get_or_create(user=recruiter_user)
@@ -539,6 +549,7 @@ def admin_verify_recruiter(request, user_id):
 # ── ADMIN DRIVE MODERATION ────────────────────────────────────────────────
 
 @admin_required
+@require_POST
 def admin_toggle_drive_status(request, drive_id):
     drive = get_object_or_404(PlacementDrive, pk=drive_id)
 
@@ -567,6 +578,7 @@ def admin_toggle_drive_status(request, drive_id):
 # ── ADMIN USER MANAGEMENT (SOFT DELETE) ───────────────────────────────────
 
 @admin_required
+@require_POST
 def admin_toggle_user_status(request, user_id):
     target_user = get_object_or_404(User, pk=user_id)
 
