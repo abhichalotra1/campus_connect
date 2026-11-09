@@ -57,3 +57,9 @@ thread, so a blocked SMTP port will not slow or break requests; it only means ma
 - Expired drives disappear from listings automatically at their deadline (checked at read time), and a
   recruiter can reopen one just by extending its deadline. `close_expired_drives` is no longer run on deploy,
   because it stored a permanent "closed" status that an extended deadline could not undo.
+
+## 7. Deadline reminders (optional, after launch)
+`python manage.py send_deadline_reminders` sends an in-app reminder to eligible students who have not applied to
+drives closing within 2 days (`--days N` to change, `--dry-run` to preview). It never sends the same reminder twice,
+so it is safe to run daily: add a Render Cron Job with command `python manage.py send_deadline_reminders`
+(schedule `0 4 * * *`, i.e. 09:30 IST), using the same environment variables as the web service.

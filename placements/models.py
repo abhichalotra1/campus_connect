@@ -63,6 +63,12 @@ class PlacementDrive(models.Model):
 
     objects = PlacementDriveQuerySet.as_manager()
 
+    class Meta:
+        indexes = [
+            # PlacementDrive.objects.open(): status='active' AND deadline >= today
+            models.Index(fields=['status', 'deadline'], name='drive_status_deadline_idx'),
+        ]
+
     def __str__(self):
         return f"{self.company} - {self.role}"
 
@@ -103,6 +109,12 @@ class Application(models.Model):
 
     class Meta:
         unique_together = ('student', 'drive')
+        indexes = [
+            # recruiter applicant lists / stats: per-drive and per-status counts
+            models.Index(fields=['drive', 'status'], name='app_drive_status_idx'),
+            # dashboard / stats counts by status (e.g. selected)
+            models.Index(fields=['status'], name='app_status_idx'),
+        ]
 
     def __str__(self):
         return f"{self.student.username} → {self.drive.company}"
