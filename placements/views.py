@@ -2,6 +2,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
+from django.db.models import Q
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.utils import timezone
@@ -40,7 +41,7 @@ def drive_list_view(request):
     if search:
         drives = (drives.filter(company__icontains=search) | drives.filter(role__icontains=search)).distinct()
     if branch:
-        drives = drives.filter(eligible_branch=branch)
+        drives = drives.filter(Q(eligible_branch=branch) | Q(eligible_branch='ALL'))
     if job_type:
         drives = drives.filter(job_type=job_type)
 
@@ -144,7 +145,7 @@ def apply_view(request, pk):
 @login_required
 def my_applications_view(request):
     applications, page_query = paginate(
-        request, Application.objects.filter(student=request.user).order_by('-applied_at'), per_page=10)
+        request, Application.objects.filter(student=request.user).select_related('drive').order_by('-applied_at'), per_page=10)
     return render(request, 'placements/my_applications.html', {
         'page_obj': applications, 'page_query': page_query,
         'applications': applications
@@ -220,13 +221,13 @@ def my_interviews_view(request):
     upcoming_interviews = Interview.objects.filter(
         application__student=request.user, 
         scheduled_at__gte=now
-    ).order_by('scheduled_at')
+    ).select_related('application__drive').order_by('scheduled_at')
 
     # 2. Past interviews: scheduled_at is less than right now
     past_interviews = Interview.objects.filter(
         application__student=request.user, 
         scheduled_at__lt=now
-    ).order_by('-scheduled_at')
+    ).select_related('application__drive').order_by('-scheduled_at')
 
     return render(request, 'placements/my_interviews.html', {
         'upcoming_interviews': upcoming_interviews,

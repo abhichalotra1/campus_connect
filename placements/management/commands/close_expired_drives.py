@@ -7,7 +7,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
         expired = PlacementDrive.objects.filter(
-            deadline__lt=timezone.now().date(),
+            deadline__lt=timezone.localdate(),
             status='active'
         )
         count = expired.update(status='closed')

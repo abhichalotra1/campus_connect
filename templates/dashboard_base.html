@@ -272,7 +272,7 @@ body { font-family: var(--font-body); background: var(--bg); color: var(--ink); 
   <div class="topbar">
     <div>
       <div class="topbar-title">
-        Good {% now "G" as hour %}{% if hour < 12 %}Morning{% elif hour < 17 %}Afternoon{% else %}Evening{% endif %}, {{ user.first_name|default:user.username }} 👋
+        Good {% now "G" as hour %}{% if hour|add:0 < 12 %}Morning{% elif hour|add:0 < 17 %}Afternoon{% else %}Evening{% endif %}, {{ user.first_name|default:user.username }} 👋
       </div>
       <div class="topbar-sub">
         {% if user.role == 'student' %}Here's your placement overview for today{% endif %}

@@ -47,6 +47,10 @@ def _status_breakdown(applications):
 def stats_view(request):
     import json
 
+    def _js(value):
+        """JSON that can never close the surrounding <script> tag."""
+        return json.dumps(value).replace('<', '\\u003c').replace('>', '\\u003e').replace('&', '\\u0026')
+
     user = request.user
     context = {}
 
@@ -116,21 +120,21 @@ def stats_view(request):
 
         monthly_data = (Application.objects.annotate(month=TruncMonth('applied_at'))
                         .values('month').annotate(count=Count('id')).order_by('month'))
-        context['monthly_labels'] = json.dumps([m['month'].strftime('%b %Y') for m in monthly_data if m['month']])
-        context['monthly_data'] = json.dumps([m['count'] for m in monthly_data])
+        context['monthly_labels'] = _js([m['month'].strftime('%b %Y') for m in monthly_data if m['month']])
+        context['monthly_data'] = _js([m['count'] for m in monthly_data])
 
         branch_data = (Application.objects.filter(status='selected')
                        .values('student__studentprofile__branch').annotate(count=Count('id')).order_by('-count'))
-        context['branch_labels'] = json.dumps([b['student__studentprofile__branch'] or 'N/A' for b in branch_data])
-        context['branch_data'] = json.dumps([b['count'] for b in branch_data])
+        context['branch_labels'] = _js([b['student__studentprofile__branch'] or 'N/A' for b in branch_data])
+        context['branch_data'] = _js([b['count'] for b in branch_data])
     else:
         info = _status_breakdown(Application.objects.none())
 
     context['status_rows'] = info['rows']
     context['status_total'] = info['total']
     context['funnel'] = info
-    context['status_labels'] = json.dumps([r['label'] for r in info['rows']])
-    context['status_data'] = json.dumps([r['count'] for r in info['rows']])
-    context['status_colors'] = json.dumps([r['color'] for r in info['rows']])
+    context['status_labels'] = _js([r['label'] for r in info['rows']])
+    context['status_data'] = _js([r['count'] for r in info['rows']])
+    context['status_colors'] = _js([r['color'] for r in info['rows']])
 
     return render(request, 'accounts/stats.html', context)

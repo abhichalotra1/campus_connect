@@ -3,7 +3,7 @@
 ## 1. Create the services
 1. **PostgreSQL**: New → PostgreSQL. Copy its *Internal Database URL*.
 2. **Web Service**: connect this repo, branch `main`.
-   - Build command: `./build.sh`  (installs, collects static, migrates, closes expired drives)
+   - Build command: `./build.sh`  (installs, collects static, migrates)
    - Start command: `gunicorn campus_connect.wsgi`
 
 ## 2. Environment variables (Web Service → Environment)
@@ -40,7 +40,7 @@ Render's free tier may block outbound SMTP. If welcome / application emails neve
 thread, so a blocked SMTP port will not slow or break requests; it only means mail is not delivered.
 
 ## 5. First deploy checklist
-- [ ] Deploy succeeds; build log shows `Closed N expired drives.`
+- [ ] Deploy succeeds (build log ends after `migrate` with no errors)
 - [ ] Open the site over HTTPS (HTTP redirects to HTTPS)
 - [ ] Create the admin: Render Shell → `python manage.py createsuperuser`, then
       `python manage.py shell -c "from accounts.models import User; User.objects.filter(username='YOU').update(role='admin')"`
@@ -54,5 +54,6 @@ thread, so a blocked SMTP port will not slow or break requests; it only means ma
 
 ## 6. Housekeeping
 - Raise `SECURE_HSTS_SECONDS` in `settings.py` (currently 3600) to `31536000` once everything is stable.
-- Expired drives disappear from listings automatically at their deadline. `close_expired_drives`
-  only tidies the stored status; it runs on every deploy and can also be scheduled with a Render Cron Job.
+- Expired drives disappear from listings automatically at their deadline (checked at read time), and a
+  recruiter can reopen one just by extending its deadline. `close_expired_drives` is no longer run on deploy,
+  because it stored a permanent "closed" status that an extended deadline could not undo.

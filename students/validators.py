@@ -12,6 +12,15 @@ def validate_resume(file):
         raise ValidationError('Resume must be a PDF file.')
     if file.size > MAX_UPLOAD_BYTES:
         raise ValidationError('Resume must be smaller than 2 MB.')
+    raw = getattr(file, 'file', file)
+    try:
+        raw.seek(0)
+        head = raw.read(5)
+        raw.seek(0)
+    except Exception:
+        head = b''
+    if head != b'%PDF-':
+        raise ValidationError('Resume must be a valid PDF file.')
 
 
 def validate_image_size(file):
