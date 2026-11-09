@@ -9,6 +9,8 @@ from django.utils.dateparse import parse_datetime
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 
+from accounts.audit import log_action
+from accounts.notify import notify_admins
 from campus_connect.forms_util import flash_form_errors
 from campus_connect.pagination import paginate
 from notifications.views import send_notification
@@ -194,10 +196,16 @@ def post_drive_view(request):
         form = PlacementDriveForm(request.POST, request.FILES)
         if not form.is_valid():
             flash_form_errors(request, form)
-            return render(request, 'placements/post_drive.html')
+            # Hand back what was typed (the logo can't be re-filled by a browser)
+            return render(request, 'placements/post_drive.html', {'v': request.POST})
         drive = form.save(commit=False)
         drive.posted_by = request.user
         drive.save()
+        if request.user.role == 'recruiter':
+            notify_admins('New drive posted',
+                          f'{request.user.username} posted "{drive.role}" at {drive.company}.')
+        log_action(request, 'drive_posted', f'{drive.company} - {drive.role}',
+                   f'Drive #{drive.pk} posted by {request.user.role} {request.user.username}')
         messages.success(request, 'Placement drive posted successfully!')
         return _after_drive_change(request)
 
@@ -384,12 +392,22 @@ def delete_drive_view(request, pk):
         messages.error(request, "You don't have permission to delete this drive!")
         return redirect('drive_list')
 
+    app_count = Application.objects.filter(drive=drive).count()
+
     if request.method == 'POST':
+        if app_count:
+            messages.error(
+                request, f'"{drive.role}" has {app_count} application(s) and cannot be deleted. '
+                         'Close the drive instead to stop new applications.')
+            return _after_drive_change(request)
+        label = f'{drive.company} - {drive.role}'
+        pk = drive.pk
         drive.delete()
+        log_action(request, 'drive_deleted', label, f'Drive #{pk} deleted')
         messages.success(request, f'Drive "{drive.role}" has been deleted.')
         return _after_drive_change(request)
 
-    return render(request, 'placements/delete_drive_confirm.html', {'drive': drive})
+    return render(request, 'placements/delete_drive_confirm.html', {'drive': drive, 'app_count': app_count})
 
 
 @login_required

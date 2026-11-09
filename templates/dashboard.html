@@ -25,56 +25,98 @@
 {% endif %}
 
 <!-- STATS -->
-<div class="stats-row">
-  <div class="stat-card c-p anim d1">
-    <div class="stat-top">
-      <span class="stat-label">Open Drives</span>
-      <div class="stat-icon" style="background:var(--p-soft);color:var(--primary2);"><i class="fa-solid fa-briefcase"></i></div>
-    </div>
-    <div class="stat-num" style="color:var(--primary2);">{{ open_drives_count|default:"0" }}</div>
-    <div class="stat-hint"><i class="fa-solid fa-clock"></i> Active this season</div>
-  </div>
+{% comment %}Each card links to the page that holds its numbers; numbers count up once on load.{% endcomment %}
+<style>
+.sc-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 24px; }
+.sc { display: block; text-decoration: none; color: inherit; background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 18px 20px; position: relative; overflow: hidden;
+  transition: transform .2s, border-color .2s, box-shadow .2s; }
+.sc::before { content: ''; position: absolute; inset: 0 0 auto 0; height: 3px; background: var(--sc, var(--primary)); }
+.sc::after { content: ''; position: absolute; right: -30px; top: -30px; width: 110px; height: 110px; border-radius: 50%;
+  background: var(--sc, var(--primary)); opacity: .07; transition: opacity .2s, transform .3s; }
+.sc:hover { transform: translateY(-3px); border-color: var(--sc, var(--primary)); box-shadow: 0 10px 28px rgba(0,0,0,.14); color: inherit; }
+.sc:hover::after { opacity: .13; transform: scale(1.15); }
+.sc:focus-visible { outline: 2px solid var(--sc, var(--primary)); outline-offset: 2px; }
+.sc-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; position: relative; z-index: 1; }
+.sc-label { font-size: 11px; text-transform: uppercase; letter-spacing: .8px; font-weight: 700; color: var(--ink3); font-family: var(--font-mono); }
+.sc-icon { width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center;
+  font-size: 14px; color: var(--sc, var(--primary2)); background: color-mix(in srgb, var(--sc, var(--primary)) 14%, transparent); }
+.sc-num { font-family: var(--font-display); font-size: 34px; font-weight: 800; letter-spacing: -1.4px; line-height: 1;
+  color: var(--ink); margin-bottom: 8px; position: relative; z-index: 1; font-variant-numeric: tabular-nums; }
+.sc-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 12px; color: var(--ink3); position: relative; z-index: 1; }
+.sc-go { color: var(--sc, var(--primary2)); opacity: 0; transform: translateX(-4px); transition: all .2s; font-size: 11px; }
+.sc:hover .sc-go, .sc:focus-visible .sc-go { opacity: 1; transform: none; }
+.sc-ok { color: var(--green); font-weight: 600; }
+@media (max-width: 992px) { .sc-row { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 480px) {
+  .sc-row { gap: 10px; }
+  .sc { padding: 14px; }
+  .sc-num { font-size: 28px; }
+  .sc-go { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { .sc, .sc::after, .sc-go { transition: none; } }
+</style>
 
-  <div class="stat-card c-g anim d2">
-    <div class="stat-top">
-      <span class="stat-label">
-        {% if user.role == 'recruiter' %}Total Applicants
-        {% elif user.role == 'admin' %}Applications
-        {% else %}My Applications{% endif %}
-      </span>
-      <div class="stat-icon" style="background:var(--green-soft);color:var(--green);"><i class="fa-solid fa-file-lines"></i></div>
-    </div>
-    <div class="stat-num" style="color:var(--green);">{{ applications_count|default:"0" }}</div>
-    <div class="stat-hint"><i class="fa-solid fa-layer-group"></i> Total submitted</div>
-  </div>
+<div class="sc-row">
+  {# 1 · open drives #}
+  <a class="sc anim d1" style="--sc: var(--primary);"
+     href="{% if user.role == 'admin' %}{% url 'admin_dashboard' %}?tab=drives{% elif user.role == 'recruiter' %}{% url 'recruiter_dashboard' %}{% else %}{% url 'drive_list' %}{% endif %}">
+    <div class="sc-top"><span class="sc-label">{% if user.role == 'recruiter' %}My Drives{% else %}Open Drives{% endif %}</span>
+      <div class="sc-icon"><i class="fa-solid fa-briefcase"></i></div></div>
+    <div class="sc-num" data-count="{{ open_drives_count|default:0 }}">{{ open_drives_count|default:"0" }}</div>
+    <div class="sc-foot"><span>{% if open_drives_count %}Accepting applications{% else %}None open right now{% endif %}</span>
+      <i class="fa-solid fa-arrow-right sc-go"></i></div>
+  </a>
 
-  <div class="stat-card c-y anim d3">
-    <div class="stat-top">
-      <span class="stat-label">Shortlisted</span>
-      <div class="stat-icon" style="background:var(--yellow-soft);color:var(--yellow);"><i class="fa-solid fa-star"></i></div>
-    </div>
-    <div class="stat-num" style="color:var(--yellow);">{{ shortlisted_count|default:"0" }}</div>
-    <div class="stat-hint up"><i class="fa-solid fa-arrow-up"></i>
-      {% if user.role == 'student' %}Keep it up!{% else %}Candidates{% endif %}
-    </div>
-  </div>
+  {# 2 · applications #}
+  <a class="sc anim d2" style="--sc: var(--green);"
+     href="{% if user.role == 'admin' %}{% url 'admin_dashboard' %}?tab=applications{% elif user.role == 'recruiter' %}{% url 'recruiter_applicants' %}{% else %}{% url 'my_applications' %}{% endif %}">
+    <div class="sc-top"><span class="sc-label">{% if user.role == 'recruiter' %}Total Applicants{% elif user.role == 'admin' %}Applications{% else %}My Applications{% endif %}</span>
+      <div class="sc-icon"><i class="fa-solid fa-file-lines"></i></div></div>
+    <div class="sc-num" data-count="{{ applications_count|default:0 }}">{{ applications_count|default:"0" }}</div>
+    <div class="sc-foot"><span>{% if applications_count %}{% if user.role == 'student' %}Track every one{% else %}Review them all{% endif %}{% else %}{% if user.role == 'student' %}Apply to your first drive{% else %}No applications yet{% endif %}{% endif %}</span>
+      <i class="fa-solid fa-arrow-right sc-go"></i></div>
+  </a>
 
-  <div class="stat-card c-r anim d4">
-    <div class="stat-top">
-      <span class="stat-label">
-        {% if user.role == 'admin' %}Total Students
-        {% else %}Interviews{% endif %}
-      </span>
-      <div class="stat-icon" style="background:var(--red-soft);color:var(--red);"><i class="fa-solid fa-calendar"></i></div>
-    </div>
-    <div class="stat-num" style="color:var(--red);">
-      {% if user.role == 'admin' %}{{ total_students|default:"0" }}{% else %}{{ interviews_count|default:"0" }}{% endif %}
-    </div>
-    <div class="stat-hint"><i class="fa-solid fa-clock"></i>
-      {% if user.role == 'admin' %}Registered{% else %}Upcoming{% endif %}
-    </div>
-  </div>
+  {# 3 · shortlisted #}
+  <a class="sc anim d3" style="--sc: var(--yellow);"
+     href="{% if user.role == 'admin' %}{% url 'admin_dashboard' %}?tab=applications&amp;status=shortlisted{% elif user.role == 'recruiter' %}{% url 'recruiter_applicants' %}{% else %}{% url 'my_applications' %}{% endif %}">
+    <div class="sc-top"><span class="sc-label">Shortlisted</span>
+      <div class="sc-icon"><i class="fa-solid fa-star"></i></div></div>
+    <div class="sc-num" data-count="{{ shortlisted_count|default:0 }}">{{ shortlisted_count|default:"0" }}</div>
+    <div class="sc-foot"><span>{% if shortlisted_count %}<span class="sc-ok">{% if user.role == 'student' %}Great progress!{% else %}Moving forward{% endif %}</span>{% else %}Nobody yet{% endif %}</span>
+      <i class="fa-solid fa-arrow-right sc-go"></i></div>
+  </a>
+
+  {# 4 · interviews / students #}
+  <a class="sc anim d4" style="--sc: var(--red);"
+     href="{% if user.role == 'admin' %}{% url 'admin_dashboard' %}?tab=students{% elif user.role == 'recruiter' %}{% url 'recruiter_applicants' %}{% else %}{% url 'my_interviews' %}{% endif %}">
+    <div class="sc-top"><span class="sc-label">{% if user.role == 'admin' %}Students{% else %}Interviews{% endif %}</span>
+      <div class="sc-icon"><i class="fa-solid {% if user.role == 'admin' %}fa-user-graduate{% else %}fa-calendar{% endif %}"></i></div></div>
+    <div class="sc-num" data-count="{% if user.role == 'admin' %}{{ total_students|default:0 }}{% else %}{{ interviews_count|default:0 }}{% endif %}">{% if user.role == 'admin' %}{{ total_students|default:"0" }}{% else %}{{ interviews_count|default:"0" }}{% endif %}</div>
+    <div class="sc-foot"><span>{% if user.role == 'admin' %}{{ total_recruiters|default:"0" }} recruiter{{ total_recruiters|default:0|pluralize }}{% elif interviews_count %}Coming up{% else %}None scheduled{% endif %}</span>
+      <i class="fa-solid fa-arrow-right sc-go"></i></div>
+  </a>
 </div>
+<script>
+(function () {
+  var els = document.querySelectorAll('.sc-num[data-count]');
+  if (!els.length || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  els.forEach(function (el) {
+    var end = parseInt(el.dataset.count, 10);
+    if (!end || end < 0) return;
+    var start = null, dur = 700;
+    function tick(t) {
+      if (start === null) start = t;
+      var p = Math.min((t - start) / dur, 1);
+      el.textContent = Math.round(end * (1 - Math.pow(1 - p, 3)));
+      if (p < 1) requestAnimationFrame(tick);
+    }
+    el.textContent = '0';
+    requestAnimationFrame(tick);
+  });
+})();
+</script>
 
 <!-- MAIN GRID -->
 <div class="dash-grid">

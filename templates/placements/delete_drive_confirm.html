@@ -90,15 +90,17 @@
     <h3 class="del-title">Delete Drive?</h3>
     <p class="del-msg">
       Are you sure you want to delete <strong>{{ drive.role }}</strong> at <strong>{{ drive.company }}</strong>?<br>
-      <span class="del-warn">All applications for this drive will also be permanently deleted.</span>
+      {% if app_count %}<span class="del-warn">This drive has {{ app_count }} application{{ app_count|pluralize }}, so it cannot be deleted. Close it instead to stop new applications.</span>{% else %}<span class="del-warn">This cannot be undone.</span>{% endif %}
     </p>
     
     <form method="POST">
       {% csrf_token %}
       <div class="del-actions">
+        {% if not app_count %}
         <button type="submit" class="btn-delete" data-loading-text="Deleting...">
           <i class="fas fa-trash"></i> Yes, Delete Drive
         </button>
+        {% endif %}
         <a href="{% url 'drive_list' %}" class="btn-cancel">
           Cancel
         </a>
