@@ -20,6 +20,12 @@ class Notification(models.Model):
 
     class Meta:
         ordering = ['-created_at']
+        indexes = [
+            # unread badge / mark-all-read
+            models.Index(fields=['user', 'is_read'], name='notif_user_read_idx'),
+            # a user's list, newest first
+            models.Index(fields=['user', '-created_at'], name='notif_user_created_idx'),
+        ]
 
     def __str__(self):
         return f"{self.user.username} - {self.title}"
