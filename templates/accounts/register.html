@@ -60,6 +60,22 @@
   .auth-link { color: var(--primary2); font-weight: 700; text-decoration: none; transition: color 0.15s; }
   .auth-link:hover { color: var(--ink); }
 
+  .role-picker { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .role-opt { position: relative; cursor: pointer; margin: 0; }
+  .role-opt input { position: absolute; opacity: 0; width: 100%; height: 100%; top: 0; left: 0; margin: 0; pointer-events: none; }
+  .role-card {
+    display: flex; flex-direction: column; align-items: center; gap: 3px; text-align: center;
+    padding: 14px 10px; border-radius: 12px; background: var(--bg2);
+    border: 2px solid var(--border2); color: var(--ink2); transition: all 0.18s;
+  }
+  .role-card i { font-size: 20px; color: var(--ink3); margin-bottom: 2px; }
+  .role-card strong { font-family: var(--font-display); font-size: 15px; color: var(--ink); }
+  .role-card small { font-size: 12px; color: var(--ink3); }
+  .role-opt:hover .role-card { border-color: var(--primary); }
+  .role-opt input:checked + .role-card { border-color: var(--primary); background: var(--p-soft); }
+  .role-opt input:checked + .role-card i { color: var(--primary2); }
+  .role-opt input:focus-visible + .role-card { box-shadow: 0 0 0 3px var(--p-soft); }
+
   @media(max-width: 480px) { .form-row { grid-template-columns: 1fr; } }
 </style>
 
@@ -108,13 +124,27 @@
         <input type="tel" autocomplete="tel" name="phone" class="form-control" placeholder="+91 98765 43210" maxlength="15" value="{{ form.phone }}">
       </div>
       
-      <!-- Role Selection -->
+      <!-- Role Selection: both choices always visible, nothing pre-selected -->
       <div class="form-group">
-        <label class="form-label">I am a...</label>
-        <select name="role" class="form-select" required>
-          <option value="student" {% if form.role != 'recruiter' %}selected{% endif %}>Student</option>
-          <option value="recruiter" {% if form.role == 'recruiter' %}selected{% endif %}>Recruiter</option>
-        </select>
+        <span class="form-label" id="roleLabel">I am a...</span>
+        <div class="role-picker" role="radiogroup" aria-labelledby="roleLabel">
+          <label class="role-opt">
+            <input type="radio" name="role" value="student" required {% if form.role == 'student' %}checked{% endif %}>
+            <span class="role-card">
+              <i class="fa-solid fa-user-graduate"></i>
+              <strong>Student</strong>
+              <small>Find jobs &amp; internships</small>
+            </span>
+          </label>
+          <label class="role-opt">
+            <input type="radio" name="role" value="recruiter" required {% if form.role == 'recruiter' %}checked{% endif %}>
+            <span class="role-card">
+              <i class="fa-solid fa-briefcase"></i>
+              <strong>Recruiter</strong>
+              <small>Post drives &amp; hire</small>
+            </span>
+          </label>
+        </div>
       </div>
 
       <div class="form-row">

@@ -166,8 +166,9 @@ class RegistrationValidationTests(TestCase):
         self.assertFalse(User.objects.filter(username='newuser').exists())
 
     def test_admin_role_cannot_be_self_assigned(self):
-        self.post(role='admin')
-        self.assertEqual(User.objects.get(username='newuser').role, 'student')
+        # An invalid role is now rejected outright instead of silently becoming 'student'.
+        self.assertEqual(self.post(role='admin').status_code, 200)
+        self.assertFalse(User.objects.filter(username='newuser').exists())
 
 
 class DriveExpiryTests(TestCase):

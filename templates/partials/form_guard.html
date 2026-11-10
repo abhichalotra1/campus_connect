@@ -5,8 +5,20 @@ Shared by base.html and dashboard_base.html.
       data-loading-text="Saving..." on the submit button.
    2. Scrolling the mouse wheel over a focused number field scrolls the page
       instead of silently changing the value.
+   3. Every password field gets a show/hide (eye) button. Opt out per field with
+      data-no-toggle.
 {% endcomment %}
 <style>
+.cc-pw { position: relative; width: 100%; display: block; }
+.cc-pw > input { padding-right: 2.7rem !important; width: 100%; }
+.cc-pw-btn {
+  position: absolute; top: 0; right: 0; height: 100%; width: 2.7rem;
+  display: flex; align-items: center; justify-content: center;
+  background: none; border: 0; cursor: pointer; color: var(--ink3, #8b90a8); border-radius: 0 10px 10px 0;
+}
+.cc-pw-btn:hover, .cc-pw-btn:focus-visible { color: var(--ink, #eef0ff); }
+.cc-pw-btn:focus-visible { outline: 2px solid var(--primary, #6366f1); outline-offset: -2px; }
+
 .cc-busy-overlay {
   position: fixed; inset: 0; z-index: 2000;
   display: none; align-items: center; justify-content: center;
@@ -35,6 +47,36 @@ Shared by base.html and dashboard_base.html.
     var a = document.activeElement;
     if (a && a.tagName === 'INPUT' && a.type === 'number' && a === e.target) a.blur();
   }, { passive: true });
+
+  // ── Show / hide password (eye button) ──
+  document.querySelectorAll('input[type="password"]:not([data-no-toggle])').forEach(function (input) {
+    var wrap = document.createElement('div');
+    wrap.className = 'cc-pw';
+    input.parentNode.insertBefore(wrap, input);
+    wrap.appendChild(input);
+
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'cc-pw-btn';
+    btn.setAttribute('aria-label', 'Show password');
+    btn.setAttribute('aria-pressed', 'false');
+    btn.innerHTML = '<i class="fa-regular fa-eye"></i>';
+    wrap.appendChild(btn);
+
+    function setVisible(show) {
+      input.type = show ? 'text' : 'password';
+      btn.setAttribute('aria-pressed', show ? 'true' : 'false');
+      btn.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+      btn.innerHTML = '<i class="fa-regular ' + (show ? 'fa-eye-slash' : 'fa-eye') + '"></i>';
+    }
+    btn.addEventListener('click', function () {
+      setVisible(input.type === 'password');
+      input.focus();
+    });
+    // Never leave a password visible after submit or when the page is restored from cache.
+    if (input.form) input.form.addEventListener('submit', function () { setVisible(false); });
+    window.addEventListener('pageshow', function () { setVisible(false); });
+  });
 
   // ── Loading state + double-submit guard ──
   var busyForms = [];

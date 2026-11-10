@@ -114,3 +114,40 @@ class DriveFlowTests(TestCase):
         make_user('rec', 'recruiter')
         login(self, 'rec')
         self.assertRedirects(self.client.get(reverse('post_drive')), reverse('verification_status'))
+
+
+class RegistrationRoleAndPasswordToggleTests(TestCase):
+    def post(self, **over):
+        data = {'username': 'newbie2', 'email': 'n2@example.com', 'password1': 'Str0ng!Passw0rd',
+                'password2': 'Str0ng!Passw0rd', 'first_name': 'N', 'last_name': 'B', 'phone': ''}
+        data.update(over)
+        return self.client.post(reverse('register'), data)
+
+    def test_missing_role_is_rejected_not_defaulted_to_student(self):
+        resp = self.post()  # no role field at all
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'Student or a Recruiter')
+        self.assertFalse(User.objects.filter(username='newbie2').exists())
+
+    def test_invalid_role_is_rejected(self):
+        self.assertEqual(self.post(role='admin').status_code, 200)
+        self.assertFalse(User.objects.filter(username='newbie2').exists())
+
+    def test_recruiter_role_is_kept(self):
+        self.assertEqual(self.post(role='recruiter').status_code, 302)
+        self.assertEqual(User.objects.get(username='newbie2').role, 'recruiter')
+
+    def test_form_shows_both_roles_unselected_by_default(self):
+        html = self.client.get(reverse('register')).content.decode()
+        self.assertIn('value="student"', html)
+        self.assertIn('value="recruiter"', html)
+        self.assertNotIn('<select name="role"', html)
+        self.assertNotIn('required checked', html)  # no radio is pre-selected
+
+    def test_chosen_role_is_kept_after_an_error(self):
+        resp = self.post(role='recruiter', password2='different')
+        self.assertContains(resp, 'value="recruiter" required checked')
+
+    def test_password_toggle_script_is_on_login_and_register(self):
+        for name in ('login', 'register'):
+            self.assertContains(self.client.get(reverse(name)), 'cc-pw-btn')
