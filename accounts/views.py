@@ -33,6 +33,9 @@ def _validate_registration(data):
     """Return a list of error strings for the registration form data."""
     errors = []
 
+    if data['role'] not in ('student', 'recruiter'):
+        errors.append('Please choose whether you are a Student or a Recruiter.')
+
     username = data['username']
     if not username:
         errors.append('Username is required.')
@@ -91,10 +94,11 @@ def register_view(request):
             'first_name': request.POST.get('first_name', '').strip(),
             'last_name':  request.POST.get('last_name', '').strip(),
             'phone':      request.POST.get('phone', '').strip(),
-            'role':       request.POST.get('role', 'student'),
+            'role':       request.POST.get('role', ''),
         }
+        # No silent default: a recruiter who skipped the choice must not become a student.
         if form['role'] not in ['student', 'recruiter']:
-            form['role'] = 'student'
+            form['role'] = ''
 
         errors = _validate_registration(form)
         if errors:
