@@ -5,6 +5,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Campus Connect — Placement Portal</title>
+<link rel="icon" href="{% static 'favicon.ico' %}" sizes="32x32">
+<link rel="icon" href="{% static 'favicon.svg' %}" type="image/svg+xml">
+<link rel="apple-touch-icon" href="{% static 'apple-touch-icon.png' %}">
 
 <!-- Fonts -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -188,7 +191,8 @@ img{max-width:100%;display:block}
 .marquee-track{display:flex;animation:marquee 30s linear infinite;width:max-content}
 .marquee-track:hover{animation-play-state:paused}
 .marquee-item{padding:0 48px;font-family:var(--font-display);font-size:15px;font-weight:600;color:var(--text-muted);opacity:.5;display:flex;align-items:center;gap:14px;white-space:nowrap}
-.marquee-dot{width:5px;height:5px;border-radius:50%;background:var(--accent);flex-shrink:0}
+.marquee-logo{width:28px;height:28px;border-radius:8px;background:var(--c,var(--accent));color:#fff;font-family:var(--font-display);font-size:14px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
+.marquee-item:hover{opacity:1}
 
 /* ══════════════════════════════════════════════════════════
    HOW IT WORKS
@@ -510,31 +514,31 @@ img{max-width:100%;display:block}
 <!-- ═══ MARQUEE ═══ -->
 <div class="marquee-section">
   <div class="marquee-track">
-    <span class="marquee-item"><span class="marquee-dot"></span>Google</span>
-    <span class="marquee-item"><span class="marquee-dot"></span>Microsoft</span>
-    <span class="marquee-item"><span class="marquee-dot"></span>Amazon</span>
-    <span class="marquee-item"><span class="marquee-dot"></span>Flipkart</span>
-    <span class="marquee-item"><span class="marquee-dot"></span>Adobe</span>
-    <span class="marquee-item"><span class="marquee-dot"></span>Deloitte</span>
-    <span class="marquee-item"><span class="marquee-dot"></span>Infosys</span>
-    <span class="marquee-item"><span class="marquee-dot"></span>Goldman Sachs</span>
-    <span class="marquee-item"><span class="marquee-dot"></span>Uber</span>
-    <span class="marquee-item"><span class="marquee-dot"></span>Razorpay</span>
-    <span class="marquee-item"><span class="marquee-dot"></span>Swiggy</span>
-    <span class="marquee-item"><span class="marquee-dot"></span>PhonePe</span>
+    <span class="marquee-item"><span class="marquee-logo" style="--c:#4285F4" aria-hidden="true">G</span>Google</span>
+    <span class="marquee-item"><span class="marquee-logo" style="--c:#00A4EF" aria-hidden="true">M</span>Microsoft</span>
+    <span class="marquee-item"><span class="marquee-logo" style="--c:#FF9900" aria-hidden="true">A</span>Amazon</span>
+    <span class="marquee-item"><span class="marquee-logo" style="--c:#2874F0" aria-hidden="true">F</span>Flipkart</span>
+    <span class="marquee-item"><span class="marquee-logo" style="--c:#EB1000" aria-hidden="true">A</span>Adobe</span>
+    <span class="marquee-item"><span class="marquee-logo" style="--c:#26890D" aria-hidden="true">D</span>Deloitte</span>
+    <span class="marquee-item"><span class="marquee-logo" style="--c:#007CC3" aria-hidden="true">I</span>Infosys</span>
+    <span class="marquee-item"><span class="marquee-logo" style="--c:#6C9BD2" aria-hidden="true">G</span>Goldman Sachs</span>
+    <span class="marquee-item"><span class="marquee-logo" style="--c:#111111" aria-hidden="true">U</span>Uber</span>
+    <span class="marquee-item"><span class="marquee-logo" style="--c:#3395FF" aria-hidden="true">R</span>Razorpay</span>
+    <span class="marquee-item"><span class="marquee-logo" style="--c:#FC8019" aria-hidden="true">S</span>Swiggy</span>
+    <span class="marquee-item"><span class="marquee-logo" style="--c:#5F259F" aria-hidden="true">P</span>PhonePe</span>
     <!-- duplicate for loop -->
-    <span class="marquee-item"><span class="marquee-dot"></span>Google</span>
-    <span class="marquee-item"><span class="marquee-dot"></span>Microsoft</span>
-    <span class="marquee-item"><span class="marquee-dot"></span>Amazon</span>
-    <span class="marquee-item"><span class="marquee-dot"></span>Flipkart</span>
-    <span class="marquee-item"><span class="marquee-dot"></span>Adobe</span>
-    <span class="marquee-item"><span class="marquee-dot"></span>Deloitte</span>
-    <span class="marquee-item"><span class="marquee-dot"></span>Infosys</span>
-    <span class="marquee-item"><span class="marquee-dot"></span>Goldman Sachs</span>
-    <span class="marquee-item"><span class="marquee-dot"></span>Uber</span>
-    <span class="marquee-item"><span class="marquee-dot"></span>Razorpay</span>
-    <span class="marquee-item"><span class="marquee-dot"></span>Swiggy</span>
-    <span class="marquee-item"><span class="marquee-dot"></span>PhonePe</span>
+    <span class="marquee-item"><span class="marquee-logo" style="--c:#4285F4" aria-hidden="true">G</span>Google</span>
+    <span class="marquee-item"><span class="marquee-logo" style="--c:#00A4EF" aria-hidden="true">M</span>Microsoft</span>
+    <span class="marquee-item"><span class="marquee-logo" style="--c:#FF9900" aria-hidden="true">A</span>Amazon</span>
+    <span class="marquee-item"><span class="marquee-logo" style="--c:#2874F0" aria-hidden="true">F</span>Flipkart</span>
+    <span class="marquee-item"><span class="marquee-logo" style="--c:#EB1000" aria-hidden="true">A</span>Adobe</span>
+    <span class="marquee-item"><span class="marquee-logo" style="--c:#26890D" aria-hidden="true">D</span>Deloitte</span>
+    <span class="marquee-item"><span class="marquee-logo" style="--c:#007CC3" aria-hidden="true">I</span>Infosys</span>
+    <span class="marquee-item"><span class="marquee-logo" style="--c:#6C9BD2" aria-hidden="true">G</span>Goldman Sachs</span>
+    <span class="marquee-item"><span class="marquee-logo" style="--c:#111111" aria-hidden="true">U</span>Uber</span>
+    <span class="marquee-item"><span class="marquee-logo" style="--c:#3395FF" aria-hidden="true">R</span>Razorpay</span>
+    <span class="marquee-item"><span class="marquee-logo" style="--c:#FC8019" aria-hidden="true">S</span>Swiggy</span>
+    <span class="marquee-item"><span class="marquee-logo" style="--c:#5F259F" aria-hidden="true">P</span>PhonePe</span>
   </div>
 </div>
 

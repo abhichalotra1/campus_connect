@@ -3,6 +3,7 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from accounts import views as account_views
+from campus_connect import views as site_views
 from django.contrib.auth import views as auth_views
 
 urlpatterns = [
@@ -48,6 +49,8 @@ urlpatterns = [
              template_name='accounts/password_reset_complete.html'
          ),
          name='password_reset_complete'),
+
+    path('favicon.ico', site_views.favicon),
 
     # Landing Page
     path('', account_views.landing_view, name='landing'),

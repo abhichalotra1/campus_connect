@@ -2,7 +2,7 @@ import threading
 from unittest import mock
 
 from django.core.mail import EmailMessage
-from django.test import SimpleTestCase
+from django.test import SimpleTestCase, TestCase
 
 from campus_connect.mail import AsyncSMTPEmailBackend
 
@@ -51,3 +51,21 @@ class AsyncEmailBackendTests(SimpleTestCase):
 
     def test_empty_list_sends_nothing(self):
         self.assertEqual(AsyncSMTPEmailBackend().send_messages([]), 0)
+
+
+class FaviconTests(TestCase):
+    def test_pages_link_the_site_icon(self):
+        from django.urls import reverse
+        for name in ('landing', 'login', 'register'):
+            self.assertContains(self.client.get(reverse(name)), 'favicon.svg')
+
+    def test_root_favicon_redirects_to_static_file(self):
+        resp = self.client.get('/favicon.ico')
+        self.assertEqual(resp.status_code, 301)
+        self.assertIn('favicon.ico', resp['Location'])
+
+    def test_landing_strip_has_logo_badges_not_dots(self):
+        from django.urls import reverse
+        html = self.client.get(reverse('landing')).content.decode()
+        self.assertIn('marquee-logo', html)
+        self.assertNotIn('<span class="marquee-dot"></span>', html)
