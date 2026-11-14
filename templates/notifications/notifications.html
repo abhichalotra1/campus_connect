@@ -232,6 +232,8 @@
           <i class="fas fa-trophy"></i>
         {% elif notification.notif_type == 'rejected' %}
           <i class="fas fa-circle-xmark"></i>
+        {% elif notification.notif_type == 'announcement' %}
+          <i class="fas fa-bullhorn"></i>
         {% else %}
           <i class="fas fa-bell"></i>
         {% endif %}
@@ -249,6 +251,8 @@
             <span class="noti-badge badge-selected">Selected</span>
           {% elif notification.notif_type == 'rejected' %}
             <span class="noti-badge badge-rejected">Rejected</span>
+          {% elif notification.notif_type == 'announcement' %}
+            <span class="noti-badge badge-general">Announcement</span>
           {% else %}
             <span class="noti-badge badge-general">General</span>
           {% endif %}

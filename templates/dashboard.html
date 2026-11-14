@@ -123,6 +123,8 @@
   <!-- Left Column -->
   <div style="display:flex;flex-direction:column;gap:16px;">
     
+    {% if user.role == 'student' %}{% include 'announcements/_dashboard_card.html' %}{% endif %}
+
     <!-- Latest Drives -->
     <div class="panel anim">
       <div class="panel-head">

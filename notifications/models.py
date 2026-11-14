@@ -8,6 +8,7 @@ class Notification(models.Model):
         ('rejected',     'Rejected'),
         ('selected',     'Selected'),
         ('deadline',     'Deadline Reminder'),
+        ('announcement', 'Announcement'),
         ('general',      'General'),
     )
 

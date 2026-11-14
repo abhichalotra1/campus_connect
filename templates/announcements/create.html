@@ -1,0 +1,90 @@
+{% extends "dashboard_base.html" %}
+{% block breadcrumb_page_name %}New Announcement{% endblock %}
+
+{% block dashboard_content %}
+{% include 'announcements/_styles.html' %}
+<style>
+  .an-form { max-width:760px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); padding:1.75rem; }
+  .an-form .form-group { margin-bottom:18px; }
+  .an-form .hint { font-size:12px; color:var(--ink3); margin-top:5px; }
+  .an-row { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  @media (max-width:640px){ .an-row { grid-template-columns:1fr; } }
+  .an-check { display:flex; align-items:center; gap:10px; font-size:13.5px; color:var(--ink2); margin-bottom:10px; }
+  .an-check input { width:16px; height:16px; accent-color:var(--primary); }
+  .field-error { color:var(--red); font-size:12.5px; margin-top:5px; }
+</style>
+
+<div class="an-header">
+  <h1 class="an-title"><i class="fas fa-bullhorn"></i> New announcement</h1>
+  <a class="an-btn an-btn-ghost" href="{% url 'announcements' %}">Back</a>
+</div>
+
+<form method="post" class="an-form">
+  {% csrf_token %}
+
+  <div class="form-group">
+    <label class="form-label" for="{{ form.title.id_for_label }}">Title <span style="color:var(--red)">*</span></label>
+    {{ form.title }}
+    {% for e in form.title.errors %}<div class="field-error">{{ e }}</div>{% endfor %}
+  </div>
+
+  <div class="form-group">
+    <label class="form-label" for="{{ form.message.id_for_label }}">Message <span style="color:var(--red)">*</span></label>
+    {{ form.message }}
+    {% for e in form.message.errors %}<div class="field-error">{{ e }}</div>{% endfor %}
+  </div>
+
+  <div class="an-row">
+    <div class="form-group">
+      <label class="form-label" for="{{ form.audience.id_for_label }}">{{ form.audience.label }}</label>
+      {{ form.audience }}
+    </div>
+    <div class="form-group" id="branchField">
+      <label class="form-label" for="{{ form.branch.id_for_label }}">{{ form.branch.label }}</label>
+      {{ form.branch }}
+      {% for e in form.branch.errors %}<div class="field-error">{{ e }}</div>{% endfor %}
+    </div>
+    <div class="form-group" id="driveField">
+      <label class="form-label" for="{{ form.drive.id_for_label }}">{{ form.drive.label }}</label>
+      {{ form.drive }}
+      <div class="hint" id="driveHint"></div>
+      {% for e in form.drive.errors %}<div class="field-error">{{ e }}</div>{% endfor %}
+    </div>
+    <div class="form-group">
+      <label class="form-label" for="{{ form.expires_at.id_for_label }}">{{ form.expires_at.label }}</label>
+      {{ form.expires_at }}
+      {% for e in form.expires_at.errors %}<div class="field-error">{{ e }}</div>{% endfor %}
+    </div>
+  </div>
+
+  {% if form.is_pinned %}
+  <label class="an-check">{{ form.is_pinned }} {{ form.is_pinned.label }}</label>
+  {% endif %}
+  <label class="an-check">{{ form.send_email }} {{ form.send_email.label }}</label>
+  <div class="hint" style="margin:-4px 0 18px 26px;">Email is skipped automatically for very large audiences. Everyone still gets a notification.</div>
+
+  <button class="an-btn" type="submit"><i class="fas fa-paper-plane"></i> Send announcement</button>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+  var audience = document.getElementById('{{ form.audience.id_for_label }}');
+  var branchField = document.getElementById('branchField');
+  var driveField = document.getElementById('driveField');
+  var driveHint = document.getElementById('driveHint');
+  var driveAudiences = ['eligible', 'applicants', 'shortlisted'];
+
+  function sync() {
+    var v = audience.value;
+    branchField.style.display = v === 'branch' ? '' : 'none';
+    var needsDrive = driveAudiences.indexOf(v) !== -1;
+    driveField.style.display = (needsDrive || v === 'all' || v === 'branch') ? '' : 'none';
+    driveHint.textContent = needsDrive ? 'Required for this audience.' : 'Optional: adds a link to the drive for students.';
+  }
+  audience.addEventListener('change', sync);
+  sync();
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,41 @@
+{% extends "dashboard_base.html" %}
+{% load tz %}
+{% block breadcrumb_page_name %}Announcements{% endblock %}
+
+{% block dashboard_content %}
+{% include 'announcements/_styles.html' %}
+
+<div class="an-header">
+  <h1 class="an-title"><i class="fas fa-bullhorn"></i> Announcements</h1>
+</div>
+
+<div class="an-list">
+  {% for a in announcements %}
+  <div class="an-card {% if a.is_pinned %}pinned{% endif %}">
+    <div class="an-top">
+      <h2 class="an-card-title">{{ a.title }}</h2>
+      {% if a.is_pinned %}<span class="an-chip pin"><i class="fas fa-thumbtack"></i> Pinned</span>{% endif %}
+    </div>
+    <p class="an-msg">{{ a.message }}</p>
+    <div class="an-meta">
+      <span><i class="fas fa-user"></i> {{ a.author_label }}</span>
+      {% localtime on %}<span><i class="fas fa-clock"></i> {{ a.created_at|timesince }} ago</span>{% endlocaltime %}
+      {% if a.drive %}
+        <a class="an-chip" href="{% url 'drive_detail' a.drive.pk %}" style="text-decoration:none;">
+          <i class="fas fa-briefcase"></i> {{ a.drive.company }} — {{ a.drive.role }}
+        </a>
+      {% endif %}
+      {% if a.expires_at %}<span>Visible until {{ a.expires_at|date:"d M Y" }}</span>{% endif %}
+    </div>
+  </div>
+  {% empty %}
+  <div class="an-empty">
+    <i class="fas fa-bullhorn"></i>
+    <h3>No announcements yet</h3>
+    <p>Messages from the placement cell and recruiters will show up here.</p>
+  </div>
+  {% endfor %}
+</div>
+
+{% include 'partials/pagination.html' %}
+{% endblock %}
