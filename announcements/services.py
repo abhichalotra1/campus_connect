@@ -10,7 +10,7 @@ from django.utils import timezone
 
 from accounts.models import User
 from notifications.models import Notification
-from placements.models import Application
+from placements.models import Application, PlacementDrive
 from .models import Announcement, AnnouncementReceipt
 
 logger = logging.getLogger(__name__)
@@ -22,6 +22,18 @@ def active_announcements(queryset):
     """Announcements that have not passed their 'hide after' date."""
     today = timezone.localdate()
     return queryset.filter(Q(expires_at__isnull=True) | Q(expires_at__gte=today))
+
+
+def allowed_audiences(user):
+    """Audience values this sender may use (admins: all of them; recruiters: only drive-based ones)."""
+    return [value for value, _label in Announcement.AUDIENCE_CHOICES
+            if user.role == 'admin' or value not in Announcement.ADMIN_ONLY_AUDIENCES]
+
+
+def drives_for(user):
+    """Drives this sender may attach to an announcement: any for admins, only their own for recruiters."""
+    drives = PlacementDrive.objects.all() if user.role == 'admin' else PlacementDrive.objects.filter(posted_by=user)
+    return drives.order_by('-created_at')
 
 
 def recruiter_daily_limit():

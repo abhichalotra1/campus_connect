@@ -1,33 +1,44 @@
 {% extends "dashboard_base.html" %}
-{% load tz %}
+{% block title %}Announcements — Campus Connect{% endblock %}
 {% block breadcrumb_page_name %}Announcements{% endblock %}
 
 {% block dashboard_content %}
 {% include 'announcements/_styles.html' %}
 
 <div class="an-header">
-  <h1 class="an-title"><i class="fas fa-bullhorn"></i> Announcements</h1>
+  <div>
+    <h1 class="an-title"><i class="fas fa-bullhorn"></i> Announcements</h1>
+    <p class="an-sub">Updates from the placement cell and recruiters.</p>
+  </div>
 </div>
 
 <div class="an-list">
   {% for a in announcements %}
-  <div class="an-card {% if a.is_pinned %}pinned{% endif %}">
-    <div class="an-top">
-      <h2 class="an-card-title">{{ a.title }}</h2>
-      {% if a.is_pinned %}<span class="an-chip pin"><i class="fas fa-thumbtack"></i> Pinned</span>{% endif %}
+  <article class="an-card {% if a.is_pinned %}pinned{% endif %}">
+    <div class="an-avatar" aria-hidden="true">{{ a.author_label|first|upper }}</div>
+    <div class="an-body">
+      <div class="an-top">
+        <div style="min-width:0;">
+          <h2 class="an-card-title">{{ a.title }}</h2>
+          <div class="an-by">
+            {{ a.author_label }} &middot;
+            {% with ago=a.created_at|timesince %}{% if ago == '0 minutes' %}Just now{% else %}{{ ago }} ago{% endif %}{% endwith %}
+          </div>
+        </div>
+        {% if a.is_pinned %}<span class="an-chip pin"><i class="fas fa-thumbtack"></i> Pinned</span>{% endif %}
+      </div>
+      <p class="an-msg">{{ a.message|urlizetrunc:48 }}</p>
+      <div class="an-meta">
+        <span class="an-chip"><i class="fas fa-users"></i> {{ a.audience_label }}</span>
+        {% if a.drive %}
+          <a class="an-chip" href="{% url 'drive_detail' a.drive.pk %}">
+            <i class="fas fa-briefcase"></i> {{ a.drive.company }} — {{ a.drive.role }}
+          </a>
+        {% endif %}
+        {% if a.expires_at %}<span><i class="fas fa-hourglass-half"></i>Visible until {{ a.expires_at|date:"d M Y" }}</span>{% endif %}
+      </div>
     </div>
-    <p class="an-msg">{{ a.message }}</p>
-    <div class="an-meta">
-      <span><i class="fas fa-user"></i> {{ a.author_label }}</span>
-      {% localtime on %}<span><i class="fas fa-clock"></i> {{ a.created_at|timesince }} ago</span>{% endlocaltime %}
-      {% if a.drive %}
-        <a class="an-chip" href="{% url 'drive_detail' a.drive.pk %}" style="text-decoration:none;">
-          <i class="fas fa-briefcase"></i> {{ a.drive.company }} — {{ a.drive.role }}
-        </a>
-      {% endif %}
-      {% if a.expires_at %}<span>Visible until {{ a.expires_at|date:"d M Y" }}</span>{% endif %}
-    </div>
-  </div>
+  </article>
   {% empty %}
   <div class="an-empty">
     <i class="fas fa-bullhorn"></i>
@@ -38,4 +49,5 @@
 </div>
 
 {% include 'partials/pagination.html' %}
+{% include 'announcements/_clamp.html' %}
 {% endblock %}

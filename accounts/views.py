@@ -201,7 +201,8 @@ def dashboard_view(request):
         context['upcoming_interviews'] = interviews[:2]
 
         context['dashboard_announcements'] = list(active_announcements(
-            Announcement.objects.filter(receipts__student=user).select_related('drive', 'author'))[:3])
+            Announcement.objects.filter(receipts__student=user)
+            .select_related('drive', 'author', 'author__recruiterprofile'))[:3])
 
         profile = StudentProfile.objects.filter(user=user).first() or StudentProfile(user=user)
         context['profile_completion'] = profile.profile_completion()

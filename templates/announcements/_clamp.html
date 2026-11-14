@@ -1,0 +1,20 @@
+<script>
+// Long announcements are folded to five lines with a "Show more" toggle. Without JS they stay fully open.
+(function () {
+  document.querySelectorAll('.an-msg').forEach(function (el) {
+    el.classList.add('clamp');
+    if (el.scrollHeight <= el.clientHeight + 1) { el.classList.remove('clamp'); return; }
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'an-more';
+    btn.textContent = 'Show more';
+    btn.setAttribute('aria-expanded', 'false');
+    btn.addEventListener('click', function () {
+      var open = !el.classList.toggle('clamp');
+      btn.textContent = open ? 'Show less' : 'Show more';
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+    el.insertAdjacentElement('afterend', btn);
+  });
+})();
+</script>
