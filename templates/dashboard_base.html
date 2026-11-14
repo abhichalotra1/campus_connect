@@ -207,6 +207,10 @@ body { font-family: var(--font-body); background: var(--bg); color: var(--ink); 
     </a>
     {% endif %}
 
+    <a class="nav-item {% if request.resolver_match.url_name == 'announcements' or request.resolver_match.url_name == 'announcement_create' %}active{% endif %}" href="{% url 'announcements' %}">
+      <div class="nav-icon"><i class="fa-solid fa-bullhorn"></i></div>
+      Announcements
+    </a>
     <a class="nav-item {% if request.resolver_match.url_name == 'notifications' %}active{% endif %}" href="{% url 'notifications' %}">
       <div class="nav-icon"><i class="fa-solid fa-bell"></i></div>
       Notifications

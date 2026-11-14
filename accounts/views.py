@@ -21,6 +21,8 @@ from .models import User
 from placements.models import PlacementDrive, Application, Interview
 from students.models import StudentProfile, RecruiterProfile
 from notifications.models import Notification
+from announcements.models import Announcement
+from announcements.services import active_announcements
 from notifications.views import send_notification
 from campus_connect.email_utils import send_status_update_email
 
@@ -197,6 +199,9 @@ def dashboard_view(request):
         ).order_by('scheduled_at')
         context['interviews_count'] = interviews.count()
         context['upcoming_interviews'] = interviews[:2]
+
+        context['dashboard_announcements'] = list(active_announcements(
+            Announcement.objects.filter(receipts__student=user).select_related('drive', 'author'))[:3])
 
         profile = StudentProfile.objects.filter(user=user).first() or StudentProfile(user=user)
         context['profile_completion'] = profile.profile_completion()

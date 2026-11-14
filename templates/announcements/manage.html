@@ -1,0 +1,56 @@
+{% extends "dashboard_base.html" %}
+{% load tz %}
+{% block breadcrumb_page_name %}Announcements{% endblock %}
+
+{% block dashboard_content %}
+{% include 'announcements/_styles.html' %}
+
+<div class="an-header">
+  <h1 class="an-title"><i class="fas fa-bullhorn"></i> Announcements</h1>
+  {% if can_send %}
+    <a class="an-btn" href="{% url 'announcement_create' %}"><i class="fas fa-plus"></i> New announcement</a>
+  {% else %}
+    <a class="an-btn an-btn-ghost" href="{% url 'verification_status' %}">Get verified to send announcements</a>
+  {% endif %}
+</div>
+
+<div class="an-list">
+  {% for a in announcements %}
+  <div class="an-card {% if a.is_pinned %}pinned{% endif %} {% if not a.is_active %}expired{% endif %}">
+    <div class="an-top">
+      <h2 class="an-card-title">{{ a.title }}</h2>
+      <div class="an-actions">
+        {% if user.role == 'admin' %}
+        <form method="post" action="{% url 'announcement_toggle_pin' a.pk %}" data-no-loading>
+          {% csrf_token %}
+          <button class="an-btn an-btn-ghost" type="submit"><i class="fas fa-thumbtack"></i> {% if a.is_pinned %}Unpin{% else %}Pin{% endif %}</button>
+        </form>
+        {% endif %}
+        <form method="post" action="{% url 'announcement_delete' a.pk %}" onsubmit="return confirm('Delete this announcement? Students will no longer see it in their feed.');">
+          {% csrf_token %}
+          <button class="an-btn an-btn-ghost an-btn-danger" type="submit"><i class="fas fa-trash"></i> Delete</button>
+        </form>
+      </div>
+    </div>
+    <p class="an-msg">{{ a.message }}</p>
+    <div class="an-meta">
+      <span class="an-chip">{{ a.audience_label }}</span>
+      <span><i class="fas fa-users"></i> Reached {{ a.recipients_count }} student{{ a.recipients_count|pluralize }}</span>
+      {% if user.role == 'admin' %}<span><i class="fas fa-user"></i> {{ a.author_label }}{% if a.author %} ({{ a.author.username }}){% endif %}</span>{% endif %}
+      {% localtime on %}<span><i class="fas fa-clock"></i> {{ a.created_at|date:"d M Y, g:i A" }}</span>{% endlocaltime %}
+      {% if a.send_email %}<span><i class="fas fa-envelope"></i> Emailed</span>{% endif %}
+      {% if a.is_pinned %}<span class="an-chip pin"><i class="fas fa-thumbtack"></i> Pinned</span>{% endif %}
+      {% if not a.is_active %}<span class="an-chip warn">Expired</span>{% endif %}
+    </div>
+  </div>
+  {% empty %}
+  <div class="an-empty">
+    <i class="fas fa-bullhorn"></i>
+    <h3>You haven't sent any announcements</h3>
+    {% if can_send %}<p>Tell students about drives, results or interview updates.</p>{% endif %}
+  </div>
+  {% endfor %}
+</div>
+
+{% include 'partials/pagination.html' %}
+{% endblock %}
