@@ -1,0 +1,23 @@
+{# One add/edit form. Needs: form, action, submit (button text), cancel (url, optional) #}
+<form method="post" action="{{ action }}" class="rb-form">
+  {% csrf_token %}
+  {% if form.non_field_errors %}
+  <div class="rb-error rb-f-wide">{% for e in form.non_field_errors %}<span><i class="fa-solid fa-circle-exclamation"></i> {{ e }}</span>{% endfor %}</div>
+  {% endif %}
+  {% for field in form %}
+  <div class="rb-field rb-f-{{ field.name }}{% if field.errors %} has-error{% endif %}">
+    {% if field.field.widget.input_type == 'checkbox' %}
+      <label class="rb-check">{{ field }}<span>{{ field.label }}</span></label>
+    {% else %}
+      <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %}<i class="rb-req" aria-hidden="true">*</i>{% endif %}</label>
+      {{ field }}
+    {% endif %}
+    {% if field.help_text %}<p class="rb-help">{{ field.help_text }}</p>{% endif %}
+    {% for e in field.errors %}<p class="rb-error"><i class="fa-solid fa-circle-exclamation"></i> {{ e }}</p>{% endfor %}
+  </div>
+  {% endfor %}
+  <div class="rb-form-actions rb-f-wide">
+    <button type="submit" class="rb-btn" data-loading-text="Saving...">{{ submit }}</button>
+    {% if cancel %}<a href="{{ cancel }}" class="rb-btn rb-btn-ghost">Cancel</a>{% endif %}
+  </div>
+</form>

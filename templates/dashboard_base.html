@@ -198,6 +198,10 @@ body { font-family: var(--font-body); background: var(--bg); color: var(--ink); 
       <div class="nav-icon"><i class="fa-solid fa-calendar-days"></i></div>
       Interviews
     </a>
+    <a class="nav-item {% if request.resolver_match.url_name == 'resume_builder' %}active{% endif %}" href="{% url 'resume_builder' %}">
+      <div class="nav-icon"><i class="fa-solid fa-file-pen"></i></div>
+      Resume Builder
+    </a>
 {% endif %}
 
     {% if user.role == "recruiter" or user.role == "admin" %}

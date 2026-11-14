@@ -239,6 +239,7 @@
           {% if profile.resume %}
             <small class="file-hint">Current: <a href="{{ profile.resume.url }}" target="_blank">View Resume</a></small>
           {% endif %}
+          <small class="file-hint" style="display:block;margin-top:6px;">No PDF yet? <a href="{% url 'resume_builder' %}">Build one with Resume Builder</a>.</small>
         </div>
       </div>
 

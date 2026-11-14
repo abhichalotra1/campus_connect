@@ -61,3 +61,17 @@ def validate_image(file):
         except Exception:
             pass
 
+
+
+def validate_resume_text(value):
+    """Resume text must print in the PDF's standard font (Latin letters, digits, common punctuation).
+
+    Emoji and non-Latin scripts would come out as boxes in the PDF, and applicant-tracking
+    systems read plain text best, so reject them here with a clear message.
+    """
+    try:
+        str(value).encode('cp1252')
+    except UnicodeEncodeError:
+        raise ValidationError(
+            'Use plain letters, numbers and common punctuation. Emoji and non-Latin '
+            'scripts do not print in the PDF.')

@@ -1,0 +1,376 @@
+{% extends "dashboard_base.html" %}
+{% block title %}Resume Builder — Campus Connect{% endblock %}
+{% block breadcrumb_page_name %}Resume Builder{% endblock %}
+
+{% block dashboard_content %}
+<style>
+  [hidden] { display:none !important; }
+  .rb-page { max-width:1240px; }
+  /* The shared layout sets overflow-x:hidden on .content, which stops the sticky preview from sticking.
+     'clip' keeps the horizontal clipping without turning .content into a scroll container. */
+  .content:has(.rb-page) { overflow-x:clip; overflow-y:visible; }
+
+  /* ── Header ── */
+  .rb-top { display:flex; justify-content:space-between; align-items:flex-start; gap:14px 20px; flex-wrap:wrap; margin-bottom:18px; }
+  .rb-title { font-family:var(--font-display); font-size:26px; font-weight:800; letter-spacing:-.5px; margin:0; display:flex; align-items:center; gap:10px; }
+  .rb-title i { color:var(--primary2); font-size:22px; }
+  .rb-sub { color:var(--ink2); font-size:13.5px; margin:6px 0 0; line-height:1.55; max-width:560px; }
+  .rb-actions { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  .rb-actions form { margin:0; }
+
+  /* ── Buttons ── */
+  .rb-btn { display:inline-flex; align-items:center; justify-content:center; gap:7px; font:700 13px/1.2 var(--font-body); color:#fff !important;
+            background:var(--primary); border:1px solid transparent; padding:10px 18px; border-radius:10px; text-decoration:none; cursor:pointer; transition:background .18s, box-shadow .18s, border-color .18s; }
+  .rb-btn:hover { background:var(--primary2); box-shadow:0 4px 14px var(--p-glow); }
+  .rb-btn:focus-visible, .rb-icon-btn:focus-visible, .rb-add-btn:focus-visible { outline:2px solid var(--primary2); outline-offset:2px; }
+  .rb-btn:disabled, .rb-btn[aria-disabled="true"] { opacity:.5; cursor:not-allowed; box-shadow:none; background:var(--primary); }
+  .rb-btn-ghost { background:transparent; color:var(--ink2) !important; border-color:var(--border2); font-weight:600; }
+  .rb-btn-ghost:hover { background:var(--p-soft); color:var(--primary2) !important; border-color:var(--primary); box-shadow:none; }
+
+  /* ── Resume status ── */
+  .rb-status { display:flex; align-items:center; gap:12px; padding:12px 16px; margin-bottom:18px; border-radius:var(--radius); border:1px solid var(--border2); background:var(--surface); font-size:13.5px; color:var(--ink2); flex-wrap:wrap; }
+  .rb-status i { font-size:15px; color:var(--ink3); }
+  .rb-status.on { border-color:rgba(34,211,160,.3); background:var(--green-soft); color:var(--ink); }
+  .rb-status.on i { color:var(--green); }
+  .rb-status a { color:var(--primary2); font-weight:700; text-decoration:none; margin-left:auto; }
+  .rb-status a:hover { text-decoration:underline; }
+  .rb-status strong { color:var(--ink); font-weight:700; }
+
+  /* ── Layout ── */
+  .rb-layout { display:grid; grid-template-columns:minmax(0,1fr) minmax(360px,520px); gap:24px; align-items:start; }
+  .rb-editor { display:flex; flex-direction:column; gap:16px; min-width:0; }
+  .rb-aside { align-self:stretch; }   /* full row height, so the inner block has room to stay in view */
+  .rb-aside-inner { position:sticky; top:96px; }
+  @media (max-width:1100px) {
+    .rb-layout { grid-template-columns:minmax(0,1fr); }
+    .rb-aside-inner { position:static; }
+  }
+
+  /* ── Panels ── */
+  .rb-panel { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); padding:1.2rem 1.3rem 1.3rem; scroll-margin-top:96px; }
+  .rb-head { display:flex; align-items:center; gap:12px; margin-bottom:14px; }
+  .rb-ico { width:38px; height:38px; border-radius:11px; background:var(--p-soft); color:var(--primary2); display:flex; align-items:center; justify-content:center; font-size:15px; flex-shrink:0; }
+  .rb-head h2 { font-family:var(--font-display); font-size:16.5px; font-weight:700; letter-spacing:-.2px; margin:0; }
+  .rb-head p { font-size:12.5px; color:var(--ink3); margin:2px 0 0; line-height:1.4; }
+  .rb-count { margin-left:auto; font:500 11.5px var(--font-mono); color:var(--ink3); background:var(--bg3); padding:3px 9px; border-radius:20px; white-space:nowrap; }
+
+  /* ── Profile summary ── */
+  .rb-from { display:grid; gap:8px 18px; grid-template-columns:repeat(auto-fit, minmax(210px, 1fr)); }
+  .rb-from div { font-size:13px; color:var(--ink2); min-width:0; }
+  .rb-from b { display:block; font-size:11.5px; font-weight:600; color:var(--ink3); margin-bottom:1px; }
+  .rb-from span { color:var(--ink); word-break:break-word; }
+  .rb-gap { display:flex; gap:9px; align-items:flex-start; margin-top:14px; padding:10px 12px; border-radius:10px; background:var(--yellow-soft); color:var(--yellow); font-size:12.5px; line-height:1.5; }
+  .rb-gap a { color:inherit; font-weight:700; }
+
+  /* ── Entries ── */
+  .rb-items { list-style:none; margin:0 0 12px; padding:0; display:flex; flex-direction:column; gap:8px; }
+  .rb-item { display:flex; align-items:center; gap:12px; padding:11px 12px 11px 14px; border:1px solid var(--border); border-radius:var(--radius); background:var(--bg2); }
+  .rb-item.editing { display:block; border-color:var(--primary); background:var(--bg2); box-shadow:0 0 0 3px var(--p-soft); padding:14px; }
+  .rb-item-body { flex:1; min-width:0; }
+  .rb-item-title { font-size:14px; font-weight:700; color:var(--ink); word-break:break-word; }
+  .rb-item-sub { font-size:12.5px; color:var(--ink2); margin-top:2px; word-break:break-word; }
+  .rb-item-meta { font:500 11.5px var(--font-mono); color:var(--ink3); margin-top:4px; display:flex; gap:12px; flex-wrap:wrap; }
+  .rb-item-ctl { display:flex; gap:4px; flex-shrink:0; }
+  .rb-item-ctl form { margin:0; }
+  .rb-icon-btn { width:32px; height:32px; border-radius:8px; border:1px solid transparent; background:transparent; color:var(--ink3); display:inline-flex; align-items:center; justify-content:center; font-size:12px; cursor:pointer; text-decoration:none; transition:background .15s, color .15s; }
+  .rb-icon-btn:hover:not(:disabled) { background:var(--p-soft); color:var(--primary2); }
+  .rb-icon-btn.del:hover:not(:disabled) { background:var(--red-soft); color:var(--red); }
+  .rb-icon-btn:disabled { opacity:.3; cursor:default; }
+  .rb-empty { padding:16px; border:1px dashed var(--border2); border-radius:var(--radius); color:var(--ink3); font-size:13px; margin-bottom:12px; }
+
+  /* ── Add form toggle ── */
+  .rb-add summary { list-style:none; cursor:pointer; }
+  .rb-add summary::-webkit-details-marker { display:none; }
+  .rb-add-btn { display:inline-flex; align-items:center; gap:8px; padding:9px 14px; border-radius:10px; border:1px dashed var(--border2); color:var(--primary2); font-size:13px; font-weight:700; transition:background .15s, border-color .15s; }
+  .rb-add-btn:hover { background:var(--p-soft); border-color:var(--primary); }
+  .rb-add[open] .rb-add-btn { display:none; }
+  .rb-add .rb-form { margin-top:2px; padding:14px; border:1px solid var(--border2); border-radius:var(--radius); background:var(--bg2); }
+  .rb-limit { font-size:12.5px; color:var(--ink3); }
+
+  /* ── Form ── */
+  .rb-form { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:14px; color-scheme:dark; }
+  [data-theme="light"] .rb-form { color-scheme:light; }
+  .rb-f-institution, .rb-f-grade, .rb-f-title, .rb-f-tech, .rb-f-link, .rb-f-description, .rb-f-text, .rb-f-is_current, .rb-f-wide { grid-column:1 / -1; }
+  .rb-field label { display:block; font-size:12.5px; font-weight:600; color:var(--ink2); margin:0 0 6px; }
+  .rb-req { color:var(--red); font-style:normal; margin-left:3px; }
+  .rb-form .form-control, .rb-form .form-select { display:block; width:100%; background:var(--surface); border:1px solid var(--border2); color:var(--ink); border-radius:10px; font:14px/1.5 var(--font-body); padding:.6rem .8rem; transition:border-color .18s, box-shadow .18s; }
+  .rb-form .form-control:hover { border-color:var(--ink3); }
+  .rb-form .form-control:focus { outline:none; border-color:var(--primary); box-shadow:0 0 0 3px var(--p-soft); }
+  .rb-form .form-control:disabled { opacity:.45; cursor:not-allowed; }
+  .rb-form .form-control::placeholder { color:var(--ink3); }
+  .rb-form textarea.form-control { min-height:104px; resize:vertical; line-height:1.6; }
+  .rb-field.has-error .form-control { border-color:var(--red); }
+  .rb-help { font-size:12px; color:var(--ink3); margin:6px 0 0; }
+  .rb-error { display:flex; flex-direction:column; gap:4px; color:var(--red); font-size:12.5px; margin:6px 0 0; }
+  .rb-field > .rb-error { flex-direction:row; gap:6px; align-items:flex-start; }
+  .rb-check { display:flex !important; align-items:center; gap:9px; cursor:pointer; font-size:13.5px !important; color:var(--ink) !important; font-weight:500 !important; margin:0 !important; }
+  .rb-check input { width:17px; height:17px; accent-color:var(--primary); }
+  .rb-form-actions { display:flex; gap:8px; flex-wrap:wrap; }
+  .rb-form-actions .rb-btn { padding:9px 16px; }
+  @media (max-width:560px) {
+    .rb-form { grid-template-columns:minmax(0,1fr); }
+    .rb-item { flex-wrap:wrap; }
+    .rb-item-body { flex-basis:100%; }
+    .rb-item-ctl { width:100%; justify-content:flex-end; border-top:1px solid var(--border); padding-top:6px; }
+    .rb-panel { padding:1rem 1rem 1.1rem; }
+  }
+
+  /* ── Preview ── */
+  .rb-aside-head { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px; }
+  .rb-aside-head h2 { font-family:var(--font-display); font-size:15px; font-weight:700; margin:0; }
+  .rb-aside-head a { font-size:12.5px; font-weight:700; color:var(--primary2); text-decoration:none; }
+  .rb-aside-head a:hover { text-decoration:underline; }
+  .rb-scroll { max-height:calc(100vh - 190px); overflow:auto; border-radius:6px; padding:2px; scrollbar-width:thin; }
+  @media (max-width:1100px) { .rb-scroll { max-height:none; } }
+  .rb-sheet-wrap { container-type:inline-size; }
+  .rb-sheet { background:#fff; color:#111827; font-family:Helvetica, Arial, sans-serif; font-size:8px; font-size:1.6cqw; line-height:1.38;
+              padding:7.6em 8.6em; padding:7.6cqw 8.6cqw; min-height:calc(100cqw * 1.414); border-radius:3px;
+              box-shadow:0 1px 2px rgba(0,0,0,.25), 0 14px 40px rgba(0,0,0,.35); overflow-wrap:anywhere; }
+  [data-theme="light"] .rb-sheet { box-shadow:0 1px 2px rgba(15,23,42,.15), 0 14px 36px rgba(15,23,42,.16); }
+  .rs-name { font-size:2.2em; line-height:1.2; font-weight:700; margin:0; }
+  .rs-contact { color:#4b5563; margin:.3em 0 0; }
+  .rs-bar { margin:0 .55em; color:#9ca3af; }
+  .rs-h { font-size:1.05em; font-weight:700; margin:1.1em 0 .2em; padding-bottom:.15em; border-bottom:.06em solid #9ca3af; line-height:1.2; }
+  .rs-entry { margin-top:.5em; }
+  .rs-title, .rs-sub, .rs-text { margin:0; }
+  .rs-sub { color:#4b5563; }
+  .rs-link { color:#1d4ed8; }
+  .rs-list { margin:.1em 0 0; padding-left:1.25em; }
+  .rs-list li { margin-top:.1em; }
+  .rs-placeholder { color:#9ca3af; margin-top:2em; text-align:center; font-size:1.2em; }
+  .rb-note { font-size:12px; color:var(--ink3); margin:10px 2px 0; line-height:1.5; }
+  .rb-jump { display:none; }
+  @media (max-width:1100px) { .rb-jump { display:inline-flex; } }
+
+  /* ── Confirm dialog ── */
+  .rb-dialog { border:1px solid var(--border2); border-radius:var(--radius-lg); background:var(--surface); color:var(--ink); padding:0; max-width:440px; width:calc(100% - 32px); box-shadow:0 24px 70px rgba(0,0,0,.5); }
+  .rb-dialog::backdrop { background:rgba(8,10,16,.6); backdrop-filter:blur(2px); }
+  .rb-dialog-in { padding:22px 24px 20px; }
+  .rb-dialog h3 { font-family:var(--font-display); font-size:18px; font-weight:800; margin:0 0 8px; }
+  .rb-dialog p { font-size:13.5px; color:var(--ink2); line-height:1.6; margin:0 0 18px; }
+  .rb-dialog-actions { display:flex; gap:8px; justify-content:flex-end; flex-wrap:wrap; }
+  .rb-dialog-actions form { margin:0; }
+
+  /* ── Toasts: messages stay visible however far the page is scrolled ── */
+  .rb-toasts { position:fixed; right:18px; bottom:18px; z-index:1500; display:flex; flex-direction:column; gap:8px; max-width:min(420px, calc(100vw - 36px)); }
+  .rb-toasts .cc-alert { margin:0; box-shadow:0 10px 30px rgba(0,0,0,.35); background-color:var(--surface); cursor:pointer; }
+  .rb-toasts .cc-alert.success { background-image:linear-gradient(var(--green-soft), var(--green-soft)); }
+  .rb-toasts .cc-alert.error, .rb-toasts .cc-alert.danger { background-image:linear-gradient(var(--red-soft), var(--red-soft)); }
+  .rb-toasts .cc-alert.info, .rb-toasts .cc-alert.warning { background-image:linear-gradient(var(--p-soft), var(--p-soft)); }
+
+  @media (prefers-reduced-motion: reduce) { .rb-toasts .cc-alert { animation:none; } }
+</style>
+
+<div class="rb-page">
+
+  <header class="rb-top">
+    <div>
+      <h1 class="rb-title"><i class="fa-solid fa-file-pen"></i> Resume Builder</h1>
+      <p class="rb-sub">Add your education, projects and experience once. We combine them with your profile into a clean, single-column PDF that applicant-tracking systems can read.</p>
+    </div>
+    <div class="rb-actions">
+      <a class="rb-btn rb-btn-ghost rb-jump" href="#preview"><i class="fa-regular fa-eye"></i> Preview</a>
+      {% if can_generate %}
+        <a class="rb-btn rb-btn-ghost" href="{% url 'resume_preview_pdf' %}" target="_blank" rel="noopener"><i class="fa-solid fa-up-right-from-square"></i> Open PDF</a>
+        {% if profile.resume %}
+          <button type="button" class="rb-btn" id="rb-open-confirm"><i class="fa-solid fa-wand-magic-sparkles"></i> Generate resume</button>
+        {% else %}
+          <form method="post" action="{% url 'resume_generate' %}">
+            {% csrf_token %}<input type="hidden" name="confirm" value="1">
+            <button type="submit" class="rb-btn" data-loading-text="Generating..."><i class="fa-solid fa-wand-magic-sparkles"></i> Generate resume</button>
+          </form>
+        {% endif %}
+      {% else %}
+        <button type="button" class="rb-btn" disabled title="Add an education, experience or project entry first"><i class="fa-solid fa-wand-magic-sparkles"></i> Generate resume</button>
+      {% endif %}
+    </div>
+  </header>
+
+  {% if profile.resume %}
+  <div class="rb-status on" role="status">
+    <i class="fa-solid fa-circle-check"></i>
+    <span><strong>A resume is on file.</strong> Generating a new one replaces it.</span>
+    <a href="{{ profile.resume.url }}" target="_blank" rel="noopener">View current resume</a>
+  </div>
+  {% else %}
+  <div class="rb-status" role="status">
+    <i class="fa-regular fa-file"></i>
+    <span>{% if can_generate %}<strong>No resume on file yet.</strong> Generate one when your entries look right.{% else %}<strong>No resume on file yet.</strong> Add an education, experience or project entry to enable Generate. You can also upload your own PDF in <a href="{% url 'edit_profile' %}" style="margin-left:0;">Edit profile</a>.{% endif %}</span>
+  </div>
+  {% endif %}
+
+  <div class="rb-layout">
+
+    <div class="rb-editor">
+
+      <section class="rb-panel" id="profile">
+        <div class="rb-head">
+          <div class="rb-ico"><i class="fa-solid fa-user"></i></div>
+          <div>
+            <h2>From your profile</h2>
+            <p>These details fill in automatically, so you never type them twice.</p>
+          </div>
+          <a class="rb-btn rb-btn-ghost" style="margin-left:auto;padding:7px 12px;font-size:12.5px;" href="{% url 'edit_profile' %}">Edit profile</a>
+        </div>
+        <div class="rb-from">
+          <div><b>Name</b><span>{{ resume.name }}</span></div>
+          <div><b>Email</b><span>{{ user.email|default:"Not added" }}</span></div>
+          <div><b>Phone</b><span>{{ user.phone|default:"Not added" }}</span></div>
+          <div><b>Skills</b><span>{% if resume.skills %}{{ resume.skills|length }} listed{% else %}Not added{% endif %}</span></div>
+          <div><b>About</b><span>{% if resume.summary %}Used as your summary{% else %}Not added{% endif %}</span></div>
+          <div><b>Links</b><span>{% if profile.linkedin or profile.github %}{% if profile.linkedin %}LinkedIn{% endif %}{% if profile.linkedin and profile.github %}, {% endif %}{% if profile.github %}GitHub{% endif %}{% else %}Not added{% endif %}</span></div>
+        </div>
+        {% if profile_gaps %}
+        <div class="rb-gap">
+          <i class="fa-solid fa-lightbulb" style="margin-top:2px;"></i>
+          <span>Your resume will look fuller with your {{ profile_gaps|join:", " }}. <a href="{% url 'edit_profile' %}">Add them in your profile.</a></span>
+        </div>
+        {% endif %}
+      </section>
+
+      {% for s in sections %}
+      <section class="rb-panel" id="{{ s.kind }}">
+        <div class="rb-head">
+          <div class="rb-ico"><i class="fa-solid {{ s.icon }}"></i></div>
+          <div>
+            <h2>{{ s.label }}</h2>
+            <p>{{ s.hint }}</p>
+          </div>
+          <span class="rb-count" title="Entries used of the maximum">{{ s.count }} of {{ s.limit }}</span>
+        </div>
+
+        {% if s.rows %}
+        <ul class="rb-items">
+          {% for row in s.rows %}
+          <li class="rb-item{% if row.editing %} editing{% endif %}">
+            {% if row.editing %}
+              {% url 'resume_entry_edit' s.kind row.pk as edit_action %}
+              {% url 'resume_builder' as builder_url %}
+              {% with cancel_url=builder_url|add:"#"|add:s.kind %}
+                {% include 'students/_resume_form.html' with form=row.form action=edit_action submit="Save changes" cancel=cancel_url %}
+              {% endwith %}
+            {% else %}
+              <div class="rb-item-body">
+                <div class="rb-item-title">{{ row.title }}</div>
+                {% if row.sub %}<div class="rb-item-sub">{{ row.sub }}</div>{% endif %}
+                {% if row.dates or row.bullets or row.link %}
+                <div class="rb-item-meta">
+                  {% if row.dates %}<span>{{ row.dates }}</span>{% endif %}
+                  {% if row.bullets %}<span>{{ row.bullets|length }} point{{ row.bullets|length|pluralize }}</span>{% endif %}
+                  {% if row.link %}<span>link added</span>{% endif %}
+                </div>
+                {% endif %}
+              </div>
+              <div class="rb-item-ctl">
+                <form method="post" action="{% url 'resume_entry_move' s.kind row.pk 'up' %}" data-no-loading>
+                  {% csrf_token %}<button type="submit" class="rb-icon-btn" title="Move up" aria-label="Move {{ row.title }} up"{% if forloop.first %} disabled{% endif %}><i class="fa-solid fa-arrow-up"></i></button>
+                </form>
+                <form method="post" action="{% url 'resume_entry_move' s.kind row.pk 'down' %}" data-no-loading>
+                  {% csrf_token %}<button type="submit" class="rb-icon-btn" title="Move down" aria-label="Move {{ row.title }} down"{% if forloop.last %} disabled{% endif %}><i class="fa-solid fa-arrow-down"></i></button>
+                </form>
+                <a class="rb-icon-btn" href="?edit={{ s.kind }}-{{ row.pk }}#{{ s.kind }}" title="Edit" aria-label="Edit {{ row.title }}"><i class="fa-solid fa-pen"></i></a>
+                <form method="post" action="{% url 'resume_entry_delete' s.kind row.pk %}" onsubmit="return confirm('Delete this entry from your resume?');">
+                  {% csrf_token %}<button type="submit" class="rb-icon-btn del" title="Delete" aria-label="Delete {{ row.title }}"><i class="fa-solid fa-trash-can"></i></button>
+                </form>
+              </div>
+            {% endif %}
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p class="rb-empty">{{ s.empty }}</p>
+        {% endif %}
+
+        {% if s.at_limit %}
+          <p class="rb-limit">You have reached the limit of {{ s.limit }}. Delete an entry to add another.</p>
+        {% else %}
+          <details class="rb-add"{% if s.add_open %} open{% endif %}>
+            <summary class="rb-add-btn"><i class="fa-solid fa-plus"></i> Add {{ s.singular }}</summary>
+            {% url 'resume_entry_add' s.kind as add_action %}
+            {% include 'students/_resume_form.html' with form=s.add_form action=add_action submit="Add "|add:s.singular cancel="" %}
+          </details>
+        {% endif %}
+      </section>
+      {% endfor %}
+
+    </div>
+
+    <aside class="rb-aside" id="preview" aria-label="Resume preview">
+      <div class="rb-aside-inner">
+        <div class="rb-aside-head">
+          <h2>Preview</h2>
+          {% if can_generate %}<a href="{% url 'resume_preview_pdf' %}" target="_blank" rel="noopener">Open as PDF</a>{% endif %}
+        </div>
+        <div class="rb-scroll">
+          <div class="rb-sheet-wrap">
+            {% include 'students/_resume_sheet.html' %}
+          </div>
+        </div>
+        <p class="rb-note">Updates each time you save an entry. The PDF follows this layout, with selectable text and no tables or images.</p>
+      </div>
+    </aside>
+
+  </div>
+</div>
+
+{% if profile.resume and can_generate %}
+<dialog class="rb-dialog" id="rb-confirm" aria-labelledby="rb-confirm-title">
+  <div class="rb-dialog-in">
+    <h3 id="rb-confirm-title">Replace your current resume?</h3>
+    <p>The resume on your profile will be deleted and swapped for this one. Drives you already applied to keep the resume they were given.</p>
+    <div class="rb-dialog-actions">
+      <button type="button" class="rb-btn rb-btn-ghost" id="rb-cancel-confirm">Keep current</button>
+      <form method="post" action="{% url 'resume_generate' %}">
+        {% csrf_token %}<input type="hidden" name="confirm" value="1">
+        <button type="submit" class="rb-btn" data-loading-text="Generating...">Replace and generate</button>
+      </form>
+    </div>
+  </div>
+</dialog>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+  // Confirm before replacing an existing resume
+  var dlg = document.getElementById('rb-confirm');
+  var open = document.getElementById('rb-open-confirm');
+  if (dlg && open) {
+    open.addEventListener('click', function () { dlg.showModal(); });
+    document.getElementById('rb-cancel-confirm').addEventListener('click', function () { dlg.close(); });
+    dlg.addEventListener('click', function (e) { if (e.target === dlg) dlg.close(); });
+  }
+
+  // "I currently work here" switches the end month off
+  document.querySelectorAll('.rb-form').forEach(function (form) {
+    var current = form.querySelector('input[name="is_current"]');
+    var end = form.querySelector('input[name="end_date"]');
+    if (!current || !end) return;
+    function sync() { end.disabled = current.checked; if (current.checked) end.value = ''; }
+    current.addEventListener('change', sync);
+    sync();
+  });
+
+  // After a rejected save, bring the first error into view
+  var firstError = document.querySelector('.rb-field.has-error');
+  if (firstError) firstError.scrollIntoView({ block: 'center' });
+
+  // Messages become toasts so they are seen wherever the page has scrolled to
+  var alerts = document.querySelectorAll('.content > .cc-alert');
+  if (alerts.length) {
+    var box = document.createElement('div');
+    box.className = 'rb-toasts';
+    box.setAttribute('role', 'status');
+    box.setAttribute('aria-live', 'polite');
+    alerts.forEach(function (a) {
+      box.appendChild(a);
+      var life = a.classList.contains('error') ? 9000 : 5000;
+      var timer = setTimeout(function () { a.remove(); }, life);
+      a.addEventListener('click', function () { clearTimeout(timer); a.remove(); });
+    });
+    document.body.appendChild(box);
+  }
+})();
+</script>
+{% endblock %}
