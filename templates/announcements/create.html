@@ -1,90 +1,426 @@
 {% extends "dashboard_base.html" %}
+{% load l10n %}
+{% block title %}New announcement — Campus Connect{% endblock %}
 {% block breadcrumb_page_name %}New Announcement{% endblock %}
 
 {% block dashboard_content %}
 {% include 'announcements/_styles.html' %}
 <style>
-  .an-form { max-width:760px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); padding:1.75rem; }
-  .an-form .form-group { margin-bottom:18px; }
-  .an-form .hint { font-size:12px; color:var(--ink3); margin-top:5px; }
-  .an-row { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
-  @media (max-width:640px){ .an-row { grid-template-columns:1fr; } }
-  .an-check { display:flex; align-items:center; gap:10px; font-size:13.5px; color:var(--ink2); margin-bottom:10px; }
-  .an-check input { width:16px; height:16px; accent-color:var(--primary); }
-  .field-error { color:var(--red); font-size:12.5px; margin-top:5px; }
+  .ac-layout { display:grid; grid-template-columns:minmax(0,1fr) 340px; gap:22px; align-items:start; max-width:1120px; }
+  @media (max-width:1100px) { .ac-layout { grid-template-columns:minmax(0,1fr); } }
+
+  /* ── Form sections ── */
+  .ac-form { display:flex; flex-direction:column; gap:16px; }
+  .ac-sec { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); padding:1.4rem 1.5rem; }
+  .ac-sec-head { display:flex; align-items:center; gap:10px; margin-bottom:18px; }
+  .ac-step { width:24px; height:24px; border-radius:50%; background:var(--p-soft); color:var(--primary2); font-size:12px; font-weight:800;
+             font-family:var(--font-mono); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .ac-sec-title { font-family:var(--font-display); font-size:15.5px; font-weight:700; letter-spacing:-.2px; color:var(--ink); margin:0; }
+  .ac-sec-sub { font-size:12.5px; color:var(--ink3); margin-left:auto; }
+
+  .ac-field { margin-bottom:18px; }
+  .ac-field:last-child { margin-bottom:0; }
+  .ac-field[hidden] { display:none !important; }
+  .ac-label { display:flex; justify-content:space-between; align-items:baseline; gap:10px; margin-bottom:7px; }
+  .ac-label label { font-size:13px; font-weight:600; color:var(--ink2); margin:0; }
+  .ac-req { color:var(--red); }
+  .ac-count { font-family:var(--font-mono); font-size:11.5px; color:var(--ink3); }
+  .ac-count.warn { color:var(--yellow); }
+  .ac-count.max { color:var(--red); }
+  .ac-hint { font-size:12px; color:var(--ink3); margin-top:6px; line-height:1.5; }
+  /* dashboard_base.html does not define the form controls (only base.html does), so style them here. */
+  [hidden] { display:none !important; }
+  .ac-form { color-scheme:dark; }
+  [data-theme="light"] .ac-form { color-scheme:light; }
+  .ac-form .form-control, .ac-form .form-select {
+    display:block; width:100%; background:var(--bg2); border:1px solid var(--border2); color:var(--ink);
+    border-radius:10px; font-family:var(--font-body); font-size:14px; line-height:1.5; padding:.65rem .85rem; transition:border-color .18s, box-shadow .18s, background .18s;
+  }
+  .ac-form .form-control:hover, .ac-form .form-select:hover { border-color:var(--ink3); }
+  .ac-form .form-control:focus, .ac-form .form-select:focus { outline:none; border-color:var(--primary); box-shadow:0 0 0 3px var(--p-soft); background:var(--bg3); }
+  .ac-form .form-control::placeholder { color:var(--ink3); }
+  .ac-form textarea.form-control { min-height:160px; resize:vertical; line-height:1.6; }
+  .ac-form input[type="date"].form-control { max-width:260px; }
+
+  /* ── Audience cards ── */
+  .ac-aud { display:grid; grid-template-columns:repeat(auto-fit, minmax(230px, 1fr)); gap:10px; margin-bottom:18px; }
+  .ac-opt { position:relative; display:block; cursor:pointer; margin:0; }
+  .ac-opt input { position:absolute; inset:0; width:100%; height:100%; margin:0; opacity:0; cursor:pointer; }
+  .ac-opt-card { display:flex; gap:12px; align-items:flex-start; height:100%; padding:13px 14px; border:1px solid var(--border2); border-radius:var(--radius);
+                 background:var(--bg2); transition:border-color .15s, background .15s, box-shadow .15s; }
+  .ac-opt:hover .ac-opt-card { border-color:var(--primary); }
+  .ac-opt input:checked + .ac-opt-card { border-color:var(--primary); background:var(--p-soft); box-shadow:0 0 0 3px var(--p-soft); }
+  .ac-opt input:focus-visible + .ac-opt-card { outline:2px solid var(--primary2); outline-offset:2px; }
+  .ac-opt-ico { width:34px; height:34px; border-radius:10px; background:var(--bg3); color:var(--ink3); display:flex; align-items:center; justify-content:center; font-size:13px; flex-shrink:0; transition:all .15s; }
+  .ac-opt input:checked + .ac-opt-card .ac-opt-ico { background:var(--primary); color:#fff; }
+  .ac-opt-txt strong { display:block; font-size:13.5px; font-weight:700; color:var(--ink); margin-bottom:2px; }
+  .ac-opt-txt small { display:block; font-size:12px; color:var(--ink3); line-height:1.45; }
+
+  .ac-fields { display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:16px; }
+
+  /* ── Live recipient count ── */
+  .ac-reach { display:flex; align-items:center; gap:10px; margin-top:18px; padding:11px 14px; border-radius:var(--radius); font-size:13px; font-weight:600;
+              background:var(--bg3); color:var(--ink2); border:1px solid var(--border); }
+  .ac-reach i { font-size:14px; }
+  .ac-reach[data-state="ok"]   { background:var(--green-soft); color:var(--green); border-color:rgba(34,211,160,.3); }
+  .ac-reach[data-state="warn"] { background:var(--red-soft);   color:var(--red);   border-color:rgba(244,63,94,.3); }
+  .ac-warn-note { display:flex; gap:8px; align-items:flex-start; margin-top:10px; font-size:12.5px; line-height:1.5; color:var(--yellow); }
+
+  /* ── Toggle switches ── */
+  .ac-switch { position:relative; display:flex; align-items:flex-start; gap:13px; padding:12px 14px; margin:0 0 10px; cursor:pointer;
+               border:1px solid var(--border); border-radius:var(--radius); background:var(--bg2); transition:border-color .15s; }
+  .ac-switch:hover { border-color:var(--border2); }
+  .ac-switch input { position:absolute; opacity:0; width:1px; height:1px; }
+  .ac-track { position:relative; width:38px; height:22px; flex-shrink:0; margin-top:1px; border-radius:99px; background:var(--bg3); border:1px solid var(--border2); transition:all .18s; }
+  .ac-track::after { content:''; position:absolute; top:2px; left:2px; width:16px; height:16px; border-radius:50%; background:var(--ink3); transition:all .18s; }
+  .ac-switch input:checked + .ac-track { background:var(--primary); border-color:var(--primary); }
+  .ac-switch input:checked + .ac-track::after { transform:translateX(16px); background:#fff; }
+  .ac-switch input:focus-visible + .ac-track { outline:2px solid var(--primary2); outline-offset:2px; }
+  .ac-switch strong { display:block; font-size:13.5px; font-weight:600; color:var(--ink); }
+  .ac-switch small { display:block; font-size:12px; color:var(--ink3); margin-top:2px; line-height:1.45; }
+
+  /* ── Alerts and actions ── */
+  .ac-alert { display:flex; gap:10px; align-items:flex-start; padding:12px 16px; border-radius:var(--radius); font-size:13.5px; font-weight:500; line-height:1.5;
+              background:var(--red-soft); border:1px solid rgba(244,63,94,.3); color:var(--red); }
+  .ac-alert i { margin-top:3px; }
+  .ac-actions { display:flex; align-items:center; gap:12px; flex-wrap:wrap; padding:1rem 1.5rem; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); }
+  .ac-actions .an-btn { padding:11px 22px; font-size:14px; }
+  .ac-actions .ac-note { font-size:12px; color:var(--ink3); flex:1; min-width:200px; line-height:1.5; }
+
+  /* ── Side column ── */
+  .ac-side { display:flex; flex-direction:column; gap:16px; position:sticky; top:92px; }
+  @media (max-width:1100px) { .ac-side { position:static; } }
+  .ac-side-label { font-family:var(--font-mono); font-size:11px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--ink3); margin-bottom:10px; display:flex; align-items:center; gap:8px; }
+  .ac-side-label i { color:var(--primary2); }
+  .ac-preview .an-card { padding:1rem 1.1rem; }
+  .ac-preview .an-card:hover { border-color:var(--border); }
+  .ac-preview .an-card.pinned:hover { border-color:rgba(108,99,255,.55); }
+  .ac-preview .an-card-title.is-empty, .ac-preview .an-msg.is-empty { color:var(--ink3); font-style:italic; font-weight:500; }
+  .ac-preview .an-msg { margin:10px 0 12px; font-size:13.5px; }
+  .ac-tips { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); padding:1.1rem 1.25rem; }
+  .ac-tips ul { list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:9px; }
+  .ac-tips li { display:flex; gap:9px; font-size:12.5px; line-height:1.5; color:var(--ink2); }
+  .ac-tips li i { color:var(--primary2); font-size:11px; margin-top:4px; flex-shrink:0; }
+  .ac-limit { margin-top:14px; padding-top:12px; border-top:1px solid var(--border); font-size:12.5px; color:var(--ink2); display:flex; gap:9px; line-height:1.5; }
+  .ac-limit.low { color:var(--yellow); }
+
+  @media (max-width:560px) {
+    .ac-sec { padding:1.1rem 1rem; }
+    .ac-actions { padding:1rem; }
+    .ac-actions .an-btn { width:100%; }
+  }
 </style>
 
 <div class="an-header">
-  <h1 class="an-title"><i class="fas fa-bullhorn"></i> New announcement</h1>
-  <a class="an-btn an-btn-ghost" href="{% url 'announcements' %}">Back</a>
+  <div>
+    <h1 class="an-title"><i class="fas fa-bullhorn"></i> New announcement</h1>
+    <p class="an-sub">Tell students about drives, results or schedule changes. They get it instantly as a notification.</p>
+  </div>
+  <a class="an-btn an-btn-ghost" href="{% url 'announcements' %}"><i class="fas fa-arrow-left"></i> Back to announcements</a>
 </div>
 
-<form method="post" class="an-form">
-  {% csrf_token %}
+<div class="ac-layout">
+  <form method="post" class="ac-form" id="annForm">
+    {% csrf_token %}
 
-  <div class="form-group">
-    <label class="form-label" for="{{ form.title.id_for_label }}">Title <span style="color:var(--red)">*</span></label>
-    {{ form.title }}
-    {% for e in form.title.errors %}<div class="field-error">{{ e }}</div>{% endfor %}
-  </div>
-
-  <div class="form-group">
-    <label class="form-label" for="{{ form.message.id_for_label }}">Message <span style="color:var(--red)">*</span></label>
-    {{ form.message }}
-    {% for e in form.message.errors %}<div class="field-error">{{ e }}</div>{% endfor %}
-  </div>
-
-  <div class="an-row">
-    <div class="form-group">
-      <label class="form-label" for="{{ form.audience.id_for_label }}">{{ form.audience.label }}</label>
-      {{ form.audience }}
+    {% if form.non_field_errors %}
+    <div class="ac-alert" role="alert">
+      <i class="fas fa-circle-exclamation"></i>
+      <div>{% for e in form.non_field_errors %}<div>{{ e }}</div>{% endfor %}</div>
     </div>
-    <div class="form-group" id="branchField">
-      <label class="form-label" for="{{ form.branch.id_for_label }}">{{ form.branch.label }}</label>
-      {{ form.branch }}
-      {% for e in form.branch.errors %}<div class="field-error">{{ e }}</div>{% endfor %}
+    {% elif form.errors %}
+    <div class="ac-alert" role="alert">
+      <i class="fas fa-circle-exclamation"></i>
+      <div>Please fix the highlighted problems below and send again.</div>
     </div>
-    <div class="form-group" id="driveField">
-      <label class="form-label" for="{{ form.drive.id_for_label }}">{{ form.drive.label }}</label>
-      {{ form.drive }}
-      <div class="hint" id="driveHint"></div>
-      {% for e in form.drive.errors %}<div class="field-error">{{ e }}</div>{% endfor %}
-    </div>
-    <div class="form-group">
-      <label class="form-label" for="{{ form.expires_at.id_for_label }}">{{ form.expires_at.label }}</label>
-      {{ form.expires_at }}
-      {% for e in form.expires_at.errors %}<div class="field-error">{{ e }}</div>{% endfor %}
-    </div>
-  </div>
+    {% endif %}
 
-  {% if form.is_pinned %}
-  <label class="an-check">{{ form.is_pinned }} {{ form.is_pinned.label }}</label>
-  {% endif %}
-  <label class="an-check">{{ form.send_email }} {{ form.send_email.label }}</label>
-  <div class="hint" style="margin:-4px 0 18px 26px;">Email is skipped automatically for very large audiences. Everyone still gets a notification.</div>
+    <!-- 1 · Message -->
+    <section class="ac-sec">
+      <div class="ac-sec-head">
+        <span class="ac-step">1</span>
+        <h2 class="ac-sec-title">Write your message</h2>
+      </div>
 
-  <button class="an-btn" type="submit"><i class="fas fa-paper-plane"></i> Send announcement</button>
-</form>
+      <div class="ac-field">
+        <div class="ac-label">
+          <label for="{{ form.title.id_for_label }}">Title <span class="ac-req">*</span></label>
+          <span class="ac-count" id="titleCount">0 / 150</span>
+        </div>
+        {{ form.title }}
+        {% for e in form.title.errors %}<div class="an-field-error"><i class="fas fa-circle-exclamation"></i>{{ e }}</div>{% endfor %}
+      </div>
+
+      <div class="ac-field">
+        <div class="ac-label">
+          <label for="{{ form.message.id_for_label }}">Message <span class="ac-req">*</span></label>
+          <span class="ac-count" id="messageCount">0 / 2000</span>
+        </div>
+        {{ form.message }}
+        {% for e in form.message.errors %}<div class="an-field-error"><i class="fas fa-circle-exclamation"></i>{{ e }}</div>{% endfor %}
+        <div class="ac-hint">Links are made clickable automatically. Line breaks are kept.</div>
+      </div>
+    </section>
+
+    <!-- 2 · Audience -->
+    <section class="ac-sec">
+      <div class="ac-sec-head">
+        <span class="ac-step">2</span>
+        <h2 class="ac-sec-title">Choose who receives it</h2>
+      </div>
+
+      <div class="ac-aud" role="radiogroup" aria-label="Who should receive this announcement?">
+        {% for o in form.audience_options %}
+        <label class="ac-opt">
+          <input type="radio" name="audience" value="{{ o.value }}" data-label="{{ o.label }}" {% if o.checked %}checked{% endif %}>
+          <span class="ac-opt-card">
+            <span class="ac-opt-ico"><i class="fas {{ o.icon }}"></i></span>
+            <span class="ac-opt-txt"><strong>{{ o.label }}</strong><small>{{ o.hint }}</small></span>
+          </span>
+        </label>
+        {% endfor %}
+      </div>
+      {% for e in form.audience.errors %}<div class="an-field-error" style="margin:-8px 0 14px;"><i class="fas fa-circle-exclamation"></i>{{ e }}</div>{% endfor %}
+
+      <div class="ac-fields">
+        <div class="ac-field" id="branchField" hidden>
+          <div class="ac-label"><label for="{{ form.branch.id_for_label }}">{{ form.branch.label }} <span class="ac-req">*</span></label></div>
+          {{ form.branch }}
+          {% for e in form.branch.errors %}<div class="an-field-error"><i class="fas fa-circle-exclamation"></i>{{ e }}</div>{% endfor %}
+        </div>
+        <div class="ac-field" id="driveField">
+          <div class="ac-label"><label for="{{ form.drive.id_for_label }}"><span id="driveLabel">{{ form.drive.label }}</span></label></div>
+          {{ form.drive }}
+          <div class="ac-hint" id="driveHint"></div>
+          {% for e in form.drive.errors %}<div class="an-field-error"><i class="fas fa-circle-exclamation"></i>{{ e }}</div>{% endfor %}
+        </div>
+      </div>
+
+      <div class="ac-reach" id="reach" data-state="idle" role="status" aria-live="polite">
+        <i class="fas fa-users" aria-hidden="true"></i>
+        <span id="reachText">Pick an audience to see how many students it reaches.</span>
+      </div>
+    </section>
+
+    <!-- 3 · Options -->
+    <section class="ac-sec">
+      <div class="ac-sec-head">
+        <span class="ac-step">3</span>
+        <h2 class="ac-sec-title">Options</h2>
+        <span class="ac-sec-sub">All optional</span>
+      </div>
+
+      <div class="ac-field">
+        <div class="ac-label"><label for="{{ form.expires_at.id_for_label }}">{{ form.expires_at.label }}</label></div>
+        {{ form.expires_at }}
+        <div class="ac-hint">After this date the announcement disappears from students' feeds. Leave empty to keep it visible.</div>
+        {% for e in form.expires_at.errors %}<div class="an-field-error"><i class="fas fa-circle-exclamation"></i>{{ e }}</div>{% endfor %}
+      </div>
+
+      {% if form.is_pinned %}
+      <label class="ac-switch" for="{{ form.is_pinned.id_for_label }}">
+        {{ form.is_pinned }}<span class="ac-track" aria-hidden="true"></span>
+        <span><strong>{{ form.is_pinned.label }}</strong><small>Pinned announcements stay above newer ones.</small></span>
+      </label>
+      {% endif %}
+
+      <label class="ac-switch" for="{{ form.send_email.id_for_label }}">
+        {{ form.send_email }}<span class="ac-track" aria-hidden="true"></span>
+        <span><strong>{{ form.send_email.label }}</strong><small>Everyone gets a notification either way. Email is skipped automatically for audiences above {{ email_limit|unlocalize }} students.</small></span>
+      </label>
+      <div class="ac-warn-note" id="emailNote" hidden>
+        <i class="fas fa-triangle-exclamation" aria-hidden="true" style="margin-top:3px;"></i>
+        <span>This audience is larger than {{ email_limit|unlocalize }} students, so email will be skipped. Students will still get the notification.</span>
+      </div>
+    </section>
+
+    <div class="ac-actions">
+      <button class="an-btn" type="submit" data-loading-text="Sending..."><i class="fas fa-paper-plane"></i> Send announcement</button>
+      <a class="an-btn an-btn-ghost" href="{% url 'announcements' %}">Cancel</a>
+      <span class="ac-note">Announcements can't be edited once sent. If you spot a mistake you can delete it and send a corrected one.</span>
+    </div>
+  </form>
+
+  <aside class="ac-side" aria-label="Preview and tips">
+    <div class="ac-preview">
+      <div class="ac-side-label"><i class="fas fa-eye" aria-hidden="true"></i> Live preview</div>
+      <article class="an-card" id="pvCard">
+        <div class="an-avatar" aria-hidden="true">{{ sender_label|first|upper }}</div>
+        <div class="an-body">
+          <div class="an-top">
+            <div style="min-width:0;">
+              <h3 class="an-card-title is-empty" id="pvTitle">Your title appears here</h3>
+              <div class="an-by">{{ sender_label }} &middot; Just now</div>
+            </div>
+            <span class="an-chip pin" id="pvPin" hidden><i class="fas fa-thumbtack"></i> Pinned</span>
+          </div>
+          <p class="an-msg is-empty" id="pvMsg">Your message appears here as students will read it.</p>
+          <div class="an-meta">
+            <span class="an-chip"><i class="fas fa-users"></i> <span id="pvAud">Audience</span></span>
+            <span id="pvExp" hidden><i class="fas fa-hourglass-half"></i><span></span></span>
+          </div>
+        </div>
+      </article>
+    </div>
+
+    <div class="ac-tips">
+      <div class="ac-side-label"><i class="fas fa-lightbulb" aria-hidden="true"></i> Tips for a clear message</div>
+      <ul>
+        <li><i class="fas fa-check" aria-hidden="true"></i>Put the key fact in the title: what changed and when.</li>
+        <li><i class="fas fa-check" aria-hidden="true"></i>Include the date, time, venue or link students need.</li>
+        <li><i class="fas fa-check" aria-hidden="true"></i>Say what students should do next, and by when.</li>
+      </ul>
+      {% if daily_limit %}
+      <div class="ac-limit {% if daily_left <= 1 %}low{% endif %}">
+        <i class="fas fa-gauge-high" aria-hidden="true" style="margin-top:3px;"></i>
+        <span>You can send {{ daily_left }} more announcement{{ daily_left|pluralize }} in this 24-hour window (limit {{ daily_limit }}).</span>
+      </div>
+      {% endif %}
+    </div>
+  </aside>
+</div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
 (function () {
-  var audience = document.getElementById('{{ form.audience.id_for_label }}');
-  var branchField = document.getElementById('branchField');
-  var driveField = document.getElementById('driveField');
-  var driveHint = document.getElementById('driveHint');
-  var driveAudiences = ['eligible', 'applicants', 'shortlisted'];
+  var COUNT_URL = '{% url "announcement_audience_count" %}';
+  var EMAIL_LIMIT = {{ email_limit|unlocalize }};
+  var DRIVE_AUDIENCES = ['eligible', 'applicants', 'shortlisted'];
 
-  function sync() {
-    var v = audience.value;
-    branchField.style.display = v === 'branch' ? '' : 'none';
-    var needsDrive = driveAudiences.indexOf(v) !== -1;
-    driveField.style.display = (needsDrive || v === 'all' || v === 'branch') ? '' : 'none';
-    driveHint.textContent = needsDrive ? 'Required for this audience.' : 'Optional: adds a link to the drive for students.';
+  var form = document.getElementById('annForm');
+  var title = document.getElementById('{{ form.title.id_for_label }}');
+  var message = document.getElementById('{{ form.message.id_for_label }}');
+  var branch = document.getElementById('{{ form.branch.id_for_label }}');
+  var drive = document.getElementById('{{ form.drive.id_for_label }}');
+  var expires = document.getElementById('{{ form.expires_at.id_for_label }}');
+  var pin = form.querySelector('[data-live="pin"]');
+  var email = form.querySelector('[data-live="email"]');
+  var branchField = document.getElementById('branchField');
+  var driveLabel = document.getElementById('driveLabel');
+  var driveHint = document.getElementById('driveHint');
+  var reach = document.getElementById('reach');
+  var reachText = document.getElementById('reachText');
+  var emailNote = document.getElementById('emailNote');
+  var pv = {
+    card: document.getElementById('pvCard'), title: document.getElementById('pvTitle'),
+    msg: document.getElementById('pvMsg'), aud: document.getElementById('pvAud'),
+    pin: document.getElementById('pvPin'), exp: document.getElementById('pvExp')
+  };
+  var lastCount = null, seq = 0, timer = null;
+
+  function selectedAudience() { return form.querySelector('input[name="audience"]:checked'); }
+  function audienceValue() { var r = selectedAudience(); return r ? r.value : ''; }
+  function needsDrive(a) { return DRIVE_AUDIENCES.indexOf(a) !== -1; }
+  function optionText(select) { return select.selectedIndex >= 0 ? select.options[select.selectedIndex].text : ''; }
+
+  // ── Character counters ──
+  function updateCount(input, el) {
+    var max = input.maxLength > 0 ? input.maxLength : 0, n = input.value.length;
+    el.textContent = n + (max ? ' / ' + max : '');
+    el.className = 'ac-count' + (max && n >= max ? ' max' : (max && n >= max * 0.9 ? ' warn' : ''));
   }
-  audience.addEventListener('change', sync);
-  sync();
+
+  // ── Fields that depend on the audience ──
+  function syncFields() {
+    var a = audienceValue(), drv = needsDrive(a);
+    branchField.hidden = a !== 'branch';
+    branch.required = a === 'branch';   // only while visible, or the browser can't focus it to explain
+    drive.required = drv;
+    driveLabel.innerHTML = drv ? 'Drive <span class="ac-req">*</span>' : 'Related drive (optional)';
+    driveHint.textContent = drv ? '' : 'Adds a link to this drive on the announcement.';
+  }
+
+  // ── Live preview (text only: never inserted as HTML) ──
+  function audienceLabel() {
+    var r = selectedAudience();
+    if (!r) return 'Audience';
+    var a = r.value;
+    if (a === 'branch') return branch.value ? optionText(branch) + ' students' : r.dataset.label;
+    if (needsDrive(a) && drive.value) return r.dataset.label + ' · ' + optionText(drive).split(' — ')[0];
+    return r.dataset.label;
+  }
+  function fmtDate(iso) {
+    var p = iso.split('-');
+    if (p.length !== 3) return iso;
+    var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return parseInt(p[2], 10) + ' ' + months[parseInt(p[1], 10) - 1] + ' ' + p[0];
+  }
+  function renderPreview() {
+    var t = title.value.trim(), m = message.value.trim();
+    pv.title.textContent = t || 'Your title appears here';
+    pv.title.classList.toggle('is-empty', !t);
+    pv.msg.textContent = m || 'Your message appears here as students will read it.';
+    pv.msg.classList.toggle('is-empty', !m);
+    pv.aud.textContent = audienceLabel();
+    var pinned = !!(pin && pin.checked);
+    pv.pin.hidden = !pinned;
+    pv.card.classList.toggle('pinned', pinned);
+    if (expires.value) { pv.exp.hidden = false; pv.exp.lastElementChild.textContent = 'Visible until ' + fmtDate(expires.value); }
+    else { pv.exp.hidden = true; }
+  }
+
+  // ── Live audience size ──
+  function setReach(state, text) { reach.dataset.state = state; reachText.textContent = text; }
+  function updateEmailNote() {
+    emailNote.hidden = !(email && email.checked && lastCount !== null && lastCount > EMAIL_LIMIT);
+  }
+  function showCount(n) {
+    lastCount = n;
+    var a = audienceValue();
+    if (n === null) {
+      setReach('idle', a === 'branch' ? 'Choose a branch to see how many students this reaches.'
+                      : needsDrive(a) ? 'Choose a drive to see how many students this reaches.'
+                      : 'Pick an audience to see how many students it reaches.');
+    } else if (n === 0) {
+      setReach('warn', 'No students match this audience yet, so nothing would be sent.');
+    } else {
+      setReach('ok', 'This will reach ' + n + ' student' + (n === 1 ? '' : 's') + '.');
+    }
+    updateEmailNote();
+  }
+  function fetchReach() {
+    var mine = ++seq;
+    var params = new URLSearchParams({ audience: audienceValue(), branch: branch.value, drive: drive.value });
+    setReach('idle', 'Checking audience…');
+    fetch(COUNT_URL + '?' + params.toString(), { credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(function (d) { if (mine === seq) showCount(typeof d.count === 'number' ? d.count : null); })
+      .catch(function () {
+        if (mine !== seq) return;
+        lastCount = null; updateEmailNote();
+        setReach('idle', 'Could not check the audience size. You can still send.');
+      });
+  }
+  function scheduleReach() { clearTimeout(timer); timer = setTimeout(fetchReach, 200); }
+
+  // ── Wiring ──
+  title.addEventListener('input', function () { updateCount(title, document.getElementById('titleCount')); renderPreview(); });
+  message.addEventListener('input', function () { updateCount(message, document.getElementById('messageCount')); renderPreview(); });
+  form.querySelectorAll('input[name="audience"]').forEach(function (r) {
+    r.addEventListener('change', function () { syncFields(); renderPreview(); scheduleReach(); });
+  });
+  branch.addEventListener('change', function () { renderPreview(); scheduleReach(); });
+  drive.addEventListener('change', function () { renderPreview(); scheduleReach(); });
+  expires.addEventListener('input', renderPreview);
+  if (pin) pin.addEventListener('change', renderPreview);
+  if (email) email.addEventListener('change', updateEmailNote);
+
+  // Sending reaches many people at once and can't be undone, so confirm with the real number.
+  form.addEventListener('submit', function (e) {
+    if (lastCount === 0) return;   // the server will explain why nothing can be sent
+    var who = lastCount === null ? 'the selected students' : lastCount + ' student' + (lastCount === 1 ? '' : 's');
+    if (!window.confirm('Send this announcement to ' + who + ' now? It cannot be unsent.')) e.preventDefault();
+  });
+
+  syncFields();
+  updateCount(title, document.getElementById('titleCount'));
+  updateCount(message, document.getElementById('messageCount'));
+  renderPreview();
+  fetchReach();
+
+  var firstError = document.querySelector('.an-field-error, .ac-alert');
+  if (firstError) firstError.scrollIntoView({ block: 'center' });
 })();
 </script>
 {% endblock %}
