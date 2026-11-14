@@ -3,7 +3,9 @@ from django.db import models
 from django.utils import timezone
 
 from accounts.models import User
-from .validators import validate_resume, validate_image
+from django.core.exceptions import ValidationError
+
+from .validators import validate_resume, validate_image, validate_resume_text
 
 
 def default_passing_year():
@@ -128,3 +130,86 @@ class RecruiterProfile(models.Model):
     def is_verified(self):
         """A recruiter is verified exactly when an admin has approved them."""
         return self.verification_status == 'approved'
+
+
+
+# ── Resume Builder ───────────────────────────────────────────────────────────
+# Each entry belongs to one student and has a sort position the student controls.
+YEAR_VALIDATORS = [MinValueValidator(1990), MaxValueValidator(2050)]
+
+
+class Education(models.Model):
+    profile        = models.ForeignKey(StudentProfile, on_delete=models.CASCADE, related_name='educations')
+    institution    = models.CharField(max_length=120, validators=[validate_resume_text])
+    degree         = models.CharField(max_length=100, validators=[validate_resume_text])
+    field_of_study = models.CharField(max_length=100, blank=True, validators=[validate_resume_text])
+    start_year     = models.PositiveSmallIntegerField(null=True, blank=True, validators=YEAR_VALIDATORS)
+    end_year       = models.PositiveSmallIntegerField(null=True, blank=True, validators=YEAR_VALIDATORS)
+    grade          = models.CharField(max_length=40, blank=True, validators=[validate_resume_text],
+                                      help_text="For example 8.4 CGPA or 86%")
+    position       = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ['position', 'id']
+        verbose_name_plural = 'education entries'
+
+    def clean(self):
+        if self.start_year and self.end_year and self.end_year < self.start_year:
+            raise ValidationError({'end_year': 'End year cannot be before the start year.'})
+
+    def __str__(self):
+        return f'{self.institution} ({self.degree})'
+
+
+class Project(models.Model):
+    profile     = models.ForeignKey(StudentProfile, on_delete=models.CASCADE, related_name='projects')
+    title       = models.CharField(max_length=120, validators=[validate_resume_text])
+    link        = models.URLField(blank=True)
+    tech        = models.CharField('Tech used', max_length=150, blank=True, validators=[validate_resume_text])
+    description = models.TextField(blank=True, validators=[validate_resume_text],
+                                   help_text="One bullet point per line")
+    position    = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ['position', 'id']
+
+    def __str__(self):
+        return self.title
+
+
+class Experience(models.Model):
+    profile     = models.ForeignKey(StudentProfile, on_delete=models.CASCADE, related_name='experiences')
+    company     = models.CharField(max_length=120, validators=[validate_resume_text])
+    role        = models.CharField(max_length=120, validators=[validate_resume_text])
+    start_date  = models.DateField()
+    end_date    = models.DateField(null=True, blank=True)
+    is_current  = models.BooleanField('I currently work here', default=False)
+    description = models.TextField(blank=True, validators=[validate_resume_text],
+                                   help_text="One bullet point per line")
+    position    = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ['position', 'id']
+
+    def clean(self):
+        if self.is_current:
+            self.end_date = None
+        elif not self.end_date:
+            raise ValidationError({'end_date': 'Add an end month, or tick "I currently work here".'})
+        elif self.start_date and self.end_date < self.start_date:
+            raise ValidationError({'end_date': 'End month cannot be before the start month.'})
+
+    def __str__(self):
+        return f'{self.role} at {self.company}'
+
+
+class Achievement(models.Model):
+    profile  = models.ForeignKey(StudentProfile, on_delete=models.CASCADE, related_name='achievements')
+    text     = models.CharField(max_length=200, validators=[validate_resume_text])
+    position = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ['position', 'id']
+
+    def __str__(self):
+        return self.text[:60]

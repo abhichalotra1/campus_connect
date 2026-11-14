@@ -1,0 +1,63 @@
+{# The on-screen preview of the PDF. Reads the same dict (students.resume.build_resume) as the PDF. #}
+<article class="rb-sheet" aria-label="Resume preview">
+  <h1 class="rs-name">{{ resume.name }}</h1>
+  {% if resume.contact %}
+  <p class="rs-contact">{% for c in resume.contact %}{% if not forloop.first %}<span class="rs-bar">|</span>{% endif %}{{ c.text }}{% endfor %}</p>
+  {% endif %}
+
+  {% if resume.summary %}
+  <h2 class="rs-h">SUMMARY</h2>
+  <p class="rs-text">{{ resume.summary }}</p>
+  {% endif %}
+
+  {% if resume.education %}
+  <h2 class="rs-h">EDUCATION</h2>
+  {% for item in resume.education %}
+  <div class="rs-entry">
+    <p class="rs-title"><b>{{ item.title }}</b>{% if item.dates %}<span class="rs-bar">|</span>{{ item.dates }}{% endif %}</p>
+    {% if item.sub %}<p class="rs-sub">{{ item.sub }}</p>{% endif %}
+  </div>
+  {% endfor %}
+  {% endif %}
+
+  {% if resume.experience %}
+  <h2 class="rs-h">EXPERIENCE</h2>
+  {% for item in resume.experience %}
+  <div class="rs-entry">
+    <p class="rs-title"><b>{{ item.title }}</b>{% if item.dates %}<span class="rs-bar">|</span>{{ item.dates }}{% endif %}</p>
+    {% if item.sub %}<p class="rs-sub">{{ item.sub }}</p>{% endif %}
+    {% if item.bullets %}<ul class="rs-list">{% for b in item.bullets %}<li>{{ b }}</li>{% endfor %}</ul>{% endif %}
+  </div>
+  {% endfor %}
+  {% endif %}
+
+  {% if resume.projects %}
+  <h2 class="rs-h">PROJECTS</h2>
+  {% for item in resume.projects %}
+  <div class="rs-entry">
+    <p class="rs-title"><b>{{ item.title }}</b></p>
+    {% if item.sub or item.link %}<p class="rs-sub">{{ item.sub }}{% if item.sub and item.link %}<span class="rs-bar">|</span>{% endif %}{% if item.link %}<span class="rs-link">{{ item.link }}</span>{% endif %}</p>{% endif %}
+    {% if item.bullets %}<ul class="rs-list">{% for b in item.bullets %}<li>{{ b }}</li>{% endfor %}</ul>{% endif %}
+  </div>
+  {% endfor %}
+  {% endif %}
+
+  {% if resume.skills %}
+  <h2 class="rs-h">SKILLS</h2>
+  <p class="rs-text">{{ resume.skills|join:", " }}</p>
+  {% endif %}
+
+  {% if resume.certifications %}
+  <h2 class="rs-h">CERTIFICATIONS</h2>
+  <ul class="rs-list">{% for line in resume.certifications %}<li>{{ line }}</li>{% endfor %}</ul>
+  {% endif %}
+
+  {% if resume.achievements %}
+  <h2 class="rs-h">ACHIEVEMENTS</h2>
+  <ul class="rs-list">{% for line in resume.achievements %}<li>{{ line }}</li>{% endfor %}</ul>
+  {% endif %}
+
+  {% if not resume.has_content and not resume.summary and not resume.skills %}
+  <p class="rs-placeholder">Your resume appears here as you add entries.</p>
+  {% endif %}
+</article>
